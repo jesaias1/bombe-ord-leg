@@ -259,8 +259,25 @@ export const GameRoom = () => {
   const handleWordSubmit = async (word: string) => {
     if (!game || !user) return;
 
+    console.log('Submitting word:', word);
+    console.log('Current syllable:', game.current_syllable);
+    console.log('Used words:', game.used_words);
+
+    // Normalize the word (lowercase, trim whitespace)
+    const normalizedWord = word.toLowerCase().trim();
+
+    // Check if the word contains the required syllable
+    if (!normalizedWord.includes(game.current_syllable?.toLowerCase() || '')) {
+      toast({
+        title: "Forkert stavelse",
+        description: `Ordet skal indeholde "${game.current_syllable}"`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check if word was already used
-    if (game.used_words?.includes(word)) {
+    if (game.used_words?.includes(normalizedWord)) {
       toast({
         title: "Allerede brugt",
         description: "Dette ord er allerede blevet brugt",
@@ -269,12 +286,14 @@ export const GameRoom = () => {
       return;
     }
 
-    // Validate word (simplified - in production use proper Danish dictionary)
-    const { data: validWord } = await supabase
+    // Validate word exists in Danish dictionary
+    const { data: validWord, error: wordError } = await supabase
       .from('danish_words')
       .select('word')
-      .eq('word', word)
-      .single();
+      .eq('word', normalizedWord)
+      .maybeSingle();
+
+    console.log('Word validation result:', validWord, wordError);
 
     if (!validWord) {
       toast({
@@ -286,7 +305,7 @@ export const GameRoom = () => {
     }
 
     // Add word to used words
-    const updatedUsedWords = [...(game.used_words || []), word];
+    const updatedUsedWords = [...(game.used_words || []), normalizedWord];
     
     await supabase
       .from('games')
@@ -294,11 +313,12 @@ export const GameRoom = () => {
       .eq('id', game.id);
 
     toast({
-      title: "Godt ord!",
-      description: `"${word}" blev accepteret`,
+      title: "Godt ord! 🎉",
+      description: `"${normalizedWord}" blev accepteret`,
     });
 
-    // Move to next turn
+    // Move to next turn immediately
+    console.log('Moving to next turn after successful word');
     nextTurn();
   };
 

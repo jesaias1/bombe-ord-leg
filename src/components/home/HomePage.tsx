@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { WordImporter } from '@/components/admin/WordImporter';
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ export const HomePage = () => {
   const [bonusLetters, setBonusLetters] = useState(false);
   const [joinRoomId, setJoinRoomId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showWordImporter, setShowWordImporter] = useState(false);
 
   const generateRoomId = () => {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -95,6 +96,23 @@ export const HomePage = () => {
           <p className="text-xl text-gray-600">
             Multiplayer ordspil på dansk
           </p>
+        </div>
+
+        {/* Word Importer - temporary admin section */}
+        <div className="mb-8 text-center">
+          <Button 
+            onClick={() => setShowWordImporter(!showWordImporter)}
+            variant="outline"
+            size="sm"
+          >
+            {showWordImporter ? "Skjul" : "Vis"} ordimporter
+          </Button>
+          
+          {showWordImporter && (
+            <div className="mt-4">
+              <WordImporter />
+            </div>
+          )}
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
