@@ -1,13 +1,14 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { BombTimer } from './BombTimer';
-import { PlayerList } from './PlayerList';
-import { WordInput } from './WordInput';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { GameHeader } from './GameHeader';
+import { GameWaiting } from './GameWaiting';
+import { GamePlaying } from './GamePlaying';
+import { GameFinished } from './GameFinished';
+import { useGameTimer } from '@/hooks/useGameTimer';
+import { useGameLogic } from '@/hooks/useGameLogic';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
@@ -23,8 +24,22 @@ export const GameRoom = () => {
   const [room, setRoom] = useState<Room | null>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const gameLogic = useGameLogic();
+
+  const handleTimerExpired = async () => {
+    if (!game || !players.length) return;
+    
+    await gameLogic.handleTimerExpired(game, players);
+    const nextPlayerId = await gameLogic.nextTurn(game, players);
+    
+    if (nextPlayerId) {
+      await gameLogic.startNewRound(game, room!, nextPlayerId);
+    }
+  };
+
+  const timeLeft = useGameTimer(game, handleTimerExpired);
 
   useEffect(() => {
     if (!roomId || !user) return;
@@ -132,196 +147,6 @@ export const GameRoom = () => {
     };
   }, [roomId, user, navigate, toast]);
 
-  // Timer logic
-  useEffect(() => {
-    if (!game?.timer_end_time) return;
-
-    const interval = setInterval(() => {
-      const endTime = new Date(game.timer_end_time!).getTime();
-      const now = new Date().getTime();
-      const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
-      
-      setTimeLeft(remaining);
-
-      if (remaining === 0) {
-        // Timer expired - handle bomb explosion
-        handleTimerExpired();
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [game?.timer_end_time]);
-
-  const handleTimerExpired = async () => {
-    if (!game?.current_player_id) return;
-
-    // Remove life from current player
-    const currentPlayer = players.find(p => p.id === game.current_player_id);
-    if (currentPlayer) {
-      const newLives = currentPlayer.lives - 1;
-      const isStillAlive = newLives > 0;
-
-      await supabase
-        .from('players')
-        .update({ 
-          lives: newLives,
-          is_alive: isStillAlive
-        })
-        .eq('id', currentPlayer.id);
-
-      toast({
-        title: "💥 Bomben eksploderede!",
-        description: `${currentPlayer.name} mistede et liv`,
-        variant: "destructive",
-      });
-
-      // Move to next player
-      nextTurn();
-    }
-  };
-
-  const nextTurn = async () => {
-    if (!game) return;
-
-    const alivePlayers = players.filter(p => p.is_alive);
-    
-    // For single player, just continue with the same player
-    if (alivePlayers.length === 1) {
-      const player = alivePlayers[0];
-      
-      // If they have no lives left, end the game
-      if (player.lives <= 0) {
-        await supabase
-          .from('games')
-          .update({ status: 'finished' })
-          .eq('id', game.id);
-        return;
-      }
-      
-      // Continue with same player for solo play
-      startNewRound(player.id);
-      return;
-    }
-
-    // Multi-player logic
-    if (alivePlayers.length <= 1) {
-      // Game over
-      await supabase
-        .from('games')
-        .update({ status: 'finished' })
-        .eq('id', game.id);
-      return;
-    }
-
-    const currentIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
-    const nextIndex = (currentIndex + 1) % alivePlayers.length;
-    const nextPlayer = alivePlayers[nextIndex];
-
-    startNewRound(nextPlayer.id);
-  };
-
-  const startNewRound = async (playerId: string) => {
-    if (!game || !room) return;
-
-    // Get random syllable based on difficulty
-    const { data: syllables } = await supabase
-      .from('syllables')
-      .select('syllable')
-      .eq('difficulty', room.difficulty)
-      .gte('word_count', getDifficultyThreshold(room.difficulty));
-
-    const randomSyllable = syllables?.[Math.floor(Math.random() * syllables.length)]?.syllable || 'ing';
-
-    // Set timer (10-25 seconds)
-    const timerDuration = Math.floor(Math.random() * 16) + 10;
-    const timerEndTime = new Date(Date.now() + timerDuration * 1000);
-
-    await supabase
-      .from('games')
-      .update({
-        current_player_id: playerId,
-        current_syllable: randomSyllable,
-        timer_end_time: timerEndTime.toISOString(),
-        timer_duration: timerDuration
-      })
-      .eq('id', game.id);
-  };
-
-  const getDifficultyThreshold = (difficulty: string) => {
-    switch (difficulty) {
-      case 'let': return 500;
-      case 'mellem': return 300;
-      case 'svaer': return 100;
-      default: return 300;
-    }
-  };
-
-  const handleWordSubmit = async (word: string) => {
-    if (!game || !user) return;
-
-    console.log('Submitting word:', word);
-    console.log('Current syllable:', game.current_syllable);
-    console.log('Used words:', game.used_words);
-
-    // Normalize the word (lowercase, trim whitespace)
-    const normalizedWord = word.toLowerCase().trim();
-
-    // Check if the word contains the required syllable
-    if (!normalizedWord.includes(game.current_syllable?.toLowerCase() || '')) {
-      toast({
-        title: "Forkert stavelse",
-        description: `Ordet skal indeholde "${game.current_syllable}"`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if word was already used
-    if (game.used_words?.includes(normalizedWord)) {
-      toast({
-        title: "Allerede brugt",
-        description: "Dette ord er allerede blevet brugt",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate word exists in Danish dictionary
-    const { data: validWord, error: wordError } = await supabase
-      .from('danish_words')
-      .select('word')
-      .eq('word', normalizedWord)
-      .maybeSingle();
-
-    console.log('Word validation result:', validWord, wordError);
-
-    if (!validWord) {
-      toast({
-        title: "Ikke fundet i ordbogen",
-        description: "Dette ord findes ikke i ordbogen",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Add word to used words
-    const updatedUsedWords = [...(game.used_words || []), normalizedWord];
-    
-    await supabase
-      .from('games')
-      .update({ used_words: updatedUsedWords })
-      .eq('id', game.id);
-
-    toast({
-      title: "Godt ord! 🎉",
-      description: `"${normalizedWord}" blev accepteret`,
-    });
-
-    // Move to next turn immediately
-    console.log('Moving to next turn after successful word');
-    nextTurn();
-  };
-
   const startGame = async () => {
     if (!game || !room) return;
 
@@ -335,15 +160,13 @@ export const GameRoom = () => {
       return;
     }
 
-    // Start with first player
     const firstPlayer = alivePlayers[0];
     
-    // Get random syllable
     const { data: syllables } = await supabase
       .from('syllables')
       .select('syllable')
       .eq('difficulty', room.difficulty)
-      .gte('word_count', getDifficultyThreshold(room.difficulty));
+      .gte('word_count', gameLogic.getDifficultyThreshold(room.difficulty));
 
     const randomSyllable = syllables?.[Math.floor(Math.random() * syllables.length)]?.syllable || 'ing';
 
@@ -364,6 +187,20 @@ export const GameRoom = () => {
       .eq('id', game.id);
   };
 
+  const handleWordSubmit = async (word: string) => {
+    if (!game || !user) return;
+
+    const isValid = await gameLogic.validateAndSubmitWord(word, game, user.id);
+    if (isValid) {
+      console.log('Moving to next turn after successful word');
+      const nextPlayerId = await gameLogic.nextTurn(game, players);
+      
+      if (nextPlayerId) {
+        await gameLogic.startNewRound(game, room!, nextPlayerId);
+      }
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Indlæser...</div>;
   }
@@ -376,97 +213,50 @@ export const GameRoom = () => {
   const isCurrentUser = currentPlayer?.user_id === user?.id;
   const alivePlayers = players.filter(p => p.is_alive);
   const isSinglePlayer = players.length === 1;
+  const canStartGame = room.creator_id === user?.id || isSinglePlayer;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">{room.name}</h1>
-          <p className="text-gray-600">
-            Vanskelighed: {room.difficulty} | Rum: {roomId}
-            {isSinglePlayer && <span className="ml-2 text-blue-600">• Solo træning</span>}
-          </p>
-        </div>
+        <GameHeader 
+          roomName={room.name}
+          roomId={roomId!}
+          difficulty={room.difficulty}
+          isSinglePlayer={isSinglePlayer}
+        />
 
-        {game.status === 'waiting' ? (
-          <div className="text-center space-y-6">
-            <h2 className="text-2xl font-semibold">
-              {isSinglePlayer ? "Klar til solo træning!" : "Venter på at spillet starter..."}
-            </h2>
-            <PlayerList players={players} currentUserId={user?.id} />
-            {(room.creator_id === user?.id || isSinglePlayer) && (
-              <Button onClick={startGame} size="lg" className="text-lg px-8 py-3">
-                {isSinglePlayer ? "Start træning" : "Start Spil"}
-              </Button>
-            )}
-          </div>
-        ) : game.status === 'playing' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <div className="text-center">
-                <BombTimer
-                  timeLeft={timeLeft}
-                  totalTime={game.timer_duration || 15}
-                  isActive={game.status === 'playing'}
-                  syllable={game.current_syllable || ''}
-                />
-              </div>
+        {game.status === 'waiting' && (
+          <GameWaiting
+            isSinglePlayer={isSinglePlayer}
+            players={players}
+            currentUserId={user?.id}
+            canStartGame={canStartGame}
+            onStartGame={startGame}
+          />
+        )}
 
-              <div className="text-center space-y-4">
-                {currentPlayer && (
-                  <p className="text-xl font-semibold">
-                    {isCurrentUser ? 
-                      (isSinglePlayer ? "Find et ord!" : "Din tur!") : 
-                      `${currentPlayer.name}s tur`
-                    }
-                  </p>
-                )}
-                
-                <WordInput
-                  onSubmit={handleWordSubmit}
-                  disabled={!isCurrentUser || timeLeft <= 0}
-                  currentSyllable={game.current_syllable || ''}
-                />
+        {game.status === 'playing' && (
+          <GamePlaying
+            game={game}
+            players={players}
+            timeLeft={timeLeft}
+            currentPlayer={currentPlayer}
+            isCurrentUser={isCurrentUser}
+            isSinglePlayer={isSinglePlayer}
+            currentUserId={user?.id}
+            onWordSubmit={handleWordSubmit}
+          />
+        )}
 
-                {game.used_words && game.used_words.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="font-semibold mb-2">Brugte ord:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {game.used_words.map((word, index) => (
-                        <span key={index} className="bg-gray-200 px-2 py-1 rounded text-sm">
-                          {word}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <PlayerList 
-                players={players} 
-                currentPlayerId={game.current_player_id || undefined}
-                currentUserId={user?.id}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="text-center space-y-6">
-            <h2 className="text-3xl font-bold">
-              {isSinglePlayer ? "Træning afsluttet!" : "Spillet er slut!"}
-            </h2>
-            {alivePlayers.length === 1 && !isSinglePlayer && (
-              <p className="text-xl">🎉 {alivePlayers[0].name} vandt! 🎉</p>
-            )}
-            {isSinglePlayer && (
-              <p className="text-xl">Du brugte {game.used_words?.length || 0} ord i din træning!</p>
-            )}
-            <PlayerList players={players} currentUserId={user?.id} />
-            <Button onClick={() => navigate('/')} className="mt-4">
-              Tilbage til forsiden
-            </Button>
-          </div>
+        {game.status === 'finished' && (
+          <GameFinished
+            isSinglePlayer={isSinglePlayer}
+            alivePlayers={alivePlayers}
+            players={players}
+            game={game}
+            currentUserId={user?.id}
+            onBackHome={() => navigate('/')}
+          />
         )}
       </div>
     </div>
