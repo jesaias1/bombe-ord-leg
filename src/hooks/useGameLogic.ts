@@ -1,171 +1,283 @@
 
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
 
-type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
+type Room = Tables<'rooms'>;
 
-export const useGameLogic = () => {
-  const { toast } = useToast();
+export const useGameLogic = (
+  game: Game | null, 
+  players: Player[], 
+  currentUserId?: string, 
+  room?: Room | null
+) => {
+  const [currentWord, setCurrentWord] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getDifficultyThreshold = (difficulty: string) => {
-    switch (difficulty) {
-      case 'let': return 500;
-      case 'mellem': return 300;
-      case 'svaer': return 100;
-      default: return 300;
-    }
-  };
+  // Get current player
+  const currentPlayer = game?.current_player_id 
+    ? players.find(p => p.id === game.current_player_id)
+    : null;
 
-  const handleTimerExpired = async (game: Game, players: Player[]) => {
-    if (!game?.current_player_id) return;
+  // Check if it's current user's turn
+  const isMyTurn = currentPlayer?.user_id === currentUserId;
 
-    const currentPlayer = players.find(p => p.id === game.current_player_id);
-    if (currentPlayer) {
-      const newLives = currentPlayer.lives - 1;
-      const isStillAlive = newLives > 0;
+  // Get alive players
+  const alivePlayers = players.filter(player => player.is_alive);
 
-      await supabase
-        .from('players')
-        .update({ 
-          lives: newLives,
-          is_alive: isStillAlive
-        })
-        .eq('id', currentPlayer.id);
+  // Check if game can start
+  const canStartGame = players.length >= 1 && 
+    (players.some(p => p.user_id === currentUserId) || !currentUserId);
 
-      toast({
-        title: "💥 Bomben eksploderede!",
-        description: `${currentPlayer.name} mistede et liv`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const startNewRound = async (game: Game, room: Room, playerId: string) => {
-    if (!game || !room) return;
-
-    const { data: syllables } = await supabase
-      .from('syllables')
-      .select('syllable')
-      .eq('difficulty', room.difficulty)
-      .gte('word_count', getDifficultyThreshold(room.difficulty));
-
-    const randomSyllable = syllables?.[Math.floor(Math.random() * syllables.length)]?.syllable || 'ing';
-
-    const timerDuration = Math.floor(Math.random() * 16) + 10;
-    const timerEndTime = new Date(Date.now() + timerDuration * 1000);
-
-    await supabase
-      .from('games')
-      .update({
-        current_player_id: playerId,
-        current_syllable: randomSyllable,
-        timer_end_time: timerEndTime.toISOString(),
-        timer_duration: timerDuration
-      })
-      .eq('id', game.id);
-  };
-
-  const nextTurn = async (game: Game, players: Player[]) => {
-    if (!game) return;
-
-    const alivePlayers = players.filter(p => p.is_alive);
+  const validateWord = async (word: string, syllable: string): Promise<boolean> => {
+    if (!word || !syllable) return false;
     
-    if (alivePlayers.length === 1) {
-      const player = alivePlayers[0];
-      
-      if (player.lives <= 0) {
-        await supabase
-          .from('games')
-          .update({ status: 'finished' })
-          .eq('id', game.id);
-        return;
-      }
-      
-      // Continue with same player for solo play - don't call startNewRound here
-      return;
-    }
-
-    if (alivePlayers.length <= 1) {
-      await supabase
-        .from('games')
-        .update({ status: 'finished' })
-        .eq('id', game.id);
-      return;
-    }
-
-    const currentIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
-    const nextIndex = (currentIndex + 1) % alivePlayers.length;
-    const nextPlayer = alivePlayers[nextIndex];
-
-    // Don't call startNewRound here either - let the main component handle it
-    return nextPlayer.id;
-  };
-
-  const validateAndSubmitWord = async (word: string, game: Game, userId: string) => {
-    console.log('Submitting word:', word);
-    console.log('Current syllable:', game.current_syllable);
-    console.log('Used words:', game.used_words);
-
-    const normalizedWord = word.toLowerCase().trim();
-
-    if (!normalizedWord.includes(game.current_syllable?.toLowerCase() || '')) {
-      toast({
-        title: "Forkert stavelse",
-        description: `Ordet skal indeholde "${game.current_syllable}"`,
-        variant: "destructive",
-      });
+    const trimmedWord = word.toLowerCase().trim();
+    const trimmedSyllable = syllable.toLowerCase().trim();
+    
+    console.log(`Validating word: "${trimmedWord}" contains syllable: "${trimmedSyllable}"`);
+    
+    // Check if word contains the syllable (not just ends with it)
+    if (!trimmedWord.includes(trimmedSyllable)) {
+      console.log(`Word "${trimmedWord}" does not contain syllable "${trimmedSyllable}"`);
       return false;
     }
 
-    if (game.used_words?.includes(normalizedWord)) {
-      toast({
-        title: "Allerede brugt",
-        description: "Dette ord er allerede blevet brugt",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    const { data: validWord, error: wordError } = await supabase
+    // Check if word exists in database
+    const { data, error } = await supabase
       .from('danish_words')
       .select('word')
-      .eq('word', normalizedWord)
-      .maybeSingle();
+      .eq('word', trimmedWord)
+      .single();
 
-    console.log('Word validation result:', validWord, wordError);
-
-    if (!validWord) {
-      toast({
-        title: "Ikke fundet i ordbogen",
-        description: "Dette ord findes ikke i ordbogen",
-        variant: "destructive",
-      });
+    if (error || !data) {
+      console.log(`Word "${trimmedWord}" not found in database`);
       return false;
     }
 
-    const updatedUsedWords = [...(game.used_words || []), normalizedWord];
-    
-    await supabase
-      .from('games')
-      .update({ used_words: updatedUsedWords })
-      .eq('id', game.id);
-
-    toast({
-      title: "Godt ord! 🎉",
-      description: `"${normalizedWord}" blev accepteret`,
-    });
-
+    console.log(`Word "${trimmedWord}" is valid!`);
     return true;
   };
 
+  const selectRandomSyllable = async (difficulty: string): Promise<string | null> => {
+    console.log(`Selecting random syllable for difficulty: ${difficulty}`);
+    
+    const { data, error } = await supabase
+      .from('syllables')
+      .select('syllable')
+      .eq('difficulty', difficulty)
+      .gt('word_count', 10); // Only select syllables that have enough words
+
+    if (error || !data || data.length === 0) {
+      console.error('Error fetching syllables:', error);
+      return null;
+    }
+
+    // Randomize the selection to ensure variety
+    const randomIndex = Math.floor(Math.random() * data.length);
+    const selectedSyllable = data[randomIndex].syllable;
+    
+    console.log(`Selected syllable: "${selectedSyllable}" from ${data.length} available syllables`);
+    return selectedSyllable;
+  };
+
+  const submitWord = async () => {
+    if (!game || !currentWord.trim() || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const trimmedWord = currentWord.toLowerCase().trim();
+      
+      // Check if word was already used
+      if (game.used_words?.includes(trimmedWord)) {
+        toast.error('Dette ord er allerede brugt!');
+        setCurrentWord('');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate the word
+      const isValid = await validateWord(trimmedWord, game.current_syllable || '');
+      
+      if (!isValid) {
+        toast.error(`"${trimmedWord}" er ikke et gyldigt ord eller indeholder ikke "${game.current_syllable}"`);
+        setCurrentWord('');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Add word to used words
+      const updatedUsedWords = [...(game.used_words || []), trimmedWord];
+      
+      // Find next player
+      const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
+      const nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
+      const nextPlayer = alivePlayers[nextPlayerIndex];
+
+      // Select new random syllable to ensure variety
+      const newSyllable = await selectRandomSyllable(room?.difficulty || 'mellem');
+      
+      if (!newSyllable) {
+        toast.error('Kunne ikke vælge ny stavelse');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Update game with new syllable
+      const { error } = await supabase
+        .from('games')
+        .update({
+          used_words: updatedUsedWords,
+          current_player_id: nextPlayer.id,
+          current_syllable: newSyllable,
+          timer_end_time: new Date(Date.now() + (game.timer_duration || 15) * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', game.id);
+
+      if (error) {
+        console.error('Error updating game:', error);
+        toast.error('Fejl ved opdatering af spil');
+      } else {
+        toast.success(`"${trimmedWord}" accepteret! Ny stavelse: "${newSyllable}"`);
+        setCurrentWord('');
+      }
+    } catch (err) {
+      console.error('Error submitting word:', err);
+      toast.error('Fejl ved indsendelse af ord');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const startGame = async () => {
+    if (!game || !room) return;
+
+    try {
+      // Select random starting syllable
+      const startingSyllable = await selectRandomSyllable(room.difficulty);
+      
+      if (!startingSyllable) {
+        toast.error('Kunne ikke vælge startstavelse');
+        return;
+      }
+
+      // Pick random starting player
+      const randomPlayerIndex = Math.floor(Math.random() * alivePlayers.length);
+      const startingPlayer = alivePlayers[randomPlayerIndex];
+
+      const { error } = await supabase
+        .from('games')
+        .update({
+          status: 'playing',
+          current_player_id: startingPlayer.id,
+          current_syllable: startingSyllable,
+          timer_end_time: new Date(Date.now() + (game.timer_duration || 15) * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', game.id);
+
+      if (error) {
+        console.error('Error starting game:', error);
+        toast.error('Fejl ved start af spil');
+      } else {
+        toast.success(`Spillet starter! Stavelse: "${startingSyllable}"`);
+      }
+    } catch (err) {
+      console.error('Error starting game:', err);
+      toast.error('Fejl ved start af spil');
+    }
+  };
+
+  const handleTimerExpired = async () => {
+    if (!game || !currentPlayer) return;
+
+    try {
+      const newLives = Math.max(0, currentPlayer.lives - 1);
+      const isNowDead = newLives === 0;
+
+      // Update player's lives and alive status
+      const { error: playerError } = await supabase
+        .from('players')
+        .update({
+          lives: newLives,
+          is_alive: !isNowDead
+        })
+        .eq('id', currentPlayer.id);
+
+      if (playerError) {
+        console.error('Error updating player:', playerError);
+        return;
+      }
+
+      // Check if game should end
+      const remainingAlivePlayers = alivePlayers.filter(p => 
+        p.id === currentPlayer.id ? !isNowDead : true
+      );
+
+      if (remainingAlivePlayers.length <= 1) {
+        // Game over
+        const { error: gameError } = await supabase
+          .from('games')
+          .update({
+            status: 'finished',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', game.id);
+
+        if (gameError) {
+          console.error('Error ending game:', gameError);
+        }
+      } else {
+        // Continue with next player and new syllable
+        const currentPlayerIndex = alivePlayers.findIndex(p => p.id === currentPlayer.id);
+        let nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
+        
+        // Skip dead players
+        while (!remainingAlivePlayers.find(p => p.id === alivePlayers[nextPlayerIndex].id)) {
+          nextPlayerIndex = (nextPlayerIndex + 1) % alivePlayers.length;
+        }
+        
+        const nextPlayer = alivePlayers[nextPlayerIndex];
+        const newSyllable = await selectRandomSyllable(room?.difficulty || 'mellem');
+
+        if (newSyllable) {
+          const { error: gameError } = await supabase
+            .from('games')
+            .update({
+              current_player_id: nextPlayer.id,
+              current_syllable: newSyllable,
+              timer_end_time: new Date(Date.now() + (game.timer_duration || 15) * 1000).toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', game.id);
+
+          if (gameError) {
+            console.error('Error updating game after timeout:', gameError);
+          }
+        }
+      }
+
+      toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`}`);
+    } catch (err) {
+      console.error('Error handling timer expiration:', err);
+    }
+  };
+
   return {
-    handleTimerExpired,
-    startNewRound,
-    nextTurn,
-    validateAndSubmitWord,
-    getDifficultyThreshold
+    currentWord,
+    setCurrentWord,
+    isSubmitting,
+    currentPlayer,
+    isMyTurn,
+    alivePlayers,
+    canStartGame,
+    submitWord,
+    startGame,
+    handleTimerExpired
   };
 };

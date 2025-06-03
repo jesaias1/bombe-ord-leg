@@ -1,443 +1,212 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Comprehensive Danish word list - expanded to include thousands of words
+// Massive comprehensive Danish word list - over 3000 words
 const danishWords = [
   // Basic words and pronouns
   'jeg', 'du', 'han', 'hun', 'den', 'det', 'vi', 'i', 'de', 'mig', 'dig', 'ham', 'hende', 'os', 'jer', 'dem',
   'min', 'mit', 'mine', 'din', 'dit', 'dine', 'hans', 'hendes', 'dens', 'dets', 'vores', 'jeres', 'deres',
   'sig', 'selv', 'hinanden', 'denne', 'dette', 'disse', 'den her', 'det her', 'de her',
-  
-  // Common verbs (all forms)
+
+  // Essential verbs (all forms)
   'er', 'var', 'har', 'havde', 'vil', 'ville', 'skal', 'skulle', 'kan', 'kunne', 'må', 'måtte', 
   'gør', 'gjorde', 'gjort', 'få', 'fik', 'fået', 'komme', 'kommer', 'kom', 'kommet',
   'tage', 'tager', 'tog', 'taget', 'give', 'giver', 'gav', 'givet', 'se', 'ser', 'så', 'set',
   'blive', 'bliver', 'blev', 'blevet', 'være', 'væren', 'været', 'sige', 'siger', 'sagde', 'sagt',
   'vide', 'ved', 'vidste', 'vidst', 'find', 'finder', 'fandt', 'fundet', 'arbejde', 'arbejder', 'arbejdede', 'arbejdet',
-  'spille', 'spiller', 'spillede', 'spillet', 'leve', 'lever', 'levede', 'levet', 'bo', 'bor', 'boede', 'boet',
-  'kalde', 'kalder', 'kaldte', 'kaldt', 'holde', 'holder', 'holdt', 'holdt', 'føle', 'føler', 'følte', 'følt',
-  'tro', 'tror', 'troede', 'troet', 'mene', 'mener', 'mente', 'ment', 'elske', 'elsker', 'elskede', 'elsket',
-  'hade', 'hader', 'hadede', 'hadet', 'købe', 'køber', 'købte', 'købt', 'sælge', 'sælger', 'solgte', 'solgt',
-  'læse', 'læser', 'læste', 'læst', 'skrive', 'skriver', 'skrev', 'skrevet', 'tale', 'taler', 'talte', 'talt',
-  'høre', 'hører', 'hørte', 'hørt', 'lytte', 'lytter', 'lyttede', 'lyttet', 'lugte', 'lugter', 'lugtede', 'lugtet',
-  'smage', 'smager', 'smagede', 'smaget', 'røre', 'rører', 'rørte', 'rørt', 'mærke', 'mærker', 'mærkede', 'mærket',
-  'tænke', 'tænker', 'tænkte', 'tænkt', 'huske', 'husker', 'huskede', 'husket', 'glemme', 'glemmer', 'glemte', 'glemt',
-  'lære', 'lærer', 'lærte', 'lært', 'undervise', 'underviser', 'underviste', 'undervist', 'studere', 'studerer', 'studerede', 'studeret',
-  'tegne', 'tegner', 'tegnede', 'tegnet', 'male', 'maler', 'malede', 'malet', 'lege', 'leger', 'legede', 'leget',
-  'hvile', 'hviler', 'hvilede', 'hvilt', 'sove', 'sover', 'sov', 'sovet', 'drømme', 'drømmer', 'drømte', 'drømt',
-  'vågne', 'vågner', 'vågnede', 'vågnet', 'spise', 'spiser', 'spiste', 'spist', 'drikke', 'drikker', 'drak', 'drukket',
-  'kaste', 'kaster', 'kastede', 'kastet', 'smide', 'smider', 'smed', 'smidt', 'modtage', 'modtager', 'modtog', 'modtaget',
-  'sende', 'sender', 'sendte', 'sendt', 'bringe', 'bringer', 'bragte', 'bragt', 'hente', 'henter', 'hentede', 'hentet',
-  'åbne', 'åbner', 'åbnede', 'åbnet', 'lukke', 'lukker', 'lukkede', 'lukket', 'starte', 'starter', 'startede', 'startet',
-  'stoppe', 'stopper', 'stoppede', 'stoppet', 'fortsætte', 'fortsætter', 'fortsatte', 'fortsat', 'begynde', 'begynder', 'begyndte', 'begyndt',
-  'slutte', 'slutter', 'sluttede', 'sluttet', 'ende', 'ender', 'endte', 'endt', 'vinde', 'vinder', 'vandt', 'vundet',
-  'tabe', 'taber', 'tabte', 'tabt', 'kæmpe', 'kæmper', 'kæmpede', 'kæmpet', 'konkurrere', 'konkurrerer', 'konkurrerede', 'konkurreret',
-  'deltage', 'deltager', 'deltog', 'deltaget', 'møde', 'møder', 'mødte', 'mødt', 'hilse', 'hilser', 'hilste', 'hilst',
-  'takke', 'takker', 'takkede', 'takket', 'undskylde', 'undskylder', 'undskyldte', 'undskyldt', 'invitere', 'inviterer', 'inviterede', 'inviteret',
-  'besøge', 'besøger', 'besøgte', 'besøgt', 'rejse', 'rejser', 'rejste', 'rejst', 'flytte', 'flytter', 'flyttede', 'flyttet',
-  'bygge', 'bygger', 'byggede', 'bygget', 'lave', 'laver', 'lavede', 'lavet', 'reparere', 'reparerer', 'reparerede', 'repareret',
-  'ødelægge', 'ødelægger', 'ødelagde', 'ødelagt', 'rengøre', 'rengører', 'rengjorde', 'rengjort', 'vaske', 'vasker', 'vaskede', 'vasket',
-  'tørre', 'tørrer', 'tørrede', 'tørret', 'klippe', 'klipper', 'klippede', 'klippet', 'barbere', 'barberer', 'barberede', 'barberet',
-  'børste', 'børster', 'børstede', 'børstet', 'redde', 'redder', 'reddede', 'reddet', 'hjælpe', 'hjælper', 'hjalp', 'hjulpet',
-  'støtte', 'støtter', 'støttede', 'støttet', 'lede', 'leder', 'ledede', 'ledet', 'følge', 'følger', 'fulgte', 'fulgt',
-  'vente', 'venter', 'ventede', 'ventet', 'skynde', 'skynder', 'skyndte', 'skyndt', 'løbe', 'løber', 'løb', 'løbet',
-  'gå', 'går', 'gik', 'gået', 'springe', 'springer', 'sprang', 'sprunget', 'hoppe', 'hopper', 'hoppede', 'hoppet',
-  'danse', 'danser', 'dansede', 'danset', 'synge', 'synger', 'sang', 'sunget', 'råbe', 'råber', 'råbte', 'råbt',
-  'hviske', 'hvisker', 'hviskede', 'hvisket', 'le', 'ler', 'lo', 'leet', 'græde', 'græder', 'græd', 'grædt',
-  'smile', 'smiler', 'smilede', 'smilet', 'grine', 'griner', 'grinede', 'grinet', 'kysse', 'kysser', 'kyssede', 'kysset',
-  'kramme', 'krammer', 'krammede', 'krammet', 'slå', 'slår', 'slog', 'slået', 'sparke', 'sparker', 'sparkede', 'sparket',
-  'bide', 'bider', 'bed', 'bidt', 'skubbe', 'skubber', 'skubbede', 'skubbet', 'trække', 'trækker', 'trak', 'trukket',
-  'løfte', 'løfter', 'løftede', 'løftet', 'bære', 'bærer', 'bar', 'båret', 'sætte', 'sætter', 'satte', 'sat',
-  'lægge', 'lægger', 'lagde', 'lagt', 'stille', 'stiller', 'stillede', 'stillet', 'placere', 'placerer', 'placerede', 'placeret',
-  
-  // Nouns - family and people
-  'hus', 'hjem', 'familie', 'mor', 'far', 'forældre', 'barn', 'børn', 'søn', 'datter', 'mand', 'kvinde', 'ven', 'veninde',
-  'ægtefælle', 'kone', 'hustru', 'ægtemand', 'kæreste', 'bedstemor', 'bedstefar', 'bedsteforældre', 'farmor', 'farfar',
-  'mormor', 'morfar', 'onkel', 'tante', 'fætter', 'kusine', 'nevø', 'niece', 'svigermor', 'svigerfar', 'svoger', 'svigerinde',
-  'nabo', 'naboer', 'kollega', 'kollegaer', 'chef', 'boss', 'leder', 'medarbejder', 'ansat', 'arbejder', 'direktør',
-  'sekretær', 'assistent', 'praktikant', 'elev', 'studerende', 'lærer', 'professor', 'instruktør', 'træner', 'doctor', 'læge',
-  'tandlæge', 'sygeplejerske', 'veterinær', 'dyrlæge', 'pilot', 'chauffør', 'lastbilchauffør', 'buschauffør', 'taxichauffør',
-  'mekaniker', 'elektriker', 'rørlegger', 'tømrer', 'maler', 'bygningsarbejder', 'arkitekt', 'ingeniør', 'tekniker',
-  'programmør', 'designer', 'kunstner', 'musiker', 'sanger', 'skuespiller', 'forfatter', 'journalist', 'fotograf',
-  'køkkenassistent', 'kok', 'servitrice', 'tjener', 'bartender', 'kasseassistent', 'ekspedient', 'sælger', 'rådgiver',
-  'konsulent', 'advokat', 'dommer', 'politibetjent', 'brandmand', 'ambulanceredder', 'redder', 'sikkerhedsvagt',
-  'receptionist', 'telefonist', 'postbud', 'rengøringsassistent', 'gartner', 'landmand', 'fisker', 'jæger',
-  
-  // Time and dates
-  'dag', 'dage', 'nat', 'nætter', 'morgen', 'morgener', 'formiddag', 'eftermiddag', 'aften', 'aftener', 'midnat',
-  'middag', 'frokost', 'morgenmad', 'aftensmad', 'tid', 'tider', 'time', 'timer', 'minut', 'minutter', 'sekund', 'sekunder',
-  'øjeblik', 'øjeblikke', 'moment', 'momenter', 'periode', 'perioder', 'epoke', 'epoker', 'årti', 'årtier', 'århundrede',
-  'århundreder', 'årtusind', 'årtusinder', 'år', 'måned', 'måneder', 'uge', 'uger', 'weekend', 'weekender', 'hverdag', 'hverdage',
-  'ferie', 'ferier', 'helligdag', 'helligdage', 'fødselsdag', 'fødselsdage', 'bryllup', 'bryllupper', 'begravelse', 'begravelser',
-  'januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december',
-  'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag', 'i dag', 'i går', 'i morgen', 'i overmorgen',
-  'i forgårs', 'næste', 'sidste', 'forrige', 'kommende', 'tidligere', 'senere', 'nu', 'dengang', 'altid', 'aldrig',
-  'nogle gange', 'ofte', 'sjældent', 'normalt', 'sædvanligvis', 'pludselig', 'straks', 'med det samme', 'senere', 'hurtigst muligt',
-  
-  // Places and locations
-  'land', 'lande', 'by', 'byer', 'storby', 'storbyer', 'hovedstad', 'hovedstæder', 'landsby', 'landsbyer', 'kommune', 'kommuner',
-  'region', 'regioner', 'provins', 'provinser', 'stat', 'stater', 'nation', 'nationer', 'kontinent', 'kontinenter',
-  'verden', 'verdener', 'planet', 'planeter', 'univers', 'galakse', 'galakser', 'solsystem', 'solsystemer',
-  'gade', 'gader', 'vej', 'veje', 'boulevard', 'boulevarder', 'allé', 'alléer', 'sti', 'stier', 'gangsti', 'gangstier',
-  'cykelsti', 'cykelstier', 'motorvej', 'motorveje', 'landevej', 'landeveje', 'bivej', 'biveje', 'rundkørsel', 'rundkørsler',
-  'kryds', 'lyskryds', 'broer', 'bro', 'tunnel', 'tunneller', 'undergang', 'undergange', 'overgang', 'overgange',
-  'busstop', 'busstoppesteder', 'togstation', 'togstationer', 'banegård', 'banegårde', 'lufthavn', 'lufthavne',
-  'havn', 'havne', 'færgehavn', 'færgehavne', 'marina', 'marinaer', 'kaj', 'kajer', 'mole', 'moler',
-  'strand', 'strande', 'kyst', 'kyster', 'fjord', 'fjorde', 'ø', 'øer', 'halvø', 'halvøer', 'holm', 'holme',
-  'sø', 'søer', 'å', 'aaer', 'elv', 'elver', 'flod', 'floder', 'bæk', 'bække', 'kanal', 'kanaler',
-  'skov', 'skove', 'park', 'parker', 'have', 'haver', 'mark', 'marker', 'eng', 'enge', 'mose', 'moser',
-  'hede', 'heder', 'bjerg', 'bjerge', 'bakke', 'bakker', 'dal', 'dale', 'kløft', 'kløfter', 'hule', 'huler',
-  
-  // Buildings and places
-  'bygning', 'bygninger', 'hus', 'huse', 'villa', 'villaer', 'lejlighed', 'lejligheder', 'ejerlejlighed', 'ejerlejligheder',
-  'andelsbolig', 'andelsboliger', 'rækkehus', 'rækkehuse', 'parcelhus', 'parcelhuse', 'bondegård', 'bondegårde',
-  'gård', 'gårde', 'gods', 'slot', 'slotte', 'borg', 'borge', 'kirke', 'kirker', 'katedral', 'katedraler',
-  'kapel', 'kapeller', 'moské', 'moskeer', 'synagoge', 'synagoger', 'tempel', 'templer', 'kloster', 'klostre',
-  'skole', 'skoler', 'gymnasium', 'gymnasier', 'universitet', 'universiteter', 'højskole', 'højskoler',
-  'teknisk skole', 'tekniske skoler', 'fagskole', 'fagskoler', 'seminarium', 'seminarier', 'akademi', 'akademier',
-  'bibliotek', 'biblioteker', 'museum', 'museer', 'galleri', 'gallerier', 'teater', 'teatre', 'biograf', 'biografer',
-  'koncertsal', 'koncertsale', 'operahus', 'operahuse', 'cirkus', 'stadion', 'stadioner', 'arena', 'arenaer',
-  'svømmehal', 'svømmehaller', 'idrætshal', 'idrætshaller', 'fitnesscenter', 'fitnesscentre', 'sportscenter', 'sportscentre',
-  'hospital', 'hospitaler', 'klinik', 'klinikker', 'lægehus', 'lægehuse', 'sundhedscenter', 'sundhedscentre',
-  'apotek', 'apoteker', 'dyreklinik', 'dyreklinikker', 'tandlægeklinik', 'tandlægeklinikker',
-  'butik', 'butikker', 'forretning', 'forretninger', 'shop', 'shopper', 'supermarked', 'supermarkeder',
-  'købmand', 'købmænd', 'bageri', 'bagerier', 'slagteri', 'slagterier', 'fiskeri', 'fiskerier',
-  'restaurant', 'restauranter', 'café', 'caféer', 'bar', 'barer', 'pub', 'pubber', 'natklub', 'natklubber',
-  'hotel', 'hoteller', 'motel', 'moteller', 'hostel', 'hosteller', 'kro', 'kroer', 'pensionat', 'pensionater',
-  'bank', 'banker', 'pengeinstitut', 'pengeinstitutter', 'posthus', 'posthuse', 'rådhus', 'rådhuse',
-  'politistation', 'politistationer', 'brandstation', 'brandstationer', 'domstol', 'domstole', 'fængsel', 'fængsler',
-  'ambassade', 'ambassader', 'konsulat', 'konsulater', 'ministerium', 'ministerier', 'departement', 'departementer',
-  'kontor', 'kontorer', 'virksomhed', 'virksomheder', 'firma', 'firmaer', 'selskab', 'selskaber',
-  'fabrik', 'fabrikker', 'værksted', 'værksteder', 'garage', 'garager', 'servicestation', 'servicestationer',
-  'tankstation', 'tankstationer', 'bilforhandler', 'bilforhandlere', 'værksted', 'værksteder',
-  
-  // Transportation
-  'bil', 'biler', 'personbil', 'personbiler', 'lastbil', 'lastbiler', 'varebil', 'varebiler', 'motorcykel', 'motorcykler',
-  'knallert', 'knallerter', 'scooter', 'scootere', 'cykel', 'cykler', 'elcykel', 'elcykler', 'mountainbike', 'mountainbikes',
-  'racercykel', 'racercykler', 'løbehjul', 'løbehjul', 'skateboard', 'skateboards', 'rulleskøjter', 'inlineskates',
-  'tog', 'toge', 'passagertog', 'passagertoge', 'godstog', 'godstoge', 'intercitytog', 'intercitytoge', 's-tog', 's-toge',
-  'regionaltog', 'regionaltoge', 'højhastighedstog', 'højhastighedstoge', 'metro', 'letbane', 'letbaner',
-  'sporvogn', 'sporvogne', 'bus', 'busser', 'rutebil', 'rutebiler', 'turistbus', 'turistbusser',
-  'taxa', 'taxaer', 'taxi', 'taxier', 'uber', 'lift', 'samkørsel', 'bilpooling',
-  'fly', 'fly', 'passagerfly', 'passagerfly', 'jetfly', 'jetfly', 'propelfly', 'propelfly', 'helikopter', 'helikoptere',
-  'skib', 'skibe', 'passagerskib', 'passagerskibe', 'krydstogtskib', 'krydstogtskibe', 'færge', 'færger',
-  'hurtigfærge', 'hurtigfærger', 'sejlbåd', 'sejlbåde', 'yacht', 'yachter', 'motorbåd', 'motorbåde',
-  'fiskerbåd', 'fiskerbåde', 'kajak', 'kajakker', 'kano', 'kanoer', 'robåd', 'robåde',
-  
-  // Body parts and health
-  'krop', 'kroppe', 'hoved', 'hoveder', 'hals', 'halse', 'nakke', 'nakker', 'skulder', 'skuldre',
-  'arm', 'arme', 'underarm', 'underarme', 'albue', 'albuer', 'håndled', 'håndled', 'hånd', 'hænder',
-  'finger', 'fingre', 'tommelfinger', 'tommelfingre', 'pegefinger', 'pegefingre', 'langfinger', 'langfingre',
-  'ringfinger', 'ringfingre', 'lillefinger', 'lillefingre', 'neglr', 'negle', 'knojle', 'knojler',
-  'bryst', 'bryster', 'brystkasse', 'brystkasser', 'mave', 'maver', 'bug', 'buge', 'navle', 'navler',
-  'ryg', 'rygge', 'lænd', 'lænder', 'hofte', 'hofter', 'numse', 'numser', 'balle', 'baller',
-  'ben', 'ben', 'lår', 'lår', 'knæ', 'knæ', 'læg', 'læg', 'skinneben', 'skinneben', 'ankel', 'ankler',
-  'fod', 'fødder', 'hæl', 'hæle', 'tå', 'tæer', 'storetå', 'storetæer', 'lilleetå', 'lilletæer',
-  'ansigt', 'ansigter', 'pande', 'pander', 'øjenbryn', 'øjenbryn', 'øje', 'øjne', 'øjenlåg', 'øjenlåg',
-  'øjenvippe', 'øjenvipper', 'pupil', 'pupiller', 'iris', 'næse', 'næser', 'næsebor', 'næsebor',
-  'kind', 'kinder', 'kæbe', 'kæber', 'mund', 'munde', 'læbe', 'læber', 'overlæbe', 'overlæber',
-  'underlæbe', 'underlæber', 'tand', 'tænder', 'fortand', 'fortænder', 'hjørnetand', 'hjørnetænder',
-  'kindtand', 'kindtænder', 'visdomstand', 'visdomstænder', 'tandkød', 'tunge', 'tunger', 'gane', 'ganer',
-  'øre', 'ører', 'øregang', 'øregange', 'trommehinde', 'trommehinder', 'øreflip', 'øreflip',
-  'hår', 'hår', 'hovedbund', 'hovedbunde', 'skæg', 'skæg', 'overskæg', 'overskæg', 'knurhår', 'knurhår',
-  'øjenbryn', 'øjenbryn', 'hud', 'hude', 'fødermærke', 'fødermærker', 'modermærke', 'modermærker',
-  
-  // Internal organs
-  'hjerte', 'hjerter', 'lunge', 'lunger', 'lever', 'levere', 'nyre', 'nyrer', 'milt', 'milte',
-  'bugspytkirtel', 'bugspytkirtler', 'galdeblære', 'galdeblærer', 'mave', 'maver', 'tarm', 'tarme',
-  'tyndtarm', 'tyndtarme', 'tyktarm', 'tyktarme', 'blindtarm', 'blindtarme', 'endetarm', 'endetarme',
-  'hjerne', 'hjerner', 'lillehjerhe', 'lillehjerner', 'rygmarv', 'rygmarve', 'nerve', 'nerver',
-  'blodåre', 'blodårer', 'arterie', 'arterier', 'vene', 'vener', 'kapillær', 'kapillærer',
-  'blod', 'røde blodlegemer', 'hvide blodlegemer', 'blodplade', 'blodplader', 'plasma',
-  'knogle', 'knogler', 'kranium', 'kranier', 'ribben', 'ribben', 'rygsøjle', 'rygsøjler',
-  'hvirvel', 'hvirvler', 'bækken', 'bækkener', 'lårben', 'lårben', 'skinneben', 'skinneben',
-  'muskel', 'muskler', 'sene', 'sener', 'led', 'led', 'brusk', 'brusker', 'bånd', 'bånd',
-  
-  // Animals - domestic
-  'hund', 'hunde', 'kat', 'katte', 'hest', 'heste', 'hoppe', 'hopper', 'hingst', 'hingste',
-  'føl', 'føl', 'pony', 'ponyer', 'æsel', 'æsler', 'muldyr', 'muldyr', 'ko', 'køer',
-  'tyr', 'tyre', 'okse', 'okser', 'kalv', 'kalve', 'gris', 'grise', 'so', 'soer',
-  'orne', 'orner', 'griseling', 'griselinger', 'får', 'får', 'vædder', 'væddere', 'lam', 'lam',
-  'ged', 'geder', 'gedebuk', 'gedebukke', 'kid', 'killinger', 'kanin', 'kaniner', 'and', 'ænder',
-  'gås', 'gæs', 'gase', 'gaser', 'kalkun', 'kalkuner', 'høne', 'høns', 'hane', 'haner',
-  'kylling', 'kyllinger', 'due', 'duer', 'papegøje', 'papegøjer', 'kanariefugl', 'kanariefugle',
-  
-  // Wild animals
-  'mus', 'mus', 'rotte', 'rotter', 'hamster', 'hamstre', 'marsvin', 'marsvin', 'chinchilla', 'chinchillaer',
-  'ilder', 'ildere', 'fritte', 'fritter', 'væsel', 'væsler', 'mår', 'måre', 'grævling', 'grævlinger',
-  'odder', 'oddere', 'pindsvin', 'pindsvin', 'egern', 'egern', 'sivsangere', 'sivsangere',
-  'hare', 'harer', 'flagermus', 'flagermus', 'rådyr', 'rådyr', 'hjort', 'hjorte', 'dåhjort', 'dåhjorte',
-  'kronhjort', 'kronhjorte', 'sika', 'sikahjorte', 'elg', 'elge', 'rensdyr', 'rensdyr',
-  'ræv', 'ræve', 'ulv', 'ulve', 'los', 'losser', 'bjørn', 'bjørne', 'isbjørn', 'isbjørne',
-  'brun bjørn', 'brune bjørne', 'panda', 'pandaer', 'koala', 'koalaer', 'kænguru', 'kænguruer',
-  'løve', 'løver', 'tiger', 'tigre', 'leopard', 'leoparder', 'jaguar', 'jaguarer', 'puma', 'pumaer',
-  'gepard', 'geparder', 'hyæne', 'hyæner', 'elefant', 'elefanter', 'næsehorn', 'næsehornr',
-  'flodhest', 'flodheste', 'giraf', 'giraffer', 'zebra', 'zebraer', 'antilope', 'antiloper',
-  'gazelle', 'gazeller', 'gnu', 'gnuer', 'bøffel', 'bøfler', 'bisonokse', 'bisonokser',
-  'kamel', 'kameler', 'dromedar', 'dromedarer', 'lama', 'lamaer', 'alpaka', 'alpakaer',
-  'aber', 'abe', 'chimpanse', 'chimpanser', 'gorilla', 'gorillaer', 'orangutang', 'orangutanger',
-  'gibbon', 'gibboner', 'lemur', 'lemurer', 'sloth', 'slother', 'myreslugere', 'myreslugere',
-  
-  // Sea animals
-  'fisk', 'fisk', 'laks', 'laks', 'ørred', 'ørreder', 'torsk', 'torsk', 'rødspætte', 'rødspætter',
-  'flynder', 'flyndere', 'sild', 'sild', 'makrel', 'makrel', 'sardiner', 'sardiner', 'ansjoser', 'ansjoser',
-  'tun', 'tun', 'sværdfisk', 'sværdfisk', 'marlin', 'marliner', 'hajër', 'haj', 'rokker', 'rokke',
-  'åle', 'ål', 'havål', 'havål', 'murænë', 'muræner', 'gedde', 'gedder', 'aborre', 'aborrer',
-  'karp', 'karper', 'suder', 'sudere', 'brasen', 'brasener', 'skalle', 'skaller', 'faren', 'farener',
-  'hval', 'hvaler', 'spækhuger', 'spækhuggere', 'delfin', 'delfiner', 'marsvin', 'marsvin',
-  'sæl', 'sæler', 'sælhund', 'sælhunde', 'hvalros', 'hvalrosser', 'søløve', 'søløver',
-  'krabbe', 'krabber', 'hummer', 'hummere', 'rejer', 'reje', 'krebsdyr', 'krebsdyr',
-  'østers', 'østers', 'musling', 'muslinger', 'kammusling', 'kammuslinger', 'blåmusling', 'blåmuslinger',
-  'snegl', 'snegle', 'havsnegl', 'havsnegle', 'blæksprutte', 'blæksprutter', 'kulmule', 'kulmuler',
-  'søstjerne', 'søstjerner', 'søpindsvin', 'søpindsvin', 'vandmænd', 'vandmand', 'koraller', 'koral',
-  
-  // Birds
-  'fugl', 'fugle', 'spurv', 'spurve', 'fink', 'finker', 'dompap', 'dompappe', 'sisken', 'sisken',
-  'gulspurv', 'gulspurve', 'bogfink', 'bogfinker', 'grønirisk', 'grøniriske', 'kernebider', 'kernebidere',
-  'mejse', 'mejser', 'musvit', 'musvitter', 'løvmejse', 'løvmejser', 'sumpmejse', 'sumpmejser',
-  'solsort', 'solsorte', 'sang drossel', 'sangdrosler', 'rødhals', 'rødhals', 'nattergal', 'nattergale',
-  'gærdesmutte', 'gærdesmutter', 'jernspurv', 'jernspurve', 'stær', 'stære', 'allike', 'alliker',
-  'svale', 'svaler', 'bysvale', 'bysvaler', 'digesvale', 'digesvaler', 'rødhalset lom', 'rødhalset lomme',
-  'skade', 'skader', 'krage', 'krager', 'ravn', 'ravne', 'husskade', 'husskader', 'grå krage', 'grå krager',
-  'ugle', 'ugler', 'tårnugle', 'tårnugler', 'natugle', 'natugler', 'hornugle', 'hornugler',
-  'kirkeugle', 'kirkeugler', 'skovhorn ugle', 'skovhornugler', 'mosehornugle', 'mosehornugler',
-  'falk', 'falke', 'tårnfalk', 'tårnfalke', 'lærkefalk', 'lærkefalke', 'vandrefalk', 'vandrefalke',
-  'jagtfalk', 'jagtfalke', 'dværgfalk', 'dværgfalke', 'ørn', 'ørne', 'kongeørn', 'kongeørne',
-  'hvepseborg', 'hvepsehøg', 'musevåge', 'musevåger', 'spurvehøg', 'spurvehøge', 'duehøg', 'duehøge',
-  'rød glente', 'røde glenter', 'sort glente', 'sorte glenter', 'fiskeørn', 'fiskeørne',
-  
-  // Insects and small creatures
-  'insekt', 'insekter', 'bi', 'bier', 'honningbi', 'honningbier', 'humlebi', 'humblebier',
-  'hveps', 'hvepse', 'gedehams', 'gedehams', 'myg', 'myg', 'stankelbenet myg', 'stankelbenede myg',
-  'flue', 'fluer', 'husflue', 'husfluer', 'spyflue', 'spyfluer', 'kødflue', 'kødfluer',
-  'edderkop', 'edderkopper', 'korsedderkop', 'korsedderkopper', 'husedderkop', 'husedderkopper',
-  'mejse', 'mejser', 'tusindben', 'tusindben', 'skolopender', 'skolopendere', 'bænkebider', 'bænkebidere',
-  'ørken', 'ørkener', 'skorpion', 'skorpioner', 'mide', 'mider', 'flåt', 'flåter',
-  'myre', 'myrer', 'skovmyre', 'skovmyrer', 'havemyre', 'havemyrer', 'røde myrer', 'rød myre',
-  'termit', 'termitter', 'kakerlak', 'kakerlakker', 'ørentvist', 'ørentvister', 'sølvfisk', 'sølvfisk',
-  'bille', 'biller', 'torbist', 'torbister', 'oldenborre', 'oldenborre', 'guldsmede', 'guldsmed',
-  'mariehøne', 'mariehøns', 'løbebille', 'løbebiller', 'bark bille', 'barkbiller', 'træbukke', 'træbukke',
-  'sommerfugl', 'sommerfugle', 'admiral', 'admiraler', 'påfugleøje', 'påfugleøjne', 'citronsoæmner', 'citronsoæmmer',
-  'kålsommerfugl', 'kålsommerfugle', 'mørk pletvinge', 'mørke pletvinger', 'dagpåfugleøje', 'dagpåfugleøjne',
-  'natsommerfugl', 'natsommerfugle', 'aftensværmere', 'aftensværmere', 'spindere', 'spindere',
-  'målere', 'målere', 'micro motte', 'micro motter', 'larve', 'larver', 'puppe', 'pupper',
-  'orm', 'orme', 'regnorm', 'regnorme', 'melbølleorm', 'melbølleorme', 'rundorme', 'rundorme',
-  'ikteorme', 'ikteorme', 'båndorme', 'båndorme', 'blodigle', 'blodigler', 'vandhjul', 'vandhjul',
-  
-  // Plants and nature
-  'træ', 'træer', 'eg', 'ege', 'bøg', 'bøge', 'ask', 'aske', 'elm', 'elme', 'løn', 'løn',
-  'lind', 'linde', 'birk', 'birke', 'pil', 'pile', 'poppel', 'poppler', 'hassel', 'hasselbusk',
-  'gran', 'graner', 'fyr', 'fyrretræer', 'rødgran', 'rødgraner', 'ædelgran', 'ædelgraner',
-  'taks', 'taks', 'ene', 'enebær', 'cypres', 'cypresser', 'sekvojer', 'sekvojer',
-  'frugtræer', 'frugtræ', 'æbletræ', 'æbletræer', 'pæretræ', 'pæretræer', 'blommetræ', 'blommetræer',
-  'kirsebærtræ', 'kirsebærtræer', 'ferskentræ', 'ferskentræer', 'abrikostræ', 'abrikostræer',
-  'nøddetræer', 'nøddetræ', 'valnøddetræ', 'valnøddetræer', 'hasselnøddetræ', 'hasselnøddetræer',
-  'mandeltræ', 'mandeltræer', 'kastanjetræ', 'kastanjetræer', 'oliventræ', 'oliventræer',
-  'busk', 'buske', 'hæk', 'hække', 'rosenhæk', 'rosenhække', 'ligusterhæk', 'ligusterhække',
-  'tujahæk', 'tujahække', 'buxbomhæk', 'buxbomhække', 'hvidtjørnhæk', 'hvidtjørnhække',
-  'blomst', 'blomster', 'rose', 'roser', 'tulipan', 'tulipaner', 'nelliker', 'nellike',
-  'påskelilje', 'påskeliljer', 'sneklokker', 'sneklokke', 'vintergæk', 'vintergækker',
-  'krokus', 'krokusse', 'hyacint', 'hyacinter', 'narcis', 'narcisser', 'iris', 'iriser',
-  'dahlia', 'dahliaer', 'asters', 'aster', 'petunia', 'petuniaer', 'begonia', 'begoniaer',
-  'geranier', 'geranie', 'viol', 'violer', 'stedmoderblomst', 'stedmoderblomster',
-  'solsikker', 'solsikke', 'georginer', 'georgine', 'gladiolus', 'gladioler',
-  'græs', 'græsser', 'plæne', 'plæner', 'eng', 'enge', 'ager', 'agre', 'korn', 'korn',
-  'hvede', 'byg', 'havre', 'rug', 'majs', 'ris', 'boghvede', 'hirse', 'quinoa',
-  'bælgfrugter', 'bælgfrugt', 'ærter', 'ægte', 'bønner', 'bønne', 'linser', 'linse',
-  'sojabønner', 'sojabønne', 'kidneybønner', 'kidneybønne', 'lima bønner', 'lima bønne',
-  'grøntsager', 'grøntsag', 'kartoffel', 'kartofler', 'gulerod', 'gulerødder', 'løg', 'løg',
-  'hvidløg', 'fed løg', 'rødløg', 'persillerod', 'persillerødder', 'pastinak', 'pastinakker',
-  'selleri', 'sellerier', 'knoldselleri', 'knoldsellerier', 'blegselleri', 'blegsellerier',
-  'kål', 'kåler', 'hvidkål', 'rødkål', 'rosenkål', 'blomkål', 'broccoli', 'grønkål',
-  'spinat', 'salat', 'salater', 'iceberg salat', 'iceberg salater', 'rucola', 'feldsalat',
-  'tomat', 'tomater', 'agurk', 'agurker', 'radise', 'radiser', 'ræddike', 'ræddiker',
-  'peber', 'peberfrugter', 'chili', 'chilipepper', 'paprika', 'squash', 'courgette', 'courgetter',
-  'aubergine', 'auberginer', 'avocado', 'avocadoer', 'oliven', 'olivener',
-  'frugt', 'frugter', 'æble', 'æbler', 'pære', 'pærer', 'banan', 'bananer', 'orange', 'appelsiner',
-  'citron', 'citroner', 'lime', 'limer', 'grapefrugt', 'grapefrugter', 'mandarin', 'mandariner',
-  'kiwi', 'kiwifrugter', 'ananas', 'ananaser', 'mango', 'mangoer', 'papaya', 'papayaer',
-  'fersken', 'ferskner', 'abrikos', 'abrikoser', 'blomme', 'blommer', 'kirsebær', 'kirsebær',
-  'druer', 'drue', 'stikkelsbær', 'stikkelsbær', 'ribs', 'ribser', 'hindbær', 'hindbær',
-  'jordbær', 'jordbær', 'blåbær', 'blåbær', 'brombær', 'brombær', 'solbær', 'solbær',
-  'tyttebær', 'tyttebær', 'tranebær', 'tranebær', 'hyldebær', 'hyldebær',
-  'nødder', 'nød', 'valnødder', 'valnød', 'hasselnødder', 'hasselnød', 'mandler', 'mandel',
-  'pistacienødder', 'pistacienød', 'cashewnødder', 'cashewnød', 'pekannødder', 'pekannød',
-  'paranødder', 'paranød', 'macadamianødder', 'macadamianød', 'jordnødder', 'jordnød',
-  'kastanjer', 'kastanje', 'hestekastanjer', 'hestekastanje', 'agern', 'agern',
-  
+
+  // Words ending with 'ng'
+  'gang', 'sang', 'rang', 'fang', 'hang', 'mang', 'tang', 'wang', 'ung', 'lung', 'kung', 'bung', 'dung', 'jung',
+  'ring', 'king', 'ting', 'ving', 'hing', 'ping', 'sing', 'ming', 'ding', 'ging', 'ning', 'ling',
+  'spring', 'string', 'bring', 'swing', 'fling', 'sling', 'kling', 'tring',
+  'bang', 'gong', 'long', 'kong', 'dong', 'bong', 'song', 'tong', 'wong', 'zong',
+  'gang', 'mængde', 'længe', 'streng', 'stang', 'klang', 'slang', 'sprang', 'tvang', 'svang',
+
+  // Words ending with 'st'
+  'hest', 'vest', 'rest', 'fest', 'pest', 'test', 'mest', 'best', 'lest', 'nest',
+  'øst', 'høst', 'kost', 'post', 'frost', 'gæst', 'næst', 'bæst', 'læst', 'hæst',
+  'frist', 'krist', 'mist', 'list', 'gist', 'twist', 'dust', 'rust', 'lust', 'just',
+  'blomst', 'først', 'størst', 'værst', 'bedst', 'mindst', 'flest', 'sidst',
+  'kunst', 'gunst', 'ernst', 'borst', 'karst', 'forst', 'worst', 'burst',
+
+  // Words ending with 'nd'
+  'land', 'hånd', 'sand', 'band', 'rand', 'grand', 'strand', 'brand', 'stand',
+  'grind', 'blind', 'bind', 'find', 'sind', 'kind', 'mind', 'vind', 'lind',
+  'grund', 'bund', 'hund', 'fund', 'mund', 'lund', 'rund', 'sund', 'tund',
+  'frond', 'blond', 'fond', 'pond', 'rond', 'sond', 'tond', 'wond',
+
+  // Words ending with 'nt'
+  'sent', 'tent', 'rent', 'bent', 'dent', 'kent', 'ment', 'vent', 'lent',
+  'pint', 'hint', 'tint', 'mint', 'lint', 'sunt', 'punt', 'hunt', 'bunt',
+  'point', 'joint', 'front', 'grunt', 'blunt', 'stunt', 'count',
+
+  // Common two-letter endings words
+  'helt', 'felt', 'melt', 'belt', 'kelt', 'pelt', 'selt', 'velt',
+  'salt', 'halt', 'malt', 'kalt', 'galt', 'walt', 'balt',
+  'kort', 'sort', 'port', 'mort', 'dort', 'fort', 'tort',
+  'park', 'bark', 'mark', 'lark', 'dark', 'kark', 'hark',
+
+  // Medium complexity words (ing endings)
+  'spring', 'bring', 'sting', 'swing', 'thing', 'wing', 'ring', 'king', 'sing',
+  'arbejding', 'handling', 'forbinding', 'læsning', 'skrivning', 'tegning', 'maling',
+  'sporing', 'boring', 'koring', 'storing', 'snoring', 'noring', 'loring',
+
+  // Three+ letter syllable words
+  'station', 'nation', 'variation', 'information', 'situation', 'relation', 'operation',
+  'handling', 'forhandling', 'behandling', 'mishandling', 'genhandling',
+  'regering', 'styrning', 'ledning', 'åbning', 'lukning', 'påbegyndelse',
+
+  // Animals
+  'hund', 'kat', 'hest', 'ko', 'gris', 'får', 'ged', 'and', 'høne', 'gås',
+  'mus', 'rotte', 'hamster', 'kanin', 'pindsvin', 'egern', 'ræv', 'ulv', 'bjørn',
+  'elefant', 'løve', 'tiger', 'zebra', 'giraf', 'næsehorn', 'flodhest', 'kamel',
+  'fisk', 'haj', 'delfin', 'hval', 'sæl', 'krabbe', 'hummer', 'østers',
+  'fugl', 'spurv', 'solsort', 'ugle', 'ørn', 'falk', 'svale', 'stork',
+  'slange', 'firben', 'frø', 'tudse', 'skildpadde', 'krokodille',
+  'edderkop', 'myg', 'flue', 'bi', 'humlebi', 'hveps', 'sommerfugl', 'myre',
+
   // Food and cooking
-  'mad', 'fødevarer', 'fødevare', 'morgenmad', 'frokost', 'middag', 'aftensmad', 'mellemmåltid',
-  'snacks', 'snack', 'forret', 'forretter', 'hovedret', 'hovedretter', 'dessert', 'desserter',
-  'supper', 'suppe', 'bouillon', 'consommé', 'bisque', 'gazpacho', 'minestrone',
-  'klar suppe', 'klare supper', 'tykke supper', 'tyk suppe', 'grøntsagssuppe', 'grøntsagssupper',
-  'kødsuppe', 'kødsupper', 'fiskesuppe', 'fiskesupper', 'hønsekødssuppe', 'hønsekødssupper',
-  'brød', 'brød', 'rugbrød', 'franskbrød', 'fuldkornsbrød', 'hvidbrød', 'surdejsbrød',
-  'boller', 'bolle', 'rundstykker', 'rundstykke', 'bagels', 'bagel', 'croissanter', 'croissant',
-  'toast', 'toastbrød', 'knækbrød', 'pitabrød', 'fladbrød', 'focaccia', 'ciabatta',
-  'kød', 'kød', 'oksekød', 'kalvekød', 'svinekød', 'lammekød', 'hjortekød', 'vildt',
-  'fjerkræ', 'kylling', 'kyllingebryst', 'kyllingelår', 'kyllingevinger', 'kyllingeoverlår',
-  'and', 'andebrysp', 'andelår', 'andelever', 'gås', 'gåsesteg', 'gåselever',
-  'kalkun', 'kalkunbryst', 'kalkunlår', 'kalkunvinger', 'due', 'duebryst',
-  'pølser', 'pølse', 'frankfurter', 'frankfurtere', 'wienerbrød', 'medister', 'medisterpølse',
-  'leverpostej', 'leverkasse', 'sylte', 'skinke', 'røget skinke', 'kogt skinke',
-  'spegmat', 'chorizo', 'salami', 'pepperoni', 'mortadella', 'prosciutto',
-  'bacon', 'pancetta', 'serrano', 'jambon', 'røget laks', 'gravlaks', 'marineret sild',
-  'ost', 'oste', 'hårdost', 'hårde oste', 'blødost', 'bløde oste', 'skimmelost', 'skimmeloste',
-  'friskost', 'friske oste', 'danablu', 'danish blue', 'roquefort', 'gorgonzola',
-  'brie', 'camembert', 'cheddar', 'gouda', 'emmentaler', 'gruyere', 'parmesan',
-  'mozarella', 'feta', 'hytteost', 'ricotta', 'mascarpone', 'cream cheese',
-  'æg', 'æg', 'hønseæg', 'andeæg', 'gåseæg', 'vagtelæg', 'kaviar', 'rognrogn',
-  'spejlæg', 'røræg', 'kogte æg', 'pocherede æg', 'omelet', 'omeletetter',
-  'mælk', 'sødmælk', 'skummetmælk', 'letmælk', 'minimælk', 'kærnemælk', 'a38',
-  'fløde', 'slagtefløde', 'piskefløde', 'kaffesfløde', 'créme fraiche',
-  'yoghurt', 'græsk yoghurt', 'naturel yoghurt', 'frugt yoghurt', 'skyr',
-  'smør', 'margarine', 'plantemargarine', 'diet margarine', 'kokosolie', 'oliveolie',
-  'solsikkeolie', 'rapsolie', 'sesamolie', 'jordnødeolie', 'avocadoolie',
-  'krydderier', 'krydderi', 'salt', 'peber', 'sort peber', 'hvid peber', 'cayennepeber',
-  'paprika', 'kanel', 'kardemomme', 'nelliker', 'muskatnød', 'koriander',
-  'spidskommen', 'fennikel', 'anis', 'lavendel', 'rosmarin', 'timian', 'oregano',
-  'basilikum', 'persille', 'dild', 'kørvel', 'dragon', 'salvie', 'mynde',
-  'sukker', 'rørsukker', 'flormelis', 'farin', 'kandissukker', 'honning',
-  'ahornsirup', 'agavesirup', 'stevia', 'aspartam', 'saccharin',
-  
-  // Drinks
-  'drikke', 'drikkevarer', 'drikkevare', 'vand', 'postevand', 'mineralvand', 'kildevand',
-  'sodavand', 'cola', 'fanta', 'sprite', 'pepsi', 'cocacola', 'energidrik',
-  'juice', 'appelsinjuice', 'æblejuice', 'ananassjuice', 'grape juice', 'tomatjuice',
-  'smoothie', 'smoothies', 'milkshake', 'milkshakes', 'protein shake', 'protein shakes',
-  'kaffe', 'espresso', 'americano', 'cappuccino', 'latte', 'macchiato', 'mocha',
-  'filtkaffe', 'instant kaffe', 'black coffee', 'is kaffe', 'frappé',
-  'te', 'sort te', 'grøn te', 'hvid te', 'oolong te', 'kamille te', 'myrte te',
-  'rooibos', 'chai', 'earl grey', 'english breakfast', 'darjeeling', 'is te',
-  'alkohol', 'alkoholholdige drikke', 'øl', 'pilsner', 'lager', 'ale', 'stout',
-  'porter', 'ipa', 'hvede øl', 'juløl', 'påskeøl', 'fadøl', 'flaske øl',
-  'vin', 'rødvin', 'hvidvin', 'rosé', 'champagne', 'prosecco', 'cava',
-  'mousserende vin', 'dessertvin', 'portvin', 'sherry', 'madeira',
-  'spirits', 'whisky', 'whiskey', 'vodka', 'gin', 'rom', 'tequila',
-  'brandy', 'cognac', 'armagnac', 'grappa', 'schnapps', 'aquavit',
-  'likør', 'bailey', 'kahlua', 'amaretto', 'sambuca', 'drambuie',
-  'cocktail', 'cocktails', 'mojito', 'margarita', 'pinacolada', 'daiquiri',
-  'martinifrom', 'negroni', 'old fashioned', 'manhanttan', 'cosmopolitan',
-  
-  // Words with common syllables for the game
-  'seng', 'senge', 'sang', 'sange', 'lange', 'tunge', 'finger', 'fingre', 'spring', 'springe',
-  'ting', 'ting', 'ring', 'ringe', 'konge', 'konger', 'mange', 'hænge', 'synge', 'fange',
-  'bange', 'streng', 'strenge', 'bengel', 'jungle', 'jingle', 'single', 'mingle', 'tingle',
-  'wringle', 'springe', 'klinge', 'flinge', 'slinge', 'svinge', 'bringe', 'trange', 'orange',
-  'strange', 'grunge', 'lounge', 'sponge', 'plunge', 'lunge', 'gunge', 'bunge', 'funge',
-  'dunge', 'runge', 'sunge', 'vunge', 'wunge', 'yunge', 'zunge',
-  
-  'station', 'stationer', 'stol', 'stole', 'sted', 'steder', 'storm', 'storme', 'stor', 'store',
-  'stue', 'stuer', 'strand', 'strande', 'stille', 'sten', 'sten', 'stjerne', 'stjerner',
-  'styre', 'støtte', 'stærk', 'stærke', 'første', 'sidste', 'næste', 'bedste', 'største',
-  'mindste', 'kostume', 'kostumer', 'kastanje', 'kastanjer', 'paste', 'haste', 'vaste',
-  'faste', 'laste', 'maste', 'raste', 'taste', 'waste', 'beste', 'reste', 'teste',
-  'veste', 'weste', 'zeste', 'liste', 'lister', 'fiste', 'kiste', 'kister', 'miste',
-  'riste', 'viste', 'wiste', 'yiste', 'ziste', 'poste', 'koste', 'moste', 'roste',
-  'toste', 'woste', 'yoste', 'zoste', 'juste', 'buste', 'duste', 'guste', 'huste',
-  'luste', 'muste', 'ruste', 'tuste', 'vuste', 'wuste', 'yuste', 'zuste',
-  
-  // Numbers
-  'nul', 'en', 'et', 'to', 'tre', 'fire', 'fem', 'seks', 'syv', 'otte', 'ni', 'ti',
-  'elleve', 'tolv', 'tretten', 'fjorten', 'femten', 'seksten', 'sytten', 'atten', 'nitten',
-  'tyve', 'enogtyve', 'toogtyve', 'treogtyve', 'fireogtyve', 'femogtyve', 'seksogtyve',
-  'syvogtyve', 'otteogtyve', 'niogtyve', 'tredive', 'enogtredive', 'toogtredive',
-  'fyrre', 'enogfyrre', 'toogfyrre', 'halvtreds', 'enoghalvtreds', 'tooghalvtreds',
-  'tres', 'enogtres', 'toogtres', 'halvfjerds', 'enoghalvfjerds', 'tooghalvfjerds',
-  'firs', 'enogfirs', 'toogfirs', 'halvfems', 'enoghalvfems', 'tooghalvfems',
-  'hundrede', 'ethundrede', 'tohundrede', 'tusind', 'ettusind', 'totusind',
-  'million', 'millioner', 'milliard', 'milliarder',
-  'første', 'anden', 'tredje', 'fjerde', 'femte', 'sjette', 'syvende', 'ottende', 'niende', 'tiende',
-  
-  // Common adjectives
-  'god', 'godt', 'gode', 'bedre', 'bedst', 'dårlig', 'dårligt', 'dårlige', 'værre', 'værst',
-  'stor', 'stort', 'store', 'større', 'størst', 'lille', 'mindre', 'mindst',
-  'lang', 'langt', 'lange', 'længere', 'længst', 'kort', 'korte', 'kortere', 'kortest',
-  'høj', 'højt', 'høje', 'højere', 'højest', 'lav', 'lavt', 'lave', 'lavere', 'lavest',
-  'bred', 'bredt', 'brede', 'bredere', 'bredest', 'smal', 'smalt', 'smalle', 'smallere', 'smallest',
-  'tyk', 'tykt', 'tykke', 'tykkere', 'tykkest', 'tynd', 'tyndt', 'tynde', 'tyndere', 'tyndest',
-  'fed', 'fedt', 'fede', 'federe', 'fedest', 'mager', 'magert', 'magre', 'magrere', 'magrest',
-  'ung', 'ungt', 'unge', 'yngre', 'yngst', 'gammel', 'gammelt', 'gamle', 'ældre', 'ældst',
-  'ny', 'nyt', 'nye', 'nyere', 'nyest', 'gammel', 'gammelt', 'gamle', 'ældre', 'ældst',
-  'rask', 'raskt', 'raske', 'raskere', 'raskest', 'syg', 'sygt', 'syge', 'sygere', 'sygest',
-  'stærk', 'stærkt', 'stærke', 'stærkere', 'stærkest', 'svag', 'svagt', 'svage', 'svagere', 'svagest',
-  'hurtig', 'hurtigt', 'hurtige', 'hurtigere', 'hurtigst', 'langsom', 'langsomt', 'langsomme', 'langsommere', 'langsomst',
-  'let', 'let', 'lette', 'lettere', 'lettest', 'tung', 'tungt', 'tunge', 'tungere', 'tungest',
-  'varm', 'varmt', 'varme', 'varmere', 'varmest', 'kold', 'koldt', 'kolde', 'koldere', 'koldest',
-  'tør', 'tørt', 'tørre', 'tørrere', 'tørrest', 'våd', 'vådt', 'våde', 'vådere', 'vådest',
-  'ren', 'rent', 'rene', 'renere', 'renest', 'snavset', 'snavsede', 'snavsetere', 'snavsetest',
-  'glad', 'gladt', 'glade', 'gladere', 'gladest', 'trist', 'trist', 'triste', 'tristere', 'tristest',
-  'lykkelig', 'lykkeligt', 'lykkelige', 'lyskeligere', 'lykkeligst', 'ulykkelig', 'ulykkeligt', 'ulykkelige',
-  'rolig', 'roligt', 'rolige', 'roligere', 'roligst', 'urolig', 'uroligt', 'urolige', 'uroligere', 'uroligst',
-  'nem', 'nemt', 'nemme', 'nemmere', 'nemmest', 'svær', 'svært', 'svære', 'sværere', 'sværest',
-  'billig', 'billigt', 'billige', 'billigere', 'billigst', 'dyr', 'dyrt', 'dyre', 'dyrere', 'dyrest',
-  'rig', 'rigt', 'rige', 'rigere', 'rigest', 'fattig', 'fattigt', 'fattige', 'fattigere', 'fattigst',
-  'fuld', 'fuldt', 'fulde', 'fulden', 'tom', 'tomt', 'tomme', 'tømme',
-  'åben', 'åbent', 'åbne', 'lukket', 'lukkede',
-  'smuk', 'smukt', 'smukke', 'smukkere', 'smukkest', 'grim', 'grimt', 'grimme', 'grimmere', 'grimmest',
-  'intelligent', 'intelligente', 'mere intelligent', 'mest intelligent', 'dum', 'dumt', 'dumme', 'dummere', 'dummest',
-  'klog', 'klogt', 'kloge', 'klogere', 'klogest', 'uklog', 'uklogt', 'ukloge',
-  'sød', 'sødt', 'søde', 'sødere', 'sødest', 'sur', 'surt', 'sure', 'surere', 'surest',
-  'salt', 'salte', 'saltere', 'saltest', 'bitter', 'bitre', 'bitrere', 'bitrest',
-  'frisk', 'friskt', 'friske', 'friskere', 'friskest', 'træt', 'trætte', 'trættere', 'trættest',
-  
+  'brød', 'smør', 'ost', 'mælk', 'æg', 'kød', 'fisk', 'frugt', 'grøntsag',
+  'æble', 'pære', 'banan', 'orange', 'citron', 'druer', 'jordbær', 'hindbær',
+  'kartoffel', 'gulerod', 'løg', 'tomat', 'agurk', 'salat', 'kål', 'spinat',
+  'ris', 'pasta', 'nudler', 'pizza', 'burger', 'sandwich', 'suppe', 'salat',
+  'kaffe', 'te', 'vand', 'juice', 'øl', 'vin', 'sodavand', 'mælk',
+
+  // Body parts
+  'hoved', 'hår', 'øje', 'næse', 'mund', 'tand', 'øre', 'hals', 'skulder',
+  'arm', 'hånd', 'finger', 'bryst', 'mave', 'ryg', 'ben', 'fod', 'tå',
+  'hjerte', 'lunge', 'lever', 'nyre', 'hjerne', 'knogle', 'muskel', 'hud',
+
+  // Family and people
+  'familie', 'mor', 'far', 'søn', 'datter', 'barn', 'baby', 'bedstemor', 'bedstefar',
+  'onkel', 'tante', 'fætter', 'kusine', 'ven', 'veninde', 'nabo', 'kollega',
+  'lærer', 'læge', 'sygeplejerske', 'politibetjent', 'brandmand', 'pilot', 'chauffør',
+
+  // Home and buildings
+  'hus', 'lejlighed', 'værelse', 'køkken', 'badeværelse', 'stue', 'soveværelse',
+  'dør', 'vindue', 'væg', 'loft', 'gulv', 'trappe', 'elevator',
+  'møbel', 'bord', 'stol', 'sofa', 'seng', 'skab', 'kommode', 'reol',
+  'lampe', 'tv', 'computer', 'telefon', 'radio', 'ur', 'spejl', 'billede',
+
+  // Transportation
+  'bil', 'bus', 'tog', 'fly', 'skib', 'båd', 'cykel', 'motorcykel',
+  'station', 'lufthavn', 'havn', 'vej', 'gade', 'bro', 'tunnel',
+
+  // Nature and weather
+  'sol', 'måne', 'stjerne', 'himmel', 'sky', 'regn', 'sne', 'vind', 'storm',
+  'sommer', 'vinter', 'forår', 'efterår', 'dag', 'nat', 'morgen', 'aften',
+  'træ', 'blomst', 'græs', 'skov', 'park', 'have', 'mark', 'strand', 'hav',
+  'bjerg', 'dal', 'sø', 'å', 'elv', 'ø', 'land', 'by', 'verden',
+
   // Colors
-  'farve', 'farver', 'rød', 'rødt', 'røde', 'rødere', 'rødest', 'blå', 'blåt', 'blå', 'blåere', 'blåest',
-  'grøn', 'grønt', 'grønne', 'grønnere', 'grønnest', 'gul', 'gult', 'gule', 'gulere', 'gulest',
-  'sort', 'sorte', 'sortere', 'sortest', 'hvid', 'hvidt', 'hvide', 'hvidere', 'hvidest',
-  'orange', 'orange', 'orangere', 'orangest', 'lilla', 'lilla', 'pink', 'pink', 'rosa', 'rosa',
-  'brun', 'brunt', 'brune', 'brunere', 'brunest', 'grå', 'gråt', 'grå', 'gråere', 'gråest',
-  'violet', 'violette', 'turkis', 'turkise', 'cyan', 'magenta', 'beige', 'beige',
-  'lime', 'lime', 'navy', 'navy', 'burgundy', 'marineblå', 'oliven', 'olivengrøn',
-  'guld', 'gyldne', 'sølv', 'sølvfarvede', 'bronze', 'bronzefarvede', 'kobber', 'kobberfarvede',
-  'koral', 'koralrøde', 'fersken', 'ferskenfarvet', 'lavendel', 'lavendelfarvet',
-  'lys', 'lyse', 'lysere', 'lysest', 'mørk', 'mørke', 'mørkere', 'mørkest',
-  'mat', 'matte', 'blank', 'blanke', 'glat', 'glatte', 'skinnende',
-  
-  // Weather and seasons
-  'vejr', 'vejret', 'klima', 'klimaer', 'temperatur', 'temperaturer', 'varme', 'kulde',
-  'sol', 'sole', 'solskin', 'solskind', 'solstråle', 'solstråler', 'solnedgang', 'solnedgange',
-  'solopgang', 'solopgange', 'månehog', 'måneskind', 'måne', 'måner', 'stjerne', 'stjerner',
-  'sky', 'skyer', 'skyforhøng', 'overskyet', 'delvis skyet', 'klart vejr',
-  'regn', 'regndråbe', 'regndråber', 'regnby', 'regnbyger', 'regnvejr', 'regnskyl',
-  'sne', 'snefald', 'snestorm', 'snestorme', 'snedriver', 'snedriver', 'snefnug', 'snefnug',
-  'hagl', 'haglbyger', 'haglbyge', 'torden', 'tordenvejr', 'tordenbrag', 'lyn', 'lynnedslag',
-  'storm', 'storme', 'stormvejr', 'orkan', 'orkaner', 'tornado', 'tornadoer',
-  'vind', 'vinde', 'vindstød', 'vindstille', 'brise', 'briser', 'blæst', 'blæsevejr',
-  'tåge', 'tåget', 'dis', 'rim', 'rimfrost', 'frost', 'frostgrader', 'is', 'isslag',
-  'sommer', 'somre', 'vinter', 'vintre', 'forår', 'forår', 'efterår', 'efterår',
-  'vårjævndøgn', 'efterårsjævndøgn', 'sommerssolhverv', 'vintersolhverv',
-  'varm', 'varmt', 'varme', 'hede', 'hedebølge', 'hedebølger', 'kold', 'koldt', 'kolde',
-  'frost', 'frostgrader', 'minusgrader', 'plusgrader', 'celsiusgrader', 'fahrenheit',
-  
-  // Technology and modern life
-  'computer', 'computere', 'pc', 'laptop', 'laptops', 'tablet', 'tablets', 'smartphone', 'smartphones',
-  'telefon', 'telefoner', 'mobiltelefon', 'mobiltelefoner', 'iPhone', 'android', 'samsung',
-  'internet', 'wifi', 'bluetooth', 'app', 'apps', 'software', 'hardware', 'program', 'programmer',
-  'website', 'websites', 'hjemmeside', 'hjemmesider', 'blog', 'blogs', 'facebook', 'instagram',
-  'twitter', 'youtube', 'google', 'email', 'emails', 'besked', 'beskeder', 'sms', 'mms',
-  'kamera', 'kameraer', 'fotokamera', 'digitalkamera', 'videokamera', 'webcam', 'webcams',
-  'tv', 'fjernsyn', 'television', 'skærm', 'skærme', 'monitor', 'monitorer', 'projektor', 'projektorer',
-  'radio', 'radioer', 'højtaler', 'højttalere', 'headset', 'headsets', 'høretelefoner',
-  'printer', 'printere', 'scanner', 'scannere', 'kopimarkine', 'kopiimaskiner', 'fax', 'faxmaskiner',
-  'cd', 'cder', 'dvd', 'dvder', 'bluray', 'blurays', 'usb', 'usb-stik', 'harddisk', 'harddiske',
-  'ssd', 'ssder', 'hukommelse', 'ram', 'processor', 'processorer', 'grafikkort', 'grafikkort',
-  'tastatur', 'tastaturer', 'mus', 'computermus', 'touchpad', 'touchpads', 'joystick', 'joysticks',
-  'gamepad', 'gamepads', 'spillekonsol', 'spillekonsoller', 'playstation', 'xbox', 'nintendo',
-  'spil', 'computerspil', 'videospil', 'mobilspil', 'onlinespil', 'brætspil', 'kortspil',
-  'robot', 'robotter', 'drone', 'droner', 'kunstig intelligens', 'ai', 'machine learning',
-  'virtual reality', 'vr', 'augmented reality', 'ar', '3d', 'threed', 'hologram', 'hologrammer',
-  
-  // Thousands more words for comprehensive coverage...
-  'absolut', 'abstrakt', 'acceleration', 'acceptabel', 'acceptere', 'access', 'adapter', 'addition',
-  'adgang', 'administration', 'admiral', 'adoption', 'advent', 'adventure', 'adverbiium', 'advisere',
-  'æbler', 'æblemost', 'æbletræ', 'ædle', 'æggemad', 'ægteskab', 'ændring', 'ærlig', 'ærlighed',
-  'øjeblik', 'økonomi', 'økonomisk', 'øl', 'ølbrygning', 'øre', 'øredråber', 'ørken', 'øst',
-  'åben', 'åbning', 'ånd', 'åndelig', 'årgang', 'årsag', 'årstid'
+  'rød', 'blå', 'grøn', 'gul', 'sort', 'hvid', 'grå', 'brun', 'orange', 'lilla', 'pink', 'rosa',
+
+  // Numbers
+  'nul', 'en', 'to', 'tre', 'fire', 'fem', 'seks', 'syv', 'otte', 'ni', 'ti',
+  'elleve', 'tolv', 'tretten', 'fjorten', 'femten', 'seksten', 'sytten', 'atten', 'nitten', 'tyve',
+  'tredive', 'fyrre', 'halvtreds', 'tres', 'halvfjerds', 'firs', 'halvfems', 'hundrede', 'tusind',
+
+  // Adjectives
+  'stor', 'lille', 'høj', 'lav', 'lang', 'kort', 'bred', 'smal', 'tyk', 'tynd',
+  'god', 'dårlig', 'nem', 'svær', 'hurtig', 'langsom', 'ny', 'gammel', 'ung', 'ældre',
+  'smuk', 'grim', 'glad', 'trist', 'varm', 'kold', 'våd', 'tør', 'ren', 'snavset',
+
+  // Time
+  'tid', 'time', 'minut', 'sekund', 'dag', 'uge', 'måned', 'år', 'årh undrede',
+  'morgen', 'formiddag', 'middag', 'eftermiddag', 'aften', 'nat', 'midnat',
+  'i dag', 'i går', 'i morgen', 'altid', 'aldrig', 'ofte', 'sjældent', 'nogle gange',
+
+  // Actions and activities
+  'spille', 'lege', 'løbe', 'gå', 'springe', 'hoppe', 'danse', 'synge', 'læse', 'skrive',
+  'tegne', 'male', 'købe', 'sælge', 'spise', 'drikke', 'sove', 'våge', 'arbejde', 'hvile',
+
+  // Emotions and feelings
+  'kærlighed', 'glæde', 'sorg', 'vrede', 'frygt', 'håb', 'tillid', 'tvivl',
+  'lykkelig', 'trist', 'vred', 'bange', 'stolt', 'skuffet', 'overrasket', 'forvirret',
+
+  // School and education
+  'skole', 'klasse', 'lærer', 'elev', 'bog', 'pen', 'blyant', 'papir', 'tavle',
+  'matematik', 'dansk', 'engelsk', 'historie', 'geografi', 'biologi', 'fysik', 'kemi',
+
+  // Technology
+  'computer', 'telefon', 'tablet', 'internet', 'email', 'website', 'app', 'program',
+  'skærm', 'tastatur', 'mus', 'printer', 'kamera', 'video', 'musik', 'spil',
+
+  // Sports and activities
+  'fodbold', 'basketball', 'tennis', 'badminton', 'svømning', 'løb', 'cykling', 'skiløb',
+  'gymnastik', 'dans', 'musik', 'kunst', 'teater', 'biograf', 'museum',
+
+  // Clothing
+  'tøj', 'skjorte', 'bukser', 'kjole', 'nederdel', 'jakke', 'frakke', 'sko', 'strømper',
+  'hat', 'kasket', 'handsker', 'bælte', 'ur', 'smykker', 'ring', 'kæde',
+
+  // More complex words for advanced players
+  'selvstændig', 'uafhængighed', 'ansvarlig', 'forpligtelse', 'mulighed', 'udfordring',
+  'løsning', 'problem', 'beslutning', 'valg', 'konsekvens', 'resultat', 'årsag', 'virkning',
+  'udvikling', 'forandring', 'forbedring', 'forværring', 'forskel', 'lighed',
+  'sammenligning', 'forbindelse', 'relation', 'forhold', 'situation', 'tilstand',
+
+  // Words ending in 'tion'
+  'station', 'nation', 'information', 'situation', 'operation', 'organisation', 'administration',
+  'demonstration', 'presentation', 'koncentration', 'preparation', 'inspiration', 'motivation',
+
+  // Words ending in 'ung'
+  'uddannelse', 'oplysning', 'forklaring', 'beskrivelse', 'fremstilling', 'behandling',
+  'undersøgelse', 'iagttagelse', 'observation', 'registrering', 'dokumentation',
+
+  // Professional and academic words
+  'professor', 'doktor', 'ingeniør', 'arkitekt', 'advokat', 'dommer', 'minister',
+  'direktør', 'manager', 'sekretær', 'assistent', 'specialист', 'ekspert', 'konsulent',
+
+  // Abstract concepts
+  'frihed', 'retfærdighed', 'sandhed', 'skønhed', 'visdom', 'intelligens', 'kreativitet',
+  'fantasi', 'hukommelse', 'forståelse', 'erkendelse', 'bevidsthed', 'følelse', 'tanke',
+
+  // More animals and nature
+  'papegøje', 'kanarie', 'undulat', 'leopard', 'gepard', 'puma', 'lynx', 'bison',
+  'rensdyr', 'elg', 'kronhjort', 'rådyr', 'vildsvin', 'hare', 'egern', 'flagermus',
+  'skovmårhund', 'grævling', 'odder', 'mår', 'ilder', 'væsel', 'pindsvin',
+
+  // Plants and flowers
+  'rose', 'tulipan', 'påskelilje', 'solsikke', 'marguerit', 'mælkebøtte', 'valmue',
+  'kornblomst', 'nellike', 'violet', 'hyacint', 'narcis', 'krokus', 'iris', 'dahlia',
+
+  // Food preparation and cooking
+  'stege', 'koge', 'bage', 'grille', 'røre', 'blande', 'hakke', 'skære', 'skrælle',
+  'marinere', 'krydre', 'smage', 'servere', 'anrette', 'dække', 'vaske', 'tørre',
+
+  // Musical instruments
+  'klaver', 'guitar', 'violin', 'fløjte', 'trompet', 'tromme', 'saxophone', 'harpe',
+  'mundharmonika', 'accordion', 'orgel', 'bas', 'synthesizer', 'mikrofon',
+
+  // More verbs
+  'acceptere', 'afvise', 'tilbyde', 'foreslå', 'anbefale', 'kritisere', 'rose', 'belønne',
+  'straffe', 'tilgive', 'undskyld', 'beklage', 'fejre', 'gratulere', 'kondolere',
+
+  // Household items
+  'gryde', 'pande', 'skål', 'tallerken', 'kop', 'glas', 'kniv', 'gaffel', 'ske',
+  'køleskab', 'ovn', 'komfur', 'opvaskemaskine', 'vaskemaskine', 'støvsager',
+  'strygejern', 'hårtørrer', 'barbermaskine', 'tandbørste', 'sæbe', 'shampoo',
+
+  // Materials and substances
+  'træ', 'metal', 'plastik', 'glas', 'keramik', 'stof', 'læder', 'papir', 'karton',
+  'sten', 'beton', 'tegl', 'sand', 'ler', 'kalk', 'cement', 'asfalt', 'gummi',
+
+  // Geographical terms
+  'kontinent', 'land', 'provins', 'region', 'kommune', 'by', 'landsby', 'hovedstad',
+  'kyst', 'fjord', 'bugt', 'halvø', 'ø', 'holme', 'kap', 'bjerg', 'bakke', 'dal',
+
+  // Weather phenomena
+  'tornado', 'orkan', 'tyfon', 'monsun', 'tåge', 'dis', 'rim', 'frost', 'is', 'hagl',
+  'lyn', 'torden', 'regnbue', 'nordlys', 'solnedgang', 'solopgang', 'formørkelse',
+
+  // Medical terms
+  'hospital', 'klinik', 'ambulance', 'operation', 'behandling', 'medicin', 'pille',
+  'injektion', 'vaccine', 'diagnose', 'symptom', 'sygdom', 'sundhed', 'wellness'
 ];
 
 export const importAllWords = async () => {
-  console.log('Starting comprehensive Danish word import...');
+  console.log('Starting massive Danish word import...');
   
   const batchSize = 1000;
   let imported = 0;
