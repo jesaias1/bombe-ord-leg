@@ -13,7 +13,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -21,37 +21,11 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const { signIn, signUp, signInAnonymously } = useAuth();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      if (isLogin) {
-        await signIn(email, password);
-      } else {
-        await signUp(email, password, displayName);
-      }
-      onClose();
-      toast({
-        title: isLogin ? "Velkommen tilbage!" : "Konto oprettet!",
-        description: isLogin ? "Du er nu logget ind." : "Du kan nu spille spillet.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Fejl",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAnonymousJoin = async () => {
+  const handleGuestPlay = async () => {
     if (!displayName.trim()) {
       toast({
         title: "Fejl",
-        description: "Indtast venligst dit navn",
+        description: "Indtast venligst dit spillernavn",
         variant: "destructive",
       });
       return;
@@ -63,7 +37,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       onClose();
       toast({
         title: "Velkommen!",
-        description: "Du er nu klar til at spille.",
+        description: "Du er nu klar til at spille som gæst.",
       });
     } catch (error: any) {
       toast({
@@ -76,29 +50,100 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     }
   };
 
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Fejl", 
+        description: "Indtast både email og adgangskode",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signIn(email, password);
+      onClose();
+      toast({
+        title: "Velkommen tilbage!",
+        description: "Du er nu logget ind.",
+      });
+    } catch (error: any) {
+      // Try sign up if sign in fails
+      try {
+        await signUp(email, password, displayName || email.split('@')[0]);
+        onClose();
+        toast({
+          title: "Konto oprettet!",
+          description: "Du kan nu spille spillet.",
+        });
+      } catch (signUpError: any) {
+        toast({
+          title: "Fejl",
+          description: signUpError.message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isLogin ? "Log ind" : "Opret konto"}</DialogTitle>
+          <DialogTitle className="text-center text-2xl">🎮 Kom i gang!</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="displayName">Spillernavn</Label>
-            <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Indtast dit spillernavn"
-              required
-            />
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName" className="text-lg">Spillernavn</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Dit spillernavn"
+                className="text-lg py-3"
+                required
+              />
+            </div>
+            
+            <Button
+              onClick={handleGuestPlay}
+              disabled={loading}
+              className="w-full py-3 text-lg bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+            >
+              {loading ? "Starter spil..." : "🚀 Spil som gæst"}
+            </Button>
           </div>
-          
-          {isLogin || !isLogin ? (
-            <>
+
+          <div className="text-center">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">eller</span>
+              </div>
+            </div>
+          </div>
+
+          {!showEmailForm ? (
+            <Button
+              onClick={() => setShowEmailForm(true)}
+              variant="outline"
+              className="w-full"
+            >
+              Log ind med email
+            </Button>
+          ) : (
+            <form onSubmit={handleEmailAuth} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email (valgfri)</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -109,44 +154,30 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Adgangskode (valgfri)</Label>
+                <Label htmlFor="password">Adgangskode</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Indtast adgangskode"
+                  placeholder="Adgangskode"
                 />
               </div>
-            </>
-          ) : null}
-          
-          <div className="flex flex-col gap-2">
-            <Button
-              type="button"
-              onClick={handleAnonymousJoin}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? "Opretter..." : "Spil som gæst"}
-            </Button>
-            
-            {email && password && (
-              <Button type="submit" disabled={loading} variant="outline" className="w-full">
-                {loading ? "Behandler..." : (isLogin ? "Log ind" : "Opret konto")}
-              </Button>
-            )}
-          </div>
-        </form>
-        
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            {isLogin ? "Har du ikke en konto? Opret en" : "Har du allerede en konto? Log ind"}
-          </button>
+              
+              <div className="flex gap-2">
+                <Button type="submit" disabled={loading} className="flex-1">
+                  {loading ? "Logger ind..." : "Log ind / Opret konto"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowEmailForm(false)}
+                >
+                  Tilbage
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </DialogContent>
     </Dialog>
