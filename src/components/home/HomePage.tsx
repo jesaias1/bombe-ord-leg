@@ -90,10 +90,10 @@ export const HomePage = () => {
       <div className="max-w-4xl mx-auto pt-12">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-800 mb-4">
-            💣 Bombe Ord 💣
+            💣 Ordbomben 💣
           </h1>
           <p className="text-xl text-gray-600">
-            Multiplayer ordspil på dansk - Inspireret af Bomb Party
+            Multiplayer ordspil på dansk
           </p>
         </div>
 
@@ -180,7 +180,7 @@ export const HomePage = () => {
                   <li>Ord kan ikke genbruges i samme spil</li>
                   <li>Du har 10-25 sekunder per tur</li>
                   <li>Mister bomben? Du mister et liv!</li>
-                  <li>Sidste spiller tilbage vinder</li>
+                  <li>Sidste spiller tilbage vinder (eller træn solo!)</li>
                 </ul>
               </div>
             </CardContent>

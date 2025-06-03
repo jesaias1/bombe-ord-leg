@@ -28,8 +28,8 @@ const Index = () => {
         <div className="space-y-4">
           <div className="text-8xl animate-bounce">💣</div>
           <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-2xl">
-            BOMBE
-            <span className="block text-yellow-300">ORD</span>
+            ORD
+            <span className="block text-yellow-300">BOMBEN</span>
           </h1>
           <p className="text-xl md:text-2xl text-white/90 font-semibold drop-shadow-lg">
             Det mest eksplosive ordspil på dansk!
@@ -44,11 +44,11 @@ const Index = () => {
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
             <div className="text-2xl mb-2">🎯</div>
-            <div>2-16 spillere</div>
+            <div>1-16 spillere</div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
             <div className="text-2xl mb-2">🏆</div>
-            <div>Inspireret af Bomb Party</div>
+            <div>Træn dit ordforråd</div>
           </div>
         </div>
 

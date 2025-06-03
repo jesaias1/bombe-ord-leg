@@ -184,6 +184,26 @@ export const GameRoom = () => {
     if (!game) return;
 
     const alivePlayers = players.filter(p => p.is_alive);
+    
+    // For single player, just continue with the same player
+    if (alivePlayers.length === 1) {
+      const player = alivePlayers[0];
+      
+      // If they have no lives left, end the game
+      if (player.lives <= 0) {
+        await supabase
+          .from('games')
+          .update({ status: 'finished' })
+          .eq('id', game.id);
+        return;
+      }
+      
+      // Continue with same player for solo play
+      startNewRound(player.id);
+      return;
+    }
+
+    // Multi-player logic
     if (alivePlayers.length <= 1) {
       // Game over
       await supabase
@@ -197,12 +217,18 @@ export const GameRoom = () => {
     const nextIndex = (currentIndex + 1) % alivePlayers.length;
     const nextPlayer = alivePlayers[nextIndex];
 
+    startNewRound(nextPlayer.id);
+  };
+
+  const startNewRound = async (playerId: string) => {
+    if (!game || !room) return;
+
     // Get random syllable based on difficulty
     const { data: syllables } = await supabase
       .from('syllables')
       .select('syllable')
-      .eq('difficulty', room?.difficulty || 'mellem')
-      .gte('word_count', getDifficultyThreshold(room?.difficulty || 'mellem'));
+      .eq('difficulty', room.difficulty)
+      .gte('word_count', getDifficultyThreshold(room.difficulty));
 
     const randomSyllable = syllables?.[Math.floor(Math.random() * syllables.length)]?.syllable || 'ing';
 
@@ -213,7 +239,7 @@ export const GameRoom = () => {
     await supabase
       .from('games')
       .update({
-        current_player_id: nextPlayer.id,
+        current_player_id: playerId,
         current_syllable: randomSyllable,
         timer_end_time: timerEndTime.toISOString(),
         timer_duration: timerDuration
@@ -280,10 +306,10 @@ export const GameRoom = () => {
     if (!game || !room) return;
 
     const alivePlayers = players.filter(p => p.is_alive);
-    if (alivePlayers.length < 2) {
+    if (alivePlayers.length < 1) {
       toast({
-        title: "Ikke nok spillere",
-        description: "Der skal være mindst 2 spillere for at starte",
+        title: "Ingen spillere",
+        description: "Der skal være mindst 1 spiller for at starte",
         variant: "destructive",
       });
       return;
@@ -329,22 +355,28 @@ export const GameRoom = () => {
   const currentPlayer = players.find(p => p.id === game.current_player_id);
   const isCurrentUser = currentPlayer?.user_id === user?.id;
   const alivePlayers = players.filter(p => p.is_alive);
+  const isSinglePlayer = players.length === 1;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">{room.name}</h1>
-          <p className="text-gray-600">Vanskelighed: {room.difficulty} | Rum: {roomId}</p>
+          <p className="text-gray-600">
+            Vanskelighed: {room.difficulty} | Rum: {roomId}
+            {isSinglePlayer && <span className="ml-2 text-blue-600">• Solo træning</span>}
+          </p>
         </div>
 
         {game.status === 'waiting' ? (
           <div className="text-center space-y-6">
-            <h2 className="text-2xl font-semibold">Venter på at spillet starter...</h2>
+            <h2 className="text-2xl font-semibold">
+              {isSinglePlayer ? "Klar til solo træning!" : "Venter på at spillet starter..."}
+            </h2>
             <PlayerList players={players} currentUserId={user?.id} />
-            {room.creator_id === user?.id && (
+            {(room.creator_id === user?.id || isSinglePlayer) && (
               <Button onClick={startGame} size="lg" className="text-lg px-8 py-3">
-                Start Spil
+                {isSinglePlayer ? "Start træning" : "Start Spil"}
               </Button>
             )}
           </div>
@@ -363,7 +395,10 @@ export const GameRoom = () => {
               <div className="text-center space-y-4">
                 {currentPlayer && (
                   <p className="text-xl font-semibold">
-                    {isCurrentUser ? "Din tur!" : `${currentPlayer.name}s tur`}
+                    {isCurrentUser ? 
+                      (isSinglePlayer ? "Find et ord!" : "Din tur!") : 
+                      `${currentPlayer.name}s tur`
+                    }
                   </p>
                 )}
                 
@@ -398,11 +433,19 @@ export const GameRoom = () => {
           </div>
         ) : (
           <div className="text-center space-y-6">
-            <h2 className="text-3xl font-bold">Spillet er slut!</h2>
-            {alivePlayers.length === 1 && (
+            <h2 className="text-3xl font-bold">
+              {isSinglePlayer ? "Træning afsluttet!" : "Spillet er slut!"}
+            </h2>
+            {alivePlayers.length === 1 && !isSinglePlayer && (
               <p className="text-xl">🎉 {alivePlayers[0].name} vandt! 🎉</p>
             )}
+            {isSinglePlayer && (
+              <p className="text-xl">Du brugte {game.used_words?.length || 0} ord i din træning!</p>
+            )}
             <PlayerList players={players} currentUserId={user?.id} />
+            <Button onClick={() => navigate('/')} className="mt-4">
+              Tilbage til forsiden
+            </Button>
           </div>
         )}
       </div>
