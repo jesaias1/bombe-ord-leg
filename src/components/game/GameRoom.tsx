@@ -52,11 +52,16 @@ export const GameRoom = () => {
         setRoom(roomData);
 
         // Load or create game
-        let { data: gameData } = await supabase
+        let { data: gameData, error: gameLoadError } = await supabase
           .from('games')
           .select('*')
           .eq('room_id', roomId)
           .maybeSingle();
+
+        if (gameLoadError) {
+          console.error('Game load error:', gameLoadError);
+          throw gameLoadError;
+        }
 
         if (!gameData) {
           console.log('No game found, creating new game for room:', roomId);
@@ -90,21 +95,25 @@ export const GameRoom = () => {
           roomId 
         });
 
-        // First check if player already exists
-        const { data: existingPlayer } = await supabase
-          .from('players')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('room_id', roomId)
-          .maybeSingle();
-
-        if (existingPlayer) {
-          console.log('Player already exists:', existingPlayer);
-        } else {
-          // Create new player
-          const { error: playerError } = await supabase
+        // First check if player already exists with detailed error logging
+        try {
+          const { data: existingPlayer, error: checkError } = await supabase
             .from('players')
-            .insert({
+            .select('*')
+            .eq('user_id', userId)
+            .eq('room_id', roomId)
+            .maybeSingle();
+
+          if (checkError) {
+            console.error('Error checking existing player:', checkError);
+            throw checkError;
+          }
+
+          if (existingPlayer) {
+            console.log('Player already exists:', existingPlayer);
+          } else {
+            // Create new player with detailed error logging
+            console.log('Creating new player with data:', {
               user_id: userId,
               room_id: roomId,
               name: displayName,
@@ -112,11 +121,31 @@ export const GameRoom = () => {
               is_alive: true
             });
 
-          if (playerError) {
-            console.error('Player creation error:', playerError);
-            throw playerError;
+            const { error: playerError } = await supabase
+              .from('players')
+              .insert({
+                user_id: userId,
+                room_id: roomId,
+                name: displayName,
+                lives: 3,
+                is_alive: true
+              });
+
+            if (playerError) {
+              console.error('Player creation error details:', {
+                error: playerError,
+                message: playerError.message,
+                details: playerError.details,
+                hint: playerError.hint,
+                code: playerError.code
+              });
+              throw playerError;
+            }
+            console.log('New player created successfully');
           }
-          console.log('New player created successfully');
+        } catch (playerErr: any) {
+          console.error('Player operation failed:', playerErr);
+          throw playerErr;
         }
 
         loadPlayers();
