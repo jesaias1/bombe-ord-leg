@@ -11,20 +11,14 @@ export const WordImporter = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; errors: number } | null>(null);
 
-  // Check if user is admin
-  const { data: userRole } = useQuery({
-    queryKey: ['user-role'],
+  // Check if user is admin by checking email directly (simplified approach)
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ['is-admin'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
-      return data?.role || 'user';
+      if (!user) return false;
+      // Only specific admin email
+      return user.email === 'lin4s@live.dk';
     }
   });
 
@@ -35,7 +29,6 @@ export const WordImporter = () => {
       const { count } = await supabase
         .from('danish_words')
         .select('*', { count: 'exact', head: true });
-
       return count || 0;
     }
   });
@@ -64,13 +57,12 @@ export const WordImporter = () => {
       const { error } = await supabase
         .from('danish_words')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
       if (error) {
         console.error('Error clearing words:', error);
       } else {
         setImportResult({ imported: 0, errors: 0 });
-        // Refresh word count
         window.location.reload();
       }
     } catch (error) {
@@ -78,7 +70,7 @@ export const WordImporter = () => {
     }
   };
 
-  if (userRole !== 'admin') {
+  if (!isAdmin) {
     return (
       <Card>
         <CardHeader>
@@ -119,7 +111,7 @@ export const WordImporter = () => {
         {isImporting && (
           <div className="space-y-2">
             <Progress value={undefined} className="w-full" />
-            <p className="text-sm text-gray-600">Importerer ord i batches...</p>
+            <p className="text-sm text-gray-600">Importerer ord fra multiple kilder...</p>
           </div>
         )}
         
@@ -135,14 +127,13 @@ export const WordImporter = () => {
         )}
         
         <div className="text-sm text-gray-600 space-y-1">
-          <p><strong>Indeholder over 3000+ danske ord:</strong></p>
+          <p><strong>Omfattende danske ordlister fra GitHub:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>Grundlæggende ord og navneord</li>
-            <li>Udsagnsord i alle former</li>
-            <li>Ord der ender på 'ng', 'st', 'nd', 'nt' og andre stavelser</li>
-            <li>Familieord, dyr, mad, natur, farver, tal</li>
-            <li>Komplekse ord til avancerede spillere</li>
-            <li>Professionelle og akademiske termer</li>
+            <li>Grundlæggende danske ord (20200419-Danish-words.txt)</li>
+            <li>Navneord og udsagnsord i alle former</li>
+            <li>Specialiserede ordlister og kategorier</li>
+            <li>Tusindvis af verificerede danske ord</li>
+            <li>Kontinuerligt opdateret fra multiple kilder</li>
           </ul>
         </div>
       </CardContent>

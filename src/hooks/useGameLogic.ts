@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
@@ -10,7 +10,7 @@ type Room = Tables<'rooms'>;
 
 export const useGameLogic = (
   game: Game | null, 
-  players: Player[], 
+  players: Player[] = [], // Default to empty array to prevent undefined filter errors
   currentUserId?: string, 
   room?: Room | null
 ) => {
@@ -25,8 +25,8 @@ export const useGameLogic = (
   // Check if it's current user's turn
   const isMyTurn = currentPlayer?.user_id === currentUserId;
 
-  // Get alive players
-  const alivePlayers = players.filter(player => player.is_alive);
+  // Get alive players - ensure players is defined before filtering
+  const alivePlayers = Array.isArray(players) ? players.filter(player => player.is_alive) : [];
 
   // Check if game can start
   const canStartGame = players.length >= 1 && 
@@ -40,7 +40,7 @@ export const useGameLogic = (
     
     console.log(`Validating word: "${trimmedWord}" contains syllable: "${trimmedSyllable}"`);
     
-    // Check if word contains the syllable (not just ends with it)
+    // Check if word contains the syllable
     if (!trimmedWord.includes(trimmedSyllable)) {
       console.log(`Word "${trimmedWord}" does not contain syllable "${trimmedSyllable}"`);
       return false;
@@ -62,21 +62,20 @@ export const useGameLogic = (
     return true;
   };
 
-  const selectRandomSyllable = async (difficulty: string): Promise<string | null> => {
+  const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer'): Promise<string | null> => {
     console.log(`Selecting random syllable for difficulty: ${difficulty}`);
     
     const { data, error } = await supabase
       .from('syllables')
       .select('syllable')
       .eq('difficulty', difficulty)
-      .gt('word_count', 10); // Only select syllables that have enough words
+      .gt('word_count', 10);
 
     if (error || !data || data.length === 0) {
       console.error('Error fetching syllables:', error);
       return null;
     }
 
-    // Randomize the selection to ensure variety
     const randomIndex = Math.floor(Math.random() * data.length);
     const selectedSyllable = data[randomIndex].syllable;
     
@@ -118,7 +117,7 @@ export const useGameLogic = (
       const nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
       const nextPlayer = alivePlayers[nextPlayerIndex];
 
-      // Select new random syllable to ensure variety
+      // Select new random syllable
       const newSyllable = await selectRandomSyllable(room?.difficulty || 'mellem');
       
       if (!newSyllable) {
@@ -127,7 +126,7 @@ export const useGameLogic = (
         return;
       }
 
-      // Update game with new syllable
+      // Update game
       const { error } = await supabase
         .from('games')
         .update({
@@ -158,7 +157,6 @@ export const useGameLogic = (
     if (!game || !room) return;
 
     try {
-      // Select random starting syllable
       const startingSyllable = await selectRandomSyllable(room.difficulty);
       
       if (!startingSyllable) {
@@ -166,7 +164,6 @@ export const useGameLogic = (
         return;
       }
 
-      // Pick random starting player
       const randomPlayerIndex = Math.floor(Math.random() * alivePlayers.length);
       const startingPlayer = alivePlayers[randomPlayerIndex];
 
@@ -194,13 +191,12 @@ export const useGameLogic = (
   };
 
   const handleTimerExpired = async () => {
-    if (!game || !currentPlayer) return;
+    if (!game || !currentPlayer || !alivePlayers.length) return;
 
     try {
       const newLives = Math.max(0, currentPlayer.lives - 1);
       const isNowDead = newLives === 0;
 
-      // Update player's lives and alive status
       const { error: playerError } = await supabase
         .from('players')
         .update({
@@ -214,13 +210,11 @@ export const useGameLogic = (
         return;
       }
 
-      // Check if game should end
       const remainingAlivePlayers = alivePlayers.filter(p => 
         p.id === currentPlayer.id ? !isNowDead : true
       );
 
       if (remainingAlivePlayers.length <= 1) {
-        // Game over
         const { error: gameError } = await supabase
           .from('games')
           .update({
@@ -233,11 +227,9 @@ export const useGameLogic = (
           console.error('Error ending game:', gameError);
         }
       } else {
-        // Continue with next player and new syllable
         const currentPlayerIndex = alivePlayers.findIndex(p => p.id === currentPlayer.id);
         let nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
         
-        // Skip dead players
         while (!remainingAlivePlayers.find(p => p.id === alivePlayers[nextPlayerIndex].id)) {
           nextPlayerIndex = (nextPlayerIndex + 1) % alivePlayers.length;
         }

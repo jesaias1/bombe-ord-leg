@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,20 +27,8 @@ export const GameRoom = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const gameLogic = useGameLogic();
-
-  const handleTimerExpired = async () => {
-    if (!game || !players.length) return;
-    
-    await gameLogic.handleTimerExpired(game, players);
-    const nextPlayerId = await gameLogic.nextTurn(game, players);
-    
-    if (nextPlayerId) {
-      await gameLogic.startNewRound(game, room!, nextPlayerId);
-    }
-  };
-
-  const timeLeft = useGameTimer(game, handleTimerExpired);
+  const gameLogic = useGameLogic(game, players, user?.id, room);
+  const timeLeft = useGameTimer(game, gameLogic.handleTimerExpired);
 
   useEffect(() => {
     if (!roomId || !user) return;
@@ -166,7 +155,7 @@ export const GameRoom = () => {
       .from('syllables')
       .select('syllable')
       .eq('difficulty', room.difficulty)
-      .gte('word_count', gameLogic.getDifficultyThreshold(room.difficulty));
+      .gte('word_count', 10);
 
     const randomSyllable = syllables?.[Math.floor(Math.random() * syllables.length)]?.syllable || 'ing';
 
@@ -189,16 +178,8 @@ export const GameRoom = () => {
 
   const handleWordSubmit = async (word: string) => {
     if (!game || !user) return;
-
-    const isValid = await gameLogic.validateAndSubmitWord(word, game, user.id);
-    if (isValid) {
-      console.log('Moving to next turn after successful word');
-      const nextPlayerId = await gameLogic.nextTurn(game, players);
-      
-      if (nextPlayerId) {
-        await gameLogic.startNewRound(game, room!, nextPlayerId);
-      }
-    }
+    gameLogic.setCurrentWord(word);
+    await gameLogic.submitWord();
   };
 
   if (loading) {
