@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -109,22 +110,28 @@ export const HomePage = () => {
           </p>
         </div>
 
-        {/* Word Importer - only visible for admin */}
+        {/* Admin section - visible when logged in as admin */}
         {isAdmin && (
-          <div className="mb-8 text-center">
-            <Button 
-              onClick={() => setShowWordImporter(!showWordImporter)}
-              variant="outline"
-              size="sm"
-            >
-              {showWordImporter ? "Skjul" : "Vis"} ordimporter
-            </Button>
-            
-            {showWordImporter && (
-              <div className="mt-4">
-                <WordImporter />
-              </div>
-            )}
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>🔧 Administrator Panel</span>
+                  <Button 
+                    onClick={() => setShowWordImporter(!showWordImporter)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {showWordImporter ? "Skjul" : "Vis"} ordimporter
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              {showWordImporter && (
+                <CardContent>
+                  <WordImporter />
+                </CardContent>
+              )}
+            </Card>
           </div>
         )}
 
