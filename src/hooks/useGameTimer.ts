@@ -1,14 +1,26 @@
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Tables } from '@/integrations/supabase/types';
 
 type Game = Tables<'games'>;
 
 export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
   const [timeLeft, setTimeLeft] = useState(0);
+  const intervalRef = useRef<number | null>(null);
   const hasExpiredRef = useRef(false);
+  const lastTimerEndTimeRef = useRef<string | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
+    // Clear any existing timer
+    clearTimer();
+    
     if (!game?.timer_end_time || game.status !== 'playing') {
       setTimeLeft(0);
       hasExpiredRef.current = false;
@@ -16,9 +28,12 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
     }
 
     // Reset expiration flag when timer changes
-    hasExpiredRef.current = false;
+    if (lastTimerEndTimeRef.current !== game.timer_end_time) {
+      hasExpiredRef.current = false;
+      lastTimerEndTimeRef.current = game.timer_end_time;
+    }
 
-    const interval = setInterval(() => {
+    const updateTimer = () => {
       const endTime = new Date(game.timer_end_time!).getTime();
       const now = new Date().getTime();
       const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
@@ -29,12 +44,21 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
       if (remaining === 0 && !hasExpiredRef.current) {
         hasExpiredRef.current = true;
         console.log('Timer expired, calling onTimerExpired');
+        clearTimer();
         onTimerExpired();
       }
-    }, 1000);
+    };
 
-    return () => clearInterval(interval);
-  }, [game?.timer_end_time, game?.status, onTimerExpired]);
+    // Initial update
+    updateTimer();
+
+    // Set up interval if timer hasn't expired
+    if (!hasExpiredRef.current) {
+      intervalRef.current = setInterval(updateTimer, 1000);
+    }
+
+    return clearTimer;
+  }, [game?.timer_end_time, game?.status, onTimerExpired, clearTimer]);
 
   return timeLeft;
 };

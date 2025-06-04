@@ -1,4 +1,5 @@
 
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
@@ -15,20 +16,15 @@ export const useTimerHandler = (
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
 
-  const handleTimerExpired = async () => {
-    if (!game || !room) {
-      console.log('No game or room available for timer expiration');
+  const handleTimerExpired = useCallback(async () => {
+    if (!game || !room || game.status !== 'playing') {
+      console.log('Timer expired but game is not in playing state');
       return;
     }
     
     const currentPlayer = players.find(p => p.id === game.current_player_id);
     if (!currentPlayer) {
       console.log('No current player found for timer expiration');
-      return;
-    }
-
-    if (!alivePlayers.length) {
-      console.log('No alive players found');
       return;
     }
 
@@ -55,14 +51,14 @@ export const useTimerHandler = (
       }
 
       // Calculate remaining alive players after this update
-      const remainingAlivePlayers = alivePlayers.filter(p => 
+      const updatedAlivePlayers = alivePlayers.filter(p => 
         p.id === currentPlayer.id ? !isNowDead : true
       );
 
-      console.log(`Remaining alive players: ${remainingAlivePlayers.length}`);
+      console.log(`Remaining alive players after update: ${updatedAlivePlayers.length}`);
 
       // Check if game should end
-      if (remainingAlivePlayers.length <= 1) {
+      if (updatedAlivePlayers.length <= 1) {
         console.log('Game ending - only 1 or fewer players remaining');
         
         const { error: gameError } = await supabase
@@ -71,6 +67,7 @@ export const useTimerHandler = (
             status: 'finished',
             current_player_id: null,
             timer_end_time: null,
+            current_syllable: null,
             updated_at: new Date().toISOString()
           })
           .eq('id', game.id);
@@ -85,9 +82,15 @@ export const useTimerHandler = (
         const currentPlayerIndex = alivePlayers.findIndex(p => p.id === currentPlayer.id);
         let nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
         
-        // Skip dead players
-        while (!remainingAlivePlayers.find(p => p.id === alivePlayers[nextPlayerIndex].id)) {
+        // Skip the current player if they're now dead
+        let attempts = 0;
+        while (attempts < alivePlayers.length) {
+          const candidatePlayer = alivePlayers[nextPlayerIndex];
+          if (candidatePlayer.id !== currentPlayer.id || !isNowDead) {
+            break;
+          }
           nextPlayerIndex = (nextPlayerIndex + 1) % alivePlayers.length;
+          attempts++;
         }
         
         const nextPlayer = alivePlayers[nextPlayerIndex];
@@ -96,12 +99,15 @@ export const useTimerHandler = (
         if (newSyllable) {
           console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
           
+          const timerDuration = game.timer_duration || 15;
+          const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
+
           const { error: gameError } = await supabase
             .from('games')
             .update({
               current_player_id: nextPlayer.id,
               current_syllable: newSyllable,
-              timer_end_time: new Date(Date.now() + (game.timer_duration || 15) * 1000).toISOString(),
+              timer_end_time: newTimerEndTime,
               updated_at: new Date().toISOString()
             })
             .eq('id', game.id);
@@ -117,7 +123,7 @@ export const useTimerHandler = (
       console.error('Error handling timer expiration:', err);
       toast.error('Fejl ved håndtering af timer udløb');
     }
-  };
+  }, [game, players, room, alivePlayers]);
 
   return { handleTimerExpired };
 };

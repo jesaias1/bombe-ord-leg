@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
@@ -20,7 +20,7 @@ export const useGameActions = (
 
   const alivePlayers = players.filter(player => player.is_alive);
 
-  const submitWord = async () => {
+  const submitWord = useCallback(async () => {
     if (!game || !currentWord.trim() || isSubmitting || game.status !== 'playing') return;
     
     setIsSubmitting(true);
@@ -55,6 +55,12 @@ export const useGameActions = (
       const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
       const nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
       const nextPlayer = alivePlayers[nextPlayerIndex];
+
+      if (!nextPlayer) {
+        console.error('No next player found');
+        setIsSubmitting(false);
+        return;
+      }
 
       // Select new random syllable
       const newSyllable = await selectRandomSyllable(room?.difficulty || 'mellem');
@@ -96,9 +102,9 @@ export const useGameActions = (
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [game, currentWord, isSubmitting, alivePlayers, room]);
 
-  const startGame = async () => {
+  const startGame = useCallback(async () => {
     if (!game || !room) return;
 
     try {
@@ -111,6 +117,11 @@ export const useGameActions = (
 
       const randomPlayerIndex = Math.floor(Math.random() * alivePlayers.length);
       const startingPlayer = alivePlayers[randomPlayerIndex];
+
+      if (!startingPlayer) {
+        toast.error('Ingen spillere tilgængelige');
+        return;
+      }
 
       const timerDuration = game.timer_duration || 15;
       const timerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
@@ -137,7 +148,7 @@ export const useGameActions = (
       console.error('Error starting game:', err);
       toast.error('Fejl ved start af spil');
     }
-  };
+  }, [game, room, alivePlayers]);
 
   return {
     currentWord,
