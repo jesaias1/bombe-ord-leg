@@ -140,10 +140,19 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         } else {
           onClose();
           resetForm();
-          toast({
-            title: "Velkommen tilbage!",
-            description: "Du er nu logget ind.",
-          });
+          
+          // Show admin-specific success message if this is the admin user
+          if (email === 'lin4s@live.dk') {
+            toast({
+              title: "Admin login successfuld!",
+              description: "Du er nu logget ind som administrator.",
+            });
+          } else {
+            toast({
+              title: "Velkommen tilbage!",
+              description: "Du er nu logget ind.",
+            });
+          }
         }
       }
     } catch (error: any) {
@@ -151,45 +160,6 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       toast({
         title: "Uventet fejl",
         description: "Noget gik galt. Prøv igen senere.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Quick admin login function
-  const handleAdminLogin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await signIn('lin4s@live.dk', 'miebs112');
-      if (error) {
-        if (error.message.includes('rate limit')) {
-          toast({
-            title: "For mange forsøg",
-            description: "Vent et øjeblik før du prøver igen.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Admin login fejl",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      } else {
-        onClose();
-        resetForm();
-        toast({
-          title: "Admin login successfuld!",
-          description: "Du er nu logget ind som administrator.",
-        });
-      }
-    } catch (error: any) {
-      console.error('Admin login error:', error);
-      toast({
-        title: "Admin login fejl",
-        description: "Kunne ikke logge ind som admin.",
         variant: "destructive",
       });
     } finally {
@@ -205,27 +175,6 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Quick Admin Login Button */}
-          <div className="text-center">
-            <Button
-              onClick={handleAdminLogin}
-              disabled={loading}
-              variant="outline"
-              className="w-full py-2 text-sm bg-blue-50 hover:bg-blue-100"
-            >
-              🔧 Admin Login (lin4s@live.dk)
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">eller</span>
-            </div>
-          </div>
-
           {/* Guest Play Section */}
           <div className="space-y-4">
             <div className="space-y-2">
