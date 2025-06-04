@@ -152,7 +152,7 @@ export const WordImporter = () => {
                 <p className="font-medium">Kilder:</p>
                 {Object.entries(importResult.sourceStats).map(([source, count]) => (
                   <p key={source} className="text-sm">
-                    {new URL(source).hostname}: {count} ord
+                    {new URL(source).hostname}: {typeof count === 'number' ? count : 0} ord
                   </p>
                 ))}
               </div>
