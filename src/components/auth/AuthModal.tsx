@@ -13,13 +13,21 @@ interface AuthModalProps {
 }
 
 export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
-  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, signInAnonymously } = useAuth();
   const { toast } = useToast();
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setDisplayName('');
+    setIsSignUp(false);
+    setLoading(false);
+  };
 
   const handleGuestPlay = async () => {
     if (!displayName.trim()) {
@@ -35,14 +43,16 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     try {
       await signInAnonymously(displayName);
       onClose();
+      resetForm();
       toast({
         title: "Velkommen!",
         description: "Du er nu klar til at spille som gæst.",
       });
     } catch (error: any) {
+      console.error('Guest login error:', error);
       toast({
         title: "Fejl",
-        description: error.message,
+        description: "Kunne ikke logge ind som gæst. Prøv igen.",
         variant: "destructive",
       });
     } finally {
@@ -64,28 +74,124 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
     setLoading(true);
     try {
-      await signIn(email, password);
-      onClose();
-      toast({
-        title: "Velkommen tilbage!",
-        description: "Du er nu logget ind.",
-      });
+      if (isSignUp) {
+        // Sign up flow
+        const { error } = await signUp(email, password, displayName || email.split('@')[0]);
+        if (error) {
+          // Handle specific signup errors
+          if (error.message.includes('rate limit')) {
+            toast({
+              title: "For mange forsøg",
+              description: "Vent et øjeblik før du prøver igen.",
+              variant: "destructive",
+            });
+          } else if (error.message.includes('already registered')) {
+            toast({
+              title: "Email allerede registreret",
+              description: "Prøv at logge ind i stedet.",
+              variant: "destructive",
+            });
+            setIsSignUp(false);
+          } else {
+            toast({
+              title: "Fejl ved oprettelse",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+        } else {
+          onClose();
+          resetForm();
+          toast({
+            title: "Konto oprettet!",
+            description: "Tjek din email for at bekræfte din konto.",
+          });
+        }
+      } else {
+        // Sign in flow
+        const { error } = await signIn(email, password);
+        if (error) {
+          // Handle specific signin errors
+          if (error.message.includes('rate limit')) {
+            toast({
+              title: "For mange forsøg",
+              description: "Vent et øjeblik før du prøver igen.",
+              variant: "destructive",
+            });
+          } else if (error.message.includes('Invalid login credentials')) {
+            toast({
+              title: "Forkerte loginoplysninger",
+              description: "Tjek din email og adgangskode.",
+              variant: "destructive",
+            });
+          } else if (error.message.includes('Email not confirmed')) {
+            toast({
+              title: "Email ikke bekræftet",
+              description: "Tjek din email og klik på bekræftelseslinket.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Login fejl",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+        } else {
+          onClose();
+          resetForm();
+          toast({
+            title: "Velkommen tilbage!",
+            description: "Du er nu logget ind.",
+          });
+        }
+      }
     } catch (error: any) {
-      // Try sign up if sign in fails
-      try {
-        await signUp(email, password, displayName || email.split('@')[0]);
+      console.error('Auth error:', error);
+      toast({
+        title: "Uventet fejl",
+        description: "Noget gik galt. Prøv igen senere.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Quick admin login function
+  const handleAdminLogin = async () => {
+    setLoading(true);
+    try {
+      const { error } = await signIn('lin4s@live.dk', 'miebs112');
+      if (error) {
+        if (error.message.includes('rate limit')) {
+          toast({
+            title: "For mange forsøg",
+            description: "Vent et øjeblik før du prøver igen.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Admin login fejl",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
         onClose();
+        resetForm();
         toast({
-          title: "Konto oprettet!",
-          description: "Du kan nu spille spillet.",
-        });
-      } catch (signUpError: any) {
-        toast({
-          title: "Fejl",
-          description: signUpError.message,
-          variant: "destructive",
+          title: "Admin login successfuld!",
+          description: "Du er nu logget ind som administrator.",
         });
       }
+    } catch (error: any) {
+      console.error('Admin login error:', error);
+      toast({
+        title: "Admin login fejl",
+        description: "Kunne ikke logge ind som admin.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -99,6 +205,28 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Quick Admin Login Button */}
+          <div className="text-center">
+            <Button
+              onClick={handleAdminLogin}
+              disabled={loading}
+              variant="outline"
+              className="w-full py-2 text-sm bg-blue-50 hover:bg-blue-100"
+            >
+              🔧 Admin Login (lin4s@live.dk)
+            </Button>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">eller</span>
+            </div>
+          </div>
+
+          {/* Guest Play Section */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="displayName" className="text-lg">Spillernavn</Label>
@@ -121,26 +249,34 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             </Button>
           </div>
 
-          <div className="text-center">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">eller</span>
-              </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">eller</span>
             </div>
           </div>
 
-          {!showEmailForm ? (
-            <Button
-              onClick={() => setShowEmailForm(true)}
-              variant="outline"
-              className="w-full"
-            >
-              Log ind med email
-            </Button>
-          ) : (
+          {/* Email Auth Section */}
+          <div className="space-y-4">
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => setIsSignUp(false)}
+                variant={!isSignUp ? "default" : "outline"}
+                className="flex-1"
+              >
+                Log ind
+              </Button>
+              <Button
+                onClick={() => setIsSignUp(true)}
+                variant={isSignUp ? "default" : "outline"}
+                className="flex-1"
+              >
+                Opret konto
+              </Button>
+            </div>
+
             <form onSubmit={handleEmailAuth} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -150,6 +286,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="din@email.dk"
+                  required
                 />
               </div>
               
@@ -161,23 +298,15 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Adgangskode"
+                  required
                 />
               </div>
               
-              <div className="flex gap-2">
-                <Button type="submit" disabled={loading} className="flex-1">
-                  {loading ? "Logger ind..." : "Log ind / Opret konto"}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowEmailForm(false)}
-                >
-                  Tilbage
-                </Button>
-              </div>
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Behandler..." : (isSignUp ? "Opret konto" : "Log ind")}
+              </Button>
             </form>
-          )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
