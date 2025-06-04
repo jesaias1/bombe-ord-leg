@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,10 +69,13 @@ export const GameRoom = () => {
         // Join as player
         const displayName = user.user_metadata?.display_name || user.email || 'Anonym';
         
+        // For guest users, we'll insert with a special user_id pattern
+        const userId = 'isGuest' in user && user.isGuest ? user.id : user.id;
+        
         const { error: playerError } = await supabase
           .from('players')
           .upsert({
-            user_id: user.id,
+            user_id: userId,
             room_id: roomId,
             name: displayName,
             lives: 3,

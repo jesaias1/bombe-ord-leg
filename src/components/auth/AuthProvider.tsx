@@ -3,13 +3,22 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+interface GuestUser {
+  id: string;
+  user_metadata: {
+    display_name: string;
+  };
+  email?: string;
+  isGuest: true;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: User | GuestUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
-  signInAnonymously: (displayName: string) => Promise<void>;
+  signInAsGuest: (displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,19 +32,39 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | GuestUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for guest user in localStorage
+    const guestUser = localStorage.getItem('guest_user');
+    if (guestUser) {
+      setUser(JSON.parse(guestUser));
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+      }
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+        // Clear guest user if real user logs in
+        localStorage.removeItem('guest_user');
+      } else {
+        // Check for guest user when no real session
+        const guestUser = localStorage.getItem('guest_user');
+        if (guestUser) {
+          setUser(JSON.parse(guestUser));
+        } else {
+          setUser(null);
+        }
+      }
       setLoading(false);
     });
 
@@ -44,6 +73,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Clear guest user when signing in with real account
+      localStorage.removeItem('guest_user');
+      
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
@@ -85,6 +117,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Clear guest user
+    localStorage.removeItem('guest_user');
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Sign out error:', error);
@@ -92,16 +127,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signInAnonymously = async (displayName: string) => {
-    const { error } = await supabase.auth.signInAnonymously({
-      options: {
-        data: { display_name: displayName }
-      }
-    });
-    if (error) {
-      console.error('Anonymous sign in error:', error);
-      throw error;
-    }
+  const signInAsGuest = async (displayName: string) => {
+    const guestUser: GuestUser = {
+      id: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      user_metadata: {
+        display_name: displayName
+      },
+      isGuest: true
+    };
+    
+    localStorage.setItem('guest_user', JSON.stringify(guestUser));
+    setUser(guestUser);
   };
 
   const value = {
@@ -110,7 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signOut,
-    signInAnonymously,
+    signInAsGuest,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

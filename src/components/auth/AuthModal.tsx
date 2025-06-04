@@ -18,7 +18,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInAnonymously } = useAuth();
+  const { signIn, signUp, signInAsGuest } = useAuth();
   const { toast } = useToast();
 
   const resetForm = () => {
@@ -41,7 +41,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
     setLoading(true);
     try {
-      await signInAnonymously(displayName);
+      await signInAsGuest(displayName);
       onClose();
       resetForm();
       toast({
