@@ -28,7 +28,7 @@ export const useGameActions = (
         isSubmitting, 
         status: game?.status 
       });
-      return;
+      return false;
     }
     
     console.log('Starting word submission process');
@@ -43,7 +43,7 @@ export const useGameActions = (
       if (game.used_words?.includes(trimmedWord)) {
         toast.error('Dette ord er allerede brugt!');
         setCurrentWord('');
-        return;
+        return false;
       }
 
       // Validate the word
@@ -52,7 +52,7 @@ export const useGameActions = (
       if (!isValid) {
         toast.error(`"${trimmedWord}" er ikke et gyldigt ord eller indeholder ikke "${game.current_syllable}"`);
         setCurrentWord('');
-        return;
+        return false;
       }
 
       // Find next player
@@ -62,7 +62,8 @@ export const useGameActions = (
 
       if (!nextPlayer) {
         console.error('No next player found');
-        return;
+        toast.error('Fejl: Kunne ikke finde næste spiller');
+        return false;
       }
 
       // Select new random syllable
@@ -70,7 +71,7 @@ export const useGameActions = (
       
       if (!newSyllable) {
         toast.error('Kunne ikke vælge ny stavelse');
-        return;
+        return false;
       }
 
       console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
@@ -82,7 +83,7 @@ export const useGameActions = (
       const timerDuration = game.timer_duration || 15;
       const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
 
-      // Update game in a single transaction-like operation
+      // Update game in database
       const { error } = await supabase
         .from('games')
         .update({
@@ -92,23 +93,24 @@ export const useGameActions = (
           timer_end_time: newTimerEndTime,
           updated_at: new Date().toISOString()
         })
-        .eq('id', game.id)
-        .eq('updated_at', game.updated_at); // Optimistic concurrency control
+        .eq('id', game.id);
 
       if (error) {
         console.error('Error updating game:', error);
         toast.error('Fejl ved opdatering af spil - prøv igen');
-        return;
+        return false;
       }
 
       // Success - clear the input and show success message
       setCurrentWord('');
       toast.success(`"${trimmedWord}" accepteret! Ny stavelse: "${newSyllable}"`);
       console.log('Word submission successful');
+      return true;
 
     } catch (err) {
       console.error('Error submitting word:', err);
       toast.error('Fejl ved indsendelse af ord - prøv igen');
+      return false;
     } finally {
       setIsSubmitting(false);
     }

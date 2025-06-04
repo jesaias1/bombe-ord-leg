@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface WordInputProps {
-  onSubmit: (word: string) => void;
+  onSubmit: (word: string) => Promise<boolean>;
   disabled: boolean;
   currentSyllable: string;
   placeholder?: string;
@@ -21,13 +21,20 @@ export const WordInput = ({
 }: WordInputProps) => {
   const [word, setWord] = useState('');
   const [error, setError] = useState('');
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
 
-  // Reset submission state when syllable changes
+  // Reset states when syllable changes
   useEffect(() => {
-    setHasSubmitted(false);
     setError('');
+    setIsLocalSubmitting(false);
   }, [currentSyllable]);
+
+  // Reset local submitting when parent isSubmitting changes
+  useEffect(() => {
+    if (!isSubmitting) {
+      setIsLocalSubmitting(false);
+    }
+  }, [isSubmitting]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,30 +49,34 @@ export const WordInput = ({
       return;
     }
 
-    if (hasSubmitted || isSubmitting) {
+    if (isLocalSubmitting || isSubmitting || disabled) {
       console.log('Preventing duplicate submission');
       return;
     }
 
-    setHasSubmitted(true);
+    setIsLocalSubmitting(true);
     setError('');
     
     try {
-      await onSubmit(word.trim().toLowerCase());
-      setWord('');
+      const success = await onSubmit(word.trim().toLowerCase());
+      if (success) {
+        setWord('');
+      }
     } catch (err) {
       console.error('Error in word submission:', err);
-      setHasSubmitted(false);
+      setError('Fejl ved indsendelse - prøv igen');
+    } finally {
+      setIsLocalSubmitting(false);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWord(e.target.value);
     if (error) setError('');
-    if (hasSubmitted && !isSubmitting) setHasSubmitted(false);
   };
 
-  const isDisabled = disabled || hasSubmitted || isSubmitting;
+  const isDisabled = disabled || isLocalSubmitting || isSubmitting;
+  const showSubmitting = isLocalSubmitting || isSubmitting;
 
   return (
     <div className="w-full max-w-md">
@@ -92,7 +103,7 @@ export const WordInput = ({
           disabled={isDisabled || !word.trim()}
           className="px-6"
         >
-          {isSubmitting ? 'Sender...' : 'Send'}
+          {showSubmitting ? 'Sender...' : 'Send'}
         </Button>
       </form>
     </div>

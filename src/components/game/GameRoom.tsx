@@ -184,10 +184,10 @@ export const GameRoom = () => {
       .eq('id', game.id);
   };
 
-  const handleWordSubmit = async (word: string) => {
-    if (!game || !user) return;
+  const handleWordSubmit = async (word: string): Promise<boolean> => {
+    if (!game || !user) return false;
     gameLogic.setCurrentWord(word);
-    await gameLogic.submitWord();
+    return await gameLogic.submitWord();
   };
 
   if (loading) {

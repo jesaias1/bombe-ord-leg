@@ -15,7 +15,7 @@ interface GamePlayingProps {
   isCurrentUser: boolean;
   isSinglePlayer: boolean;
   currentUserId?: string;
-  onWordSubmit: (word: string) => void;
+  onWordSubmit: (word: string) => Promise<boolean>;
   isSubmitting?: boolean;
 }
 
