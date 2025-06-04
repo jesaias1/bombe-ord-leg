@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { WordImporter } from '@/components/admin/WordImporter';
+import { useQuery } from '@tanstack/react-query';
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -22,6 +23,16 @@ export const HomePage = () => {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [loading, setLoading] = useState(false);
   const [showWordImporter, setShowWordImporter] = useState(false);
+
+  // Check if user is admin
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ['is-admin'],
+    queryFn: async () => {
+      if (!user) return false;
+      return user.email === 'lin4s@live.dk';
+    },
+    enabled: !!user
+  });
 
   const generateRoomId = () => {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -98,22 +109,24 @@ export const HomePage = () => {
           </p>
         </div>
 
-        {/* Word Importer - temporary admin section */}
-        <div className="mb-8 text-center">
-          <Button 
-            onClick={() => setShowWordImporter(!showWordImporter)}
-            variant="outline"
-            size="sm"
-          >
-            {showWordImporter ? "Skjul" : "Vis"} ordimporter
-          </Button>
-          
-          {showWordImporter && (
-            <div className="mt-4">
-              <WordImporter />
-            </div>
-          )}
-        </div>
+        {/* Word Importer - only visible for admin */}
+        {isAdmin && (
+          <div className="mb-8 text-center">
+            <Button 
+              onClick={() => setShowWordImporter(!showWordImporter)}
+              variant="outline"
+              size="sm"
+            >
+              {showWordImporter ? "Skjul" : "Vis"} ordimporter
+            </Button>
+            
+            {showWordImporter && (
+              <div className="mt-4">
+                <WordImporter />
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <Card>
