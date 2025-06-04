@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { importAllWords } from '@/utils/importDanishWords';
+import { ensureBasicWords } from '@/utils/ensureBasicWords';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -38,6 +39,10 @@ export const WordImporter = () => {
     setImportResult(null);
     
     try {
+      // First ensure basic words are available
+      await ensureBasicWords();
+      
+      // Then import comprehensive word lists from GitHub
       const result = await importAllWords();
       setImportResult(result);
     } catch (error) {
@@ -86,7 +91,7 @@ export const WordImporter = () => {
       <CardHeader>
         <CardTitle>Dansk Ord Importer</CardTitle>
         <CardDescription>
-          Importer en omfattende liste af danske ord til spildatabasen.
+          Importer omfattende danske ordlister fra GitHub repositories.
           Aktuelt antal ord i databasen: {wordCount.toLocaleString()}
         </CardDescription>
       </CardHeader>
@@ -111,7 +116,7 @@ export const WordImporter = () => {
         {isImporting && (
           <div className="space-y-2">
             <Progress value={undefined} className="w-full" />
-            <p className="text-sm text-gray-600">Importerer ord fra multiple kilder...</p>
+            <p className="text-sm text-gray-600">Importerer ord fra GitHub repositories...</p>
           </div>
         )}
         
@@ -129,11 +134,12 @@ export const WordImporter = () => {
         <div className="text-sm text-gray-600 space-y-1">
           <p><strong>Omfattende danske ordlister fra GitHub:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>Grundlæggende danske ord (20200419-Danish-words.txt)</li>
-            <li>Navneord og udsagnsord i alle former</li>
-            <li>Specialiserede ordlister og kategorier</li>
-            <li>Tusindvis af verificerede danske ord</li>
-            <li>Kontinuerligt opdateret fra multiple kilder</li>
+            <li>20200419-Danish-words.txt - Grundlæggende danske ord</li>
+            <li>danish-words.txt - Supplerende ordliste</li>
+            <li>lemmatization-da.txt - Lemmatiserede danske ord</li>
+            <li>Danish.dic - Ordbogs-format</li>
+            <li>Automatisk filtrering og deduplikering</li>
+            <li>Kun gyldige danske bogstaver (a-z, æ, ø, å)</li>
           </ul>
         </div>
       </CardContent>
