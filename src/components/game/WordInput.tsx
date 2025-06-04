@@ -82,6 +82,8 @@ export const WordInput = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Enter key pressed, submitting word:', word);
       handleSubmit();
     }
   };
@@ -91,7 +93,7 @@ export const WordInput = ({
 
   return (
     <div className="w-full max-w-md">
-      <form onSubmit={handleSubmit} className="flex space-x-2">
+      <div className="flex space-x-2">
         <div className="flex-1">
           <Input
             type="text"
@@ -111,13 +113,14 @@ export const WordInput = ({
           )}
         </div>
         <Button 
-          type="submit" 
+          type="button"
+          onClick={() => handleSubmit()}
           disabled={isDisabled || !word.trim()}
           className="px-6"
         >
           {showSubmitting ? 'Sender...' : 'Send'}
         </Button>
-      </form>
+      </div>
     </div>
   );
 };
