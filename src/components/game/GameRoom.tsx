@@ -84,7 +84,7 @@ export const GameRoom = () => {
         console.log('Game loaded/created successfully:', gameData);
         setGame(gameData);
 
-        // Join as player - use proper handling for guest vs authenticated users
+        // Join as player - improved handling for both guest and authenticated users
         const displayName = user.user_metadata?.display_name || user.email || 'Anonym';
         const userId = user.id;
         
@@ -95,25 +95,34 @@ export const GameRoom = () => {
           roomId 
         });
 
-        // First check if player already exists with detailed error logging
-        try {
-          const { data: existingPlayer, error: checkError } = await supabase
+        // Check if player already exists
+        const { data: existingPlayer, error: checkError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('room_id', roomId)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking existing player:', checkError);
+          // Don't throw here, try to create player anyway
+        }
+
+        if (existingPlayer) {
+          console.log('Player already exists:', existingPlayer);
+        } else {
+          // Create new player
+          console.log('Creating new player with data:', {
+            user_id: userId,
+            room_id: roomId,
+            name: displayName,
+            lives: 3,
+            is_alive: true
+          });
+
+          const { error: playerError } = await supabase
             .from('players')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('room_id', roomId)
-            .maybeSingle();
-
-          if (checkError) {
-            console.error('Error checking existing player:', checkError);
-            throw checkError;
-          }
-
-          if (existingPlayer) {
-            console.log('Player already exists:', existingPlayer);
-          } else {
-            // Create new player with detailed error logging
-            console.log('Creating new player with data:', {
+            .insert({
               user_id: userId,
               room_id: roomId,
               name: displayName,
@@ -121,31 +130,17 @@ export const GameRoom = () => {
               is_alive: true
             });
 
-            const { error: playerError } = await supabase
-              .from('players')
-              .insert({
-                user_id: userId,
-                room_id: roomId,
-                name: displayName,
-                lives: 3,
-                is_alive: true
-              });
-
-            if (playerError) {
-              console.error('Player creation error details:', {
-                error: playerError,
-                message: playerError.message,
-                details: playerError.details,
-                hint: playerError.hint,
-                code: playerError.code
-              });
-              throw playerError;
-            }
+          if (playerError) {
+            console.error('Player creation error:', playerError);
+            toast({
+              title: "Advarsel",
+              description: "Kunne ikke tilmelde dig spillet, men du kan stadig se det",
+              variant: "destructive",
+            });
+            // Don't throw here, allow user to view the game
+          } else {
             console.log('New player created successfully');
           }
-        } catch (playerErr: any) {
-          console.error('Player operation failed:', playerErr);
-          throw playerErr;
         }
 
         loadPlayers();
