@@ -39,12 +39,14 @@ export const WordInput = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!word.trim()) {
+    const trimmedWord = word.trim();
+    
+    if (!trimmedWord) {
       setError('Indtast et ord');
       return;
     }
 
-    if (!word.toLowerCase().includes(currentSyllable.toLowerCase())) {
+    if (!trimmedWord.toLowerCase().includes(currentSyllable.toLowerCase())) {
       setError(`Ordet skal indeholde "${currentSyllable}"`);
       return;
     }
@@ -58,7 +60,7 @@ export const WordInput = ({
     setError('');
     
     try {
-      const success = await onSubmit(word.trim().toLowerCase());
+      const success = await onSubmit(trimmedWord.toLowerCase());
       if (success) {
         setWord('');
       }
@@ -75,6 +77,13 @@ export const WordInput = ({
     if (error) setError('');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as any);
+    }
+  };
+
   const isDisabled = disabled || isLocalSubmitting || isSubmitting;
   const showSubmitting = isLocalSubmitting || isSubmitting;
 
@@ -86,6 +95,7 @@ export const WordInput = ({
             type="text"
             value={word}
             onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder || `Indtast et ord med "${currentSyllable}"`}
             disabled={isDisabled}
             className={cn(
