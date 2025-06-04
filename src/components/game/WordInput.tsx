@@ -36,8 +36,10 @@ export const WordInput = ({
     }
   }, [isSubmitting]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     
     const trimmedWord = word.trim();
     
@@ -77,10 +79,10 @@ export const WordInput = ({
     if (error) setError('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      handleSubmit(e as any);
+      handleSubmit();
     }
   };
 
@@ -95,7 +97,7 @@ export const WordInput = ({
             type="text"
             value={word}
             onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
+            onKeyPress={handleKeyPress}
             placeholder={placeholder || `Indtast et ord med "${currentSyllable}"`}
             disabled={isDisabled}
             className={cn(
