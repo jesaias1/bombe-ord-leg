@@ -56,7 +56,7 @@ export const GameRoom = () => {
           .from('games')
           .select('*')
           .eq('room_id', roomId)
-          .single();
+          .maybeSingle();
 
         if (!gameData) {
           console.log('No game found, creating new game for room:', roomId);
@@ -79,7 +79,7 @@ export const GameRoom = () => {
         console.log('Game loaded/created successfully:', gameData);
         setGame(gameData);
 
-        // Join as player
+        // Join as player - use proper handling for guest vs authenticated users
         const displayName = user.user_metadata?.display_name || user.email || 'Anonym';
         const userId = user.id;
         
@@ -89,25 +89,36 @@ export const GameRoom = () => {
           isGuest: 'isGuest' in user,
           roomId 
         });
-        
-        const { error: playerError } = await supabase
-          .from('players')
-          .upsert({
-            user_id: userId,
-            room_id: roomId,
-            name: displayName,
-            lives: 3,
-            is_alive: true
-          }, {
-            onConflict: 'user_id, room_id'
-          });
 
-        if (playerError) {
-          console.error('Player join error:', playerError);
-          throw playerError;
+        // First check if player already exists
+        const { data: existingPlayer } = await supabase
+          .from('players')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('room_id', roomId)
+          .maybeSingle();
+
+        if (existingPlayer) {
+          console.log('Player already exists:', existingPlayer);
+        } else {
+          // Create new player
+          const { error: playerError } = await supabase
+            .from('players')
+            .insert({
+              user_id: userId,
+              room_id: roomId,
+              name: displayName,
+              lives: 3,
+              is_alive: true
+            });
+
+          if (playerError) {
+            console.error('Player creation error:', playerError);
+            throw playerError;
+          }
+          console.log('New player created successfully');
         }
 
-        console.log('Player joined successfully');
         loadPlayers();
       } catch (error: any) {
         console.error('Error loading room:', error);
