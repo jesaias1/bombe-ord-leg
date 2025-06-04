@@ -40,7 +40,14 @@ export const HomePage = () => {
   };
 
   const createRoom = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Log ind påkrævet",
+        description: "Du skal være logget ind for at oprette et rum",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (!roomName.trim()) {
       toast({
@@ -55,6 +62,8 @@ export const HomePage = () => {
     try {
       const roomId = generateRoomId();
       
+      console.log('Creating room with user ID:', user.id);
+      
       const { error } = await supabase
         .from('rooms')
         .insert({
@@ -65,7 +74,10 @@ export const HomePage = () => {
           bonus_letters_enabled: bonusLetters,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Rum oprettet!",
@@ -77,7 +89,7 @@ export const HomePage = () => {
       console.error('Error creating room:', error);
       toast({
         title: "Fejl",
-        description: "Kunne ikke oprette rummet",
+        description: error.message || "Kunne ikke oprette rummet",
         variant: "destructive",
       });
     } finally {
@@ -86,6 +98,15 @@ export const HomePage = () => {
   };
 
   const joinRoom = () => {
+    if (!user) {
+      toast({
+        title: "Log ind påkrævet",
+        description: "Du skal være logget ind for at tilslutte dig et rum",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!joinRoomId.trim()) {
       toast({
         title: "Fejl",
@@ -108,6 +129,11 @@ export const HomePage = () => {
           <p className="text-xl text-gray-600">
             Multiplayer ordspil på dansk
           </p>
+          {!user && (
+            <p className="text-sm text-red-600 mt-4">
+              Du skal være logget ind for at spille
+            </p>
+          )}
         </div>
 
         {/* Admin section - visible when logged in as admin */}
@@ -149,12 +175,17 @@ export const HomePage = () => {
                   onChange={(e) => setRoomName(e.target.value)}
                   placeholder="Mit fantastiske rum"
                   maxLength={50}
+                  disabled={!user}
                 />
               </div>
 
               <div>
                 <Label htmlFor="difficulty">Vanskelighed</Label>
-                <Select value={difficulty} onValueChange={(value: 'let' | 'mellem' | 'svaer') => setDifficulty(value)}>
+                <Select 
+                  value={difficulty} 
+                  onValueChange={(value: 'let' | 'mellem' | 'svaer') => setDifficulty(value)}
+                  disabled={!user}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -171,6 +202,7 @@ export const HomePage = () => {
                   id="bonusLetters"
                   checked={bonusLetters}
                   onCheckedChange={setBonusLetters}
+                  disabled={!user}
                 />
                 <Label htmlFor="bonusLetters">Bonusbogstaver (Æ, Ø, Å)</Label>
               </div>
@@ -199,6 +231,7 @@ export const HomePage = () => {
                   placeholder="ABCD"
                   maxLength={4}
                   className="uppercase"
+                  disabled={!user}
                 />
               </div>
 
