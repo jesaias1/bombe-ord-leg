@@ -13,7 +13,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuest } = useAuth();
 
   return (
     <>
@@ -21,10 +21,10 @@ const AppContent = () => {
         <div className="fixed top-4 right-4 z-50">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600">
-              {user.user_metadata?.display_name || user.email}
+              {isGuest ? `Gæst: ${user.user_metadata?.display_name}` : user.email}
             </span>
             <Button onClick={signOut} variant="outline" size="sm">
-              Log ud
+              {isGuest ? "Forlad som gæst" : "Log ud"}
             </Button>
           </div>
         </div>

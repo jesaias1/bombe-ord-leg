@@ -11,11 +11,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { WordImporter } from '@/components/admin/WordImporter';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { useQuery } from '@tanstack/react-query';
 
 export const HomePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { toast } = useToast();
   
   const [roomName, setRoomName] = useState('');
@@ -24,15 +25,16 @@ export const HomePage = () => {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [loading, setLoading] = useState(false);
   const [showWordImporter, setShowWordImporter] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Check if user is admin
   const { data: isAdmin = false } = useQuery({
     queryKey: ['is-admin'],
     queryFn: async () => {
-      if (!user || 'isGuest' in user) return false;
+      if (!user || isGuest) return false;
       return user.email === 'lin4s@live.dk';
     },
-    enabled: !!user
+    enabled: !!user && !isGuest
   });
 
   const generateRoomId = () => {
@@ -41,11 +43,7 @@ export const HomePage = () => {
 
   const createRoom = async () => {
     if (!user) {
-      toast({
-        title: "Log ind påkrævet",
-        description: "Du skal være logget ind for at oprette et rum",
-        variant: "destructive",
-      });
+      setShowAuthModal(true);
       return;
     }
     
@@ -65,7 +63,7 @@ export const HomePage = () => {
       console.log('Creating room with user:', { 
         id: user.id, 
         displayName: user.user_metadata?.display_name,
-        isGuest: 'isGuest' in user 
+        isGuest 
       });
       
       const { error } = await supabase
@@ -108,11 +106,7 @@ export const HomePage = () => {
 
   const joinRoom = () => {
     if (!user) {
-      toast({
-        title: "Log ind påkrævet",
-        description: "Du skal være logget ind for at tilslutte dig et rum",
-        variant: "destructive",
-      });
+      setShowAuthModal(true);
       return;
     }
 
@@ -128,7 +122,7 @@ export const HomePage = () => {
     console.log('Joining room with user:', {
       id: user.id,
       displayName: user.user_metadata?.display_name,
-      isGuest: 'isGuest' in user
+      isGuest
     });
 
     navigate(`/room/${joinRoomId.trim().toUpperCase()}`);
@@ -145,13 +139,23 @@ export const HomePage = () => {
             Multiplayer ordspil på dansk
           </p>
           {!user && (
-            <p className="text-sm text-red-600 mt-4">
-              Du skal være logget ind for at spille
-            </p>
+            <div className="mt-6">
+              <Button onClick={() => setShowAuthModal(true)} size="lg">
+                🎮 Start spillet
+              </Button>
+              <p className="text-sm text-gray-500 mt-2">
+                Spil som gæst eller opret en konto
+              </p>
+            </div>
           )}
-          {user && 'isGuest' in user && (
+          {user && isGuest && (
             <p className="text-sm text-blue-600 mt-4">
               Spiller som gæst: {user.user_metadata?.display_name}
+            </p>
+          )}
+          {user && !isGuest && (
+            <p className="text-sm text-green-600 mt-4">
+              Logget ind som: {user.email}
             </p>
           )}
         </div>
@@ -181,103 +185,102 @@ export const HomePage = () => {
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Opret nyt rum</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="roomName">Rum navn</Label>
-                <Input
-                  id="roomName"
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  placeholder="Mit fantastiske rum"
-                  maxLength={50}
-                  disabled={!user}
-                />
-              </div>
+        {user && (
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle>Opret nyt rum</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="roomName">Rum navn</Label>
+                  <Input
+                    id="roomName"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    placeholder="Mit fantastiske rum"
+                    maxLength={50}
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="difficulty">Vanskelighed</Label>
-                <Select 
-                  value={difficulty} 
-                  onValueChange={(value: 'let' | 'mellem' | 'svaer') => setDifficulty(value)}
-                  disabled={!user}
+                <div>
+                  <Label htmlFor="difficulty">Vanskelighed</Label>
+                  <Select 
+                    value={difficulty} 
+                    onValueChange={(value: 'let' | 'mellem' | 'svaer') => setDifficulty(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="let">Let (500+ ord)</SelectItem>
+                      <SelectItem value="mellem">Mellem (300+ ord)</SelectItem>
+                      <SelectItem value="svaer">Svær (100+ ord)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="bonusLetters"
+                    checked={bonusLetters}
+                    onCheckedChange={setBonusLetters}
+                  />
+                  <Label htmlFor="bonusLetters">Bonusbogstaver (Æ, Ø, Å)</Label>
+                </div>
+
+                <Button 
+                  onClick={createRoom} 
+                  disabled={loading}
+                  className="w-full"
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="let">Let (500+ ord)</SelectItem>
-                    <SelectItem value="mellem">Mellem (300+ ord)</SelectItem>
-                    <SelectItem value="svaer">Svær (100+ ord)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  {loading ? "Opretter..." : "Opret rum"}
+                </Button>
+              </CardContent>
+            </Card>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="bonusLetters"
-                  checked={bonusLetters}
-                  onCheckedChange={setBonusLetters}
-                  disabled={!user}
-                />
-                <Label htmlFor="bonusLetters">Bonusbogstaver (Æ, Ø, Å)</Label>
-              </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Tilslut eksisterende rum</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="joinRoomId">Rum ID</Label>
+                  <Input
+                    id="joinRoomId"
+                    value={joinRoomId}
+                    onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
+                    placeholder="ABCD"
+                    maxLength={4}
+                    className="uppercase"
+                  />
+                </div>
 
-              <Button 
-                onClick={createRoom} 
-                disabled={loading || !user}
-                className="w-full"
-              >
-                {loading ? "Opretter..." : "Opret rum"}
-              </Button>
-            </CardContent>
-          </Card>
+                <Button 
+                  onClick={joinRoom}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Tilslut rum
+                </Button>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Tilslut eksisterende rum</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="joinRoomId">Rum ID</Label>
-                <Input
-                  id="joinRoomId"
-                  value={joinRoomId}
-                  onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                  placeholder="ABCD"
-                  maxLength={4}
-                  className="uppercase"
-                  disabled={!user}
-                />
-              </div>
-
-              <Button 
-                onClick={joinRoom}
-                disabled={!user}
-                className="w-full"
-                variant="outline"
-              >
-                Tilslut rum
-              </Button>
-
-              <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Sådan spiller du:</strong></p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Skriv et dansk ord der indeholder den viste stavelse</li>
-                  <li>Ord kan ikke genbruges i samme spil</li>
-                  <li>Du har 10-25 sekunder per tur</li>
-                  <li>Mister bomben? Du mister et liv!</li>
-                  <li>Sidste spiller tilbage vinder (eller træn solo!)</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                <div className="text-sm text-gray-600 space-y-2">
+                  <p><strong>Sådan spiller du:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Skriv et dansk ord der indeholder den viste stavelse</li>
+                    <li>Ord kan ikke genbruges i samme spil</li>
+                    <li>Du har 10-25 sekunder per tur</li>
+                    <li>Mister bomben? Du mister et liv!</li>
+                    <li>Sidste spiller tilbage vinder (eller træn solo!)</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 };

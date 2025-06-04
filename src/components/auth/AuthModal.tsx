@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,221 +15,132 @@ interface AuthModalProps {
 }
 
 export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [guestName, setGuestName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInAsGuest } = useAuth();
+  const { signInAsGuest } = useAuth();
   const { toast } = useToast();
 
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setDisplayName('');
-    setIsSignUp(false);
-    setLoading(false);
-  };
-
-  const handleGuestPlay = async () => {
-    if (!displayName.trim()) {
-      toast({
-        title: "Fejl",
-        description: "Indtast venligst dit spillernavn",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await signInAsGuest(displayName);
-      onClose();
-      resetForm();
-      toast({
-        title: "Velkommen!",
-        description: "Du er nu klar til at spille som gæst.",
-      });
-    } catch (error: any) {
-      console.error('Guest login error:', error);
-      toast({
-        title: "Fejl",
-        description: "Kunne ikke logge ind som gæst. Prøv igen.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        title: "Fejl", 
-        description: "Indtast både email og adgangskode",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
+
     try {
-      if (isSignUp) {
-        // Sign up flow
-        const { error } = await signUp(email, password, displayName || email.split('@')[0]);
-        if (error) {
-          // Handle specific signup errors
-          if (error.message.includes('rate limit')) {
-            toast({
-              title: "For mange forsøg",
-              description: "Vent et øjeblik før du prøver igen.",
-              variant: "destructive",
-            });
-          } else if (error.message.includes('already registered')) {
-            toast({
-              title: "Email allerede registreret",
-              description: "Prøv at logge ind i stedet.",
-              variant: "destructive",
-            });
-            setIsSignUp(false);
-          } else {
-            toast({
-              title: "Fejl ved oprettelse",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-        } else {
-          onClose();
-          resetForm();
-          toast({
-            title: "Konto oprettet!",
-            description: "Tjek din email for at bekræfte din konto.",
-          });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
         }
-      } else {
-        // Sign in flow
-        const { error } = await signIn(email, password);
-        if (error) {
-          // Handle specific signin errors
-          if (error.message.includes('rate limit')) {
-            toast({
-              title: "For mange forsøg",
-              description: "Vent et øjeblik før du prøver igen.",
-              variant: "destructive",
-            });
-          } else if (error.message.includes('Invalid login credentials')) {
-            toast({
-              title: "Forkerte loginoplysninger",
-              description: "Tjek din email og adgangskode.",
-              variant: "destructive",
-            });
-          } else if (error.message.includes('Email not confirmed')) {
-            toast({
-              title: "Email ikke bekræftet",
-              description: "Tjek din email og klik på bekræftelseslinket.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Login fejl",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-        } else {
-          onClose();
-          resetForm();
-          
-          // Show admin-specific success message if this is the admin user
-          if (email === 'lin4s@live.dk') {
-            toast({
-              title: "Admin login successfuld!",
-              description: "Du er nu logget ind som administrator.",
-            });
-          } else {
-            toast({
-              title: "Velkommen tilbage!",
-              description: "Du er nu logget ind.",
-            });
-          }
-        }
-      }
-    } catch (error: any) {
-      console.error('Auth error:', error);
+      });
+
+      if (error) throw error;
+
       toast({
-        title: "Uventet fejl",
-        description: "Noget gik galt. Prøv igen senere.",
+        title: "Konto oprettet!",
+        description: "Tjek din email for at bekræfte din konto",
+      });
+      onClose();
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Velkommen tilbage!",
+        description: "Du er nu logget ind",
+      });
+      onClose();
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestSignIn = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestName.trim()) {
+      toast({
+        title: "Fejl",
+        description: "Indtast et navn for at spille som gæst",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    signInAsGuest(guestName.trim());
+    toast({
+      title: "Velkommen!",
+      description: `Du spiller nu som gæst: ${guestName}`,
+    });
+    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl">🎮 Kom i gang!</DialogTitle>
+          <DialogTitle>Kom i gang med Ordbomben</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Guest Play Section */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="displayName" className="text-lg">Spillernavn</Label>
-              <Input
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Dit spillernavn"
-                className="text-lg py-3"
-                required
-              />
-            </div>
-            
-            <Button
-              onClick={handleGuestPlay}
-              disabled={loading}
-              className="w-full py-3 text-lg bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-            >
-              {loading ? "Starter spil..." : "🚀 Spil som gæst"}
-            </Button>
-          </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">eller</span>
-            </div>
-          </div>
+        <Tabs defaultValue="guest" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="guest">Gæst</TabsTrigger>
+            <TabsTrigger value="signin">Log ind</TabsTrigger>
+            <TabsTrigger value="signup">Opret konto</TabsTrigger>
+          </TabsList>
 
-          {/* Email Auth Section */}
-          <div className="space-y-4">
-            <div className="flex space-x-2">
-              <Button
-                onClick={() => setIsSignUp(false)}
-                variant={!isSignUp ? "default" : "outline"}
-                className="flex-1"
-              >
-                Log ind
+          <TabsContent value="guest" className="space-y-4">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium">Spil som gæst</h3>
+              <p className="text-sm text-gray-600">
+                Start med det samme - ingen konto påkrævet
+              </p>
+            </div>
+            <form onSubmit={handleGuestSignIn} className="space-y-4">
+              <div>
+                <Label htmlFor="guestName">Dit navn</Label>
+                <Input
+                  id="guestName"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="Indtast dit navn"
+                  maxLength={20}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                🎮 Spil som gæst
               </Button>
-              <Button
-                onClick={() => setIsSignUp(true)}
-                variant={isSignUp ? "default" : "outline"}
-                className="flex-1"
-              >
-                Opret konto
-              </Button>
-            </div>
+            </form>
+          </TabsContent>
 
-            <form onSubmit={handleEmailAuth} className="space-y-4">
-              <div className="space-y-2">
+          <TabsContent value="signin" className="space-y-4">
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -238,25 +151,52 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   required
                 />
               </div>
-              
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="password">Adgangskode</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Adgangskode"
                   required
                 />
               </div>
-              
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Behandler..." : (isSignUp ? "Opret konto" : "Log ind")}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Logger ind..." : "Log ind"}
               </Button>
             </form>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="signup" className="space-y-4">
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div>
+                <Label htmlFor="signupEmail">Email</Label>
+                <Input
+                  id="signupEmail"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="din@email.dk"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="signupPassword">Adgangskode</Label>
+                <Input
+                  id="signupPassword"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Opretter..." : "Opret konto"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
