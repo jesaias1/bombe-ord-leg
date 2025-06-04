@@ -6,7 +6,7 @@ type Game = Tables<'games'>;
 
 export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
   const [timeLeft, setTimeLeft] = useState(0);
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasExpiredRef = useRef(false);
   const lastTimerEndTimeRef = useRef<string | null>(null);
 
