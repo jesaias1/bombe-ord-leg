@@ -29,7 +29,7 @@ export const HomePage = () => {
   const { data: isAdmin = false } = useQuery({
     queryKey: ['is-admin'],
     queryFn: async () => {
-      if (!user) return false;
+      if (!user || 'isGuest' in user) return false;
       return user.email === 'lin4s@live.dk';
     },
     enabled: !!user
@@ -62,25 +62,30 @@ export const HomePage = () => {
     try {
       const roomId = generateRoomId();
       
-      console.log('Creating room with user ID:', user.id);
-      console.log('User type:', 'isGuest' in user ? 'guest' : 'authenticated');
-      
-      // For guest users, use their guest ID directly as creator_id
-      const creatorId = user.id;
+      console.log('Creating room with user:', { 
+        id: user.id, 
+        displayName: user.user_metadata?.display_name,
+        isGuest: 'isGuest' in user 
+      });
       
       const { error } = await supabase
         .from('rooms')
         .insert({
           id: roomId,
           name: roomName.trim(),
-          creator_id: creatorId,
+          creator_id: user.id,
           difficulty,
           bonus_letters_enabled: bonusLetters,
         });
 
       if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        console.error('Supabase error creating room:', error);
+        toast({
+          title: "Fejl",
+          description: `Kunne ikke oprette rummet: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
@@ -120,6 +125,12 @@ export const HomePage = () => {
       return;
     }
 
+    console.log('Joining room with user:', {
+      id: user.id,
+      displayName: user.user_metadata?.display_name,
+      isGuest: 'isGuest' in user
+    });
+
     navigate(`/room/${joinRoomId.trim().toUpperCase()}`);
   };
 
@@ -136,6 +147,11 @@ export const HomePage = () => {
           {!user && (
             <p className="text-sm text-red-600 mt-4">
               Du skal være logget ind for at spille
+            </p>
+          )}
+          {user && 'isGuest' in user && (
+            <p className="text-sm text-blue-600 mt-4">
+              Spiller som gæst: {user.user_metadata?.display_name}
             </p>
           )}
         </div>

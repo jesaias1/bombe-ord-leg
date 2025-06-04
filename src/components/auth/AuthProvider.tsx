@@ -36,16 +36,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for guest user in localStorage
+    // Check for guest user in localStorage first
     const guestUser = localStorage.getItem('guest_user');
     if (guestUser) {
-      setUser(JSON.parse(guestUser));
+      try {
+        const parsedGuestUser = JSON.parse(guestUser);
+        console.log('Found guest user in localStorage:', parsedGuestUser);
+        setUser(parsedGuestUser);
+      } catch (error) {
+        console.error('Error parsing guest user:', error);
+        localStorage.removeItem('guest_user');
+      }
     }
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        console.log('Found authenticated user:', session.user);
         setUser(session.user);
+        // Clear guest user if real user logs in
+        localStorage.removeItem('guest_user');
       }
       setLoading(false);
     });
@@ -53,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        console.log('Auth state changed - authenticated user:', session.user);
         setUser(session.user);
         // Clear guest user if real user logs in
         localStorage.removeItem('guest_user');
@@ -60,8 +71,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Check for guest user when no real session
         const guestUser = localStorage.getItem('guest_user');
         if (guestUser) {
-          setUser(JSON.parse(guestUser));
+          try {
+            const parsedGuestUser = JSON.parse(guestUser);
+            console.log('Auth state changed - using guest user:', parsedGuestUser);
+            setUser(parsedGuestUser);
+          } catch (error) {
+            console.error('Error parsing guest user:', error);
+            localStorage.removeItem('guest_user');
+            setUser(null);
+          }
         } else {
+          console.log('Auth state changed - no user');
           setUser(null);
         }
       }
@@ -136,6 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isGuest: true
     };
     
+    console.log('Creating guest user:', guestUser);
     localStorage.setItem('guest_user', JSON.stringify(guestUser));
     setUser(guestUser);
   };

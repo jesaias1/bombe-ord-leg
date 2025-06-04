@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +34,8 @@ export const GameRoom = () => {
 
     const loadRoomData = async () => {
       try {
+        console.log('Loading room data for room:', roomId, 'with user:', user.id);
+        
         // Load room
         const { data: roomData, error: roomError } = await supabase
           .from('rooms')
@@ -42,7 +43,12 @@ export const GameRoom = () => {
           .eq('id', roomId)
           .single();
 
-        if (roomError) throw roomError;
+        if (roomError) {
+          console.error('Room load error:', roomError);
+          throw roomError;
+        }
+        
+        console.log('Room loaded successfully:', roomData);
         setRoom(roomData);
 
         // Load or create game
@@ -53,6 +59,7 @@ export const GameRoom = () => {
           .single();
 
         if (!gameData) {
+          console.log('No game found, creating new game for room:', roomId);
           const { data: newGame, error: gameError } = await supabase
             .from('games')
             .insert({
@@ -62,18 +69,26 @@ export const GameRoom = () => {
             .select()
             .single();
 
-          if (gameError) throw gameError;
+          if (gameError) {
+            console.error('Game creation error:', gameError);
+            throw gameError;
+          }
           gameData = newGame;
         }
+        
+        console.log('Game loaded/created successfully:', gameData);
         setGame(gameData);
 
         // Join as player
         const displayName = user.user_metadata?.display_name || user.email || 'Anonym';
-        
-        // For guest users, use their guest ID directly
         const userId = user.id;
         
-        console.log('Attempting to join room with user:', { userId, displayName, isGuest: 'isGuest' in user });
+        console.log('Attempting to join room as player:', { 
+          userId, 
+          displayName, 
+          isGuest: 'isGuest' in user,
+          roomId 
+        });
         
         const { error: playerError } = await supabase
           .from('players')
@@ -92,6 +107,7 @@ export const GameRoom = () => {
           throw playerError;
         }
 
+        console.log('Player joined successfully');
         loadPlayers();
       } catch (error: any) {
         console.error('Error loading room:', error);
@@ -107,6 +123,7 @@ export const GameRoom = () => {
     };
 
     const loadPlayers = async () => {
+      console.log('Loading players for room:', roomId);
       const { data, error } = await supabase
         .from('players')
         .select('*')
@@ -114,7 +131,10 @@ export const GameRoom = () => {
         .order('joined_at');
 
       if (!error && data) {
+        console.log('Players loaded:', data);
         setPlayers(data);
+      } else if (error) {
+        console.error('Error loading players:', error);
       }
     };
 
@@ -126,6 +146,7 @@ export const GameRoom = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'games', filter: `room_id=eq.${roomId}` },
         (payload) => {
+          console.log('Game update received:', payload);
           if (payload.eventType === 'UPDATE') {
             setGame(payload.new as Game);
           }
@@ -133,7 +154,8 @@ export const GameRoom = () => {
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
-        () => {
+        (payload) => {
+          console.log('Players update received:', payload);
           loadPlayers();
         }
       )
