@@ -8,16 +8,38 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
     .from('syllables')
     .select('syllable')
     .eq('difficulty', difficulty)
-    .gt('word_count', 10);
+    .gte('word_count', 10)
+    .gte('length(syllable)', 2); // Ensure syllables are at least 2 characters
 
   if (error || !data || data.length === 0) {
     console.error('Error fetching syllables:', error);
-    return null;
+    
+    // Fallback to simple syllables if database query fails
+    const fallbackSyllables = {
+      'let': ['ing', 'end', 'er', 'en', 'de', 'le', 'se', 'te', 'ke', 're'],
+      'mellem': ['tion', 'ning', 'hed', 'ing', 'ende', 'ste', 'ling', 'ring', 'else', 'ner'],
+      'svaer': ['ation', 'ering', 'ation', 'ning', 'ende', 'ling', 'ring', 'else', 'hed', 'tion']
+    };
+    
+    const syllables = fallbackSyllables[difficulty];
+    const randomIndex = Math.floor(Math.random() * syllables.length);
+    return syllables[randomIndex];
   }
 
-  const randomIndex = Math.floor(Math.random() * data.length);
-  const selectedSyllable = data[randomIndex].syllable;
+  // Filter out very short or problematic syllables
+  const validSyllables = data.filter(s => 
+    s.syllable.length >= 2 && 
+    !['ng', 'st', 'nd', 'nt', 'mp', 'nk', 'sk', 'sp', 'sn'].includes(s.syllable.toLowerCase())
+  );
+
+  if (validSyllables.length === 0) {
+    console.warn('No valid syllables found, using fallback');
+    return 'ing'; // Safe fallback
+  }
+
+  const randomIndex = Math.floor(Math.random() * validSyllables.length);
+  const selectedSyllable = validSyllables[randomIndex].syllable;
   
-  console.log(`Selected syllable: "${selectedSyllable}" from ${data.length} available syllables`);
+  console.log(`Selected syllable: "${selectedSyllable}" from ${validSyllables.length} valid syllables`);
   return selectedSyllable;
 };

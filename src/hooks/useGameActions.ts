@@ -21,12 +21,14 @@ export const useGameActions = (
   const alivePlayers = players.filter(player => player.is_alive);
 
   const submitWord = async () => {
-    if (!game || !currentWord.trim() || isSubmitting) return;
+    if (!game || !currentWord.trim() || isSubmitting || game.status !== 'playing') return;
     
     setIsSubmitting(true);
     
     try {
       const trimmedWord = currentWord.toLowerCase().trim();
+      
+      console.log(`Submitting word: "${trimmedWord}" for syllable: "${game.current_syllable}"`);
       
       // Check if word was already used
       if (game.used_words?.includes(trimmedWord)) {
@@ -63,6 +65,12 @@ export const useGameActions = (
         return;
       }
 
+      console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
+
+      // Calculate new timer end time
+      const timerDuration = game.timer_duration || 15;
+      const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
+
       // Update game
       const { error } = await supabase
         .from('games')
@@ -70,7 +78,7 @@ export const useGameActions = (
           used_words: updatedUsedWords,
           current_player_id: nextPlayer.id,
           current_syllable: newSyllable,
-          timer_end_time: new Date(Date.now() + (game.timer_duration || 15) * 1000).toISOString(),
+          timer_end_time: newTimerEndTime,
           updated_at: new Date().toISOString()
         })
         .eq('id', game.id);
@@ -104,13 +112,17 @@ export const useGameActions = (
       const randomPlayerIndex = Math.floor(Math.random() * alivePlayers.length);
       const startingPlayer = alivePlayers[randomPlayerIndex];
 
+      const timerDuration = game.timer_duration || 15;
+      const timerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
+
       const { error } = await supabase
         .from('games')
         .update({
           status: 'playing',
           current_player_id: startingPlayer.id,
           current_syllable: startingSyllable,
-          timer_end_time: new Date(Date.now() + (game.timer_duration || 15) * 1000).toISOString(),
+          timer_end_time: timerEndTime,
+          used_words: [],
           updated_at: new Date().toISOString()
         })
         .eq('id', game.id);
