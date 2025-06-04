@@ -4,27 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { importAllWords } from '@/utils/importDanishWords';
+import { importEnhancedWords } from '@/utils/improvedWordImport';
 import { ensureBasicWords } from '@/utils/ensureBasicWords';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
 export const WordImporter = () => {
   const [isImporting, setIsImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ imported: number; errors: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; errors: number; sourceStats?: any } | null>(null);
 
-  // Check if user is admin by checking email directly (simplified approach)
+  // Check if user is admin
   const { data: isAdmin = false } = useQuery({
     queryKey: ['is-admin'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      // Only specific admin email
       return user.email === 'lin4s@live.dk';
     }
   });
 
   // Get word count
-  const { data: wordCount = 0 } = useQuery({
+  const { data: wordCount = 0, refetch: refetchWordCount } = useQuery({
     queryKey: ['word-count'],
     queryFn: async () => {
       const { count } = await supabase
@@ -34,19 +34,34 @@ export const WordImporter = () => {
     }
   });
 
-  const handleImport = async () => {
+  const handleStandardImport = async () => {
     setIsImporting(true);
     setImportResult(null);
     
     try {
-      // First ensure basic words are available
       await ensureBasicWords();
-      
-      // Then import comprehensive word lists from GitHub
       const result = await importAllWords();
       setImportResult(result);
+      refetchWordCount();
     } catch (error) {
-      console.error('Import failed:', error);
+      console.error('Standard import failed:', error);
+      setImportResult({ imported: 0, errors: 1 });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleEnhancedImport = async () => {
+    setIsImporting(true);
+    setImportResult(null);
+    
+    try {
+      await ensureBasicWords();
+      const result = await importEnhancedWords();
+      setImportResult(result);
+      refetchWordCount();
+    } catch (error) {
+      console.error('Enhanced import failed:', error);
       setImportResult({ imported: 0, errors: 1 });
     } finally {
       setIsImporting(false);
@@ -68,7 +83,7 @@ export const WordImporter = () => {
         console.error('Error clearing words:', error);
       } else {
         setImportResult({ imported: 0, errors: 0 });
-        window.location.reload();
+        refetchWordCount();
       }
     } catch (error) {
       console.error('Clear failed:', error);
@@ -96,13 +111,20 @@ export const WordImporter = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <Button 
-            onClick={handleImport} 
+            onClick={handleStandardImport} 
             disabled={isImporting}
-            className="flex-1"
+            variant="outline"
           >
-            {isImporting ? 'Importerer...' : 'Start Import'}
+            {isImporting ? 'Importerer...' : 'Standard Import'}
+          </Button>
+          <Button 
+            onClick={handleEnhancedImport} 
+            disabled={isImporting}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isImporting ? 'Importerer...' : 'Forbedret Import'}
           </Button>
           <Button 
             onClick={clearWords} 
@@ -116,7 +138,7 @@ export const WordImporter = () => {
         {isImporting && (
           <div className="space-y-2">
             <Progress value={undefined} className="w-full" />
-            <p className="text-sm text-gray-600">Importerer ord fra GitHub repositories...</p>
+            <p className="text-sm text-gray-600">Importerer ord fra flere kilder...</p>
           </div>
         )}
         
@@ -125,6 +147,16 @@ export const WordImporter = () => {
             <h3 className="font-semibold mb-2">Import Resultat:</h3>
             <p>Importerede ord: {importResult.imported.toLocaleString()}</p>
             <p>Fejl: {importResult.errors}</p>
+            {importResult.sourceStats && (
+              <div className="mt-2">
+                <p className="font-medium">Kilder:</p>
+                {Object.entries(importResult.sourceStats).map(([source, count]) => (
+                  <p key={source} className="text-sm">
+                    {new URL(source).hostname}: {count} ord
+                  </p>
+                ))}
+              </div>
+            )}
             {importResult.imported > 0 && (
               <p className="text-green-600 font-medium">Import gennemført succesfuldt!</p>
             )}
@@ -132,14 +164,13 @@ export const WordImporter = () => {
         )}
         
         <div className="text-sm text-gray-600 space-y-1">
-          <p><strong>Omfattende danske ordlister fra GitHub:</strong></p>
+          <p><strong>Standard Import:</strong> Grundlæggende danske ordlister</p>
+          <p><strong>Forbedret Import:</strong> Omfattende ordsamling fra flere kilder inklusiv:</p>
           <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>20200419-Danish-words.txt - Grundlæggende danske ord</li>
-            <li>danish-words.txt - Supplerende ordliste</li>
-            <li>lemmatization-da.txt - Lemmatiserede danske ord</li>
-            <li>Danish.dic - Ordbogs-format</li>
-            <li>Automatisk filtrering og deduplikering</li>
-            <li>Kun gyldige danske bogstaver (a-z, æ, ø, å)</li>
+            <li>LibreOffice ordbøger</li>
+            <li>Frekvensbaserede ordlister</li>
+            <li>Lemmatiserede danske ord</li>
+            <li>Forbedret filtrering og kvalitetskontrol</li>
           </ul>
         </div>
       </CardContent>
