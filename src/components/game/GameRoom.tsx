@@ -84,14 +84,15 @@ export const GameRoom = () => {
         console.log('Game loaded/created successfully:', gameData);
         setGame(gameData);
 
-        // Join as player - improved handling for both guest and authenticated users
-        const displayName = user.user_metadata?.display_name || user.email || 'Anonym';
+        // Join as player - enhanced guest support
+        const displayName = user.user_metadata?.display_name || user.email || 'Gæst';
         const userId = user.id;
+        const isGuest = userId.startsWith('guest_');
         
         console.log('Attempting to join room as player:', { 
           userId, 
           displayName, 
-          isGuest: 'isGuest' in user,
+          isGuest,
           roomId 
         });
 
@@ -105,41 +106,65 @@ export const GameRoom = () => {
 
         if (checkError) {
           console.error('Error checking existing player:', checkError);
-          // Don't throw here, try to create player anyway
         }
 
         if (existingPlayer) {
           console.log('Player already exists:', existingPlayer);
         } else {
-          // Create new player
-          console.log('Creating new player with data:', {
+          // Create new player with better error handling for guests
+          const playerData = {
             user_id: userId,
             room_id: roomId,
             name: displayName,
             lives: 3,
             is_alive: true
-          });
+          };
 
-          const { error: playerError } = await supabase
+          console.log('Creating new player with data:', playerData);
+
+          const { data: newPlayer, error: playerError } = await supabase
             .from('players')
-            .insert({
-              user_id: userId,
-              room_id: roomId,
-              name: displayName,
-              lives: 3,
-              is_alive: true
-            });
+            .insert(playerData)
+            .select()
+            .single();
 
           if (playerError) {
-            console.error('Player creation error:', playerError);
-            toast({
-              title: "Advarsel",
-              description: "Kunne ikke tilmelde dig spillet, men du kan stadig se det",
-              variant: "destructive",
+            console.error('Player creation error:', {
+              error: playerError,
+              code: playerError.code,
+              message: playerError.message,
+              details: playerError.details,
+              hint: playerError.hint,
+              playerData
             });
-            // Don't throw here, allow user to view the game
+            
+            // More specific error messages for different error types
+            if (playerError.code === '23505') {
+              toast({
+                title: "Du er allerede i spillet",
+                description: "Du deltager allerede i dette spil",
+                variant: "default",
+              });
+            } else if (playerError.code === '23503') {
+              toast({
+                title: "Rum ikke fundet",
+                description: "Dette spillerum eksisterer ikke længere",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: isGuest ? "Gæst kunne ikke tilmeldes" : "Kunne ikke tilmelde",
+                description: `Fejl: ${playerError.message}. Du kan stadig se spillet.`,
+                variant: "destructive",
+              });
+            }
           } else {
-            console.log('New player created successfully');
+            console.log('New player created successfully:', newPlayer);
+            toast({
+              title: "Velkommen til spillet!",
+              description: `Du deltager nu som ${displayName}`,
+              variant: "default",
+            });
           }
         }
 
