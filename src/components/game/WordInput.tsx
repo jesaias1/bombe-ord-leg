@@ -79,7 +79,7 @@ export const WordInput = ({
     if (error) setError('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSubmit();
@@ -97,7 +97,7 @@ export const WordInput = ({
             type="text"
             value={word}
             onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder || `Indtast et ord med "${currentSyllable}"`}
             disabled={isDisabled}
             className={cn(
