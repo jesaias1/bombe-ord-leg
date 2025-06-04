@@ -76,9 +76,12 @@ export const useTimerHandler = (
           console.error('Error ending game:', gameError);
         }
 
-        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`} - Spillet er slut!`);
+        // Show quick toast and end
+        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`} - Spillet er slut!`, {
+          duration: 2000
+        });
       } else {
-        // Continue game with next player
+        // Continue game with next player - faster transition
         const currentPlayerIndex = alivePlayers.findIndex(p => p.id === currentPlayer.id);
         let nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
         
@@ -100,6 +103,7 @@ export const useTimerHandler = (
           console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
           
           const timerDuration = game.timer_duration || 15;
+          // Start timer immediately for faster transition
           const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
 
           const { error: gameError } = await supabase
@@ -117,11 +121,16 @@ export const useTimerHandler = (
           }
         }
 
-        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`}`);
+        // Show quick toast for faster gameplay
+        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`}`, {
+          duration: 1500
+        });
       }
     } catch (err) {
       console.error('Error handling timer expiration:', err);
-      toast.error('Fejl ved håndtering af timer udløb');
+      toast.error('Fejl ved håndtering af timer udløb', {
+        duration: 1500
+      });
     }
   }, [game, players, room, alivePlayers]);
 
