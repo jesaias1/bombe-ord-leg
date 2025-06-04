@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,13 +9,27 @@ interface WordInputProps {
   disabled: boolean;
   currentSyllable: string;
   placeholder?: string;
+  isSubmitting?: boolean;
 }
 
-export const WordInput = ({ onSubmit, disabled, currentSyllable, placeholder }: WordInputProps) => {
+export const WordInput = ({ 
+  onSubmit, 
+  disabled, 
+  currentSyllable, 
+  placeholder,
+  isSubmitting = false 
+}: WordInputProps) => {
   const [word, setWord] = useState('');
   const [error, setError] = useState('');
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reset submission state when syllable changes
+  useEffect(() => {
+    setHasSubmitted(false);
+    setError('');
+  }, [currentSyllable]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!word.trim()) {
@@ -28,15 +42,30 @@ export const WordInput = ({ onSubmit, disabled, currentSyllable, placeholder }: 
       return;
     }
 
-    onSubmit(word.trim().toLowerCase());
-    setWord('');
+    if (hasSubmitted || isSubmitting) {
+      console.log('Preventing duplicate submission');
+      return;
+    }
+
+    setHasSubmitted(true);
     setError('');
+    
+    try {
+      await onSubmit(word.trim().toLowerCase());
+      setWord('');
+    } catch (err) {
+      console.error('Error in word submission:', err);
+      setHasSubmitted(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWord(e.target.value);
     if (error) setError('');
+    if (hasSubmitted && !isSubmitting) setHasSubmitted(false);
   };
+
+  const isDisabled = disabled || hasSubmitted || isSubmitting;
 
   return (
     <div className="w-full max-w-md">
@@ -47,7 +76,7 @@ export const WordInput = ({ onSubmit, disabled, currentSyllable, placeholder }: 
             value={word}
             onChange={handleInputChange}
             placeholder={placeholder || `Indtast et ord med "${currentSyllable}"`}
-            disabled={disabled}
+            disabled={isDisabled}
             className={cn(
               "text-lg",
               error && "border-red-500 focus:border-red-500"
@@ -60,10 +89,10 @@ export const WordInput = ({ onSubmit, disabled, currentSyllable, placeholder }: 
         </div>
         <Button 
           type="submit" 
-          disabled={disabled || !word.trim()}
+          disabled={isDisabled || !word.trim()}
           className="px-6"
         >
-          Send
+          {isSubmitting ? 'Sender...' : 'Send'}
         </Button>
       </form>
     </div>

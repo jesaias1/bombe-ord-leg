@@ -228,6 +228,7 @@ export const GameRoom = () => {
             isSinglePlayer={isSinglePlayer}
             currentUserId={user?.id}
             onWordSubmit={handleWordSubmit}
+            isSubmitting={gameLogic.isSubmitting}
           />
         )}
 

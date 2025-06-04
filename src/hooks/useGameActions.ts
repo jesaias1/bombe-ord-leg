@@ -21,8 +21,17 @@ export const useGameActions = (
   const alivePlayers = players.filter(player => player.is_alive);
 
   const submitWord = useCallback(async () => {
-    if (!game || !currentWord.trim() || isSubmitting || game.status !== 'playing') return;
+    if (!game || !currentWord.trim() || isSubmitting || game.status !== 'playing') {
+      console.log('Submission blocked:', { 
+        hasGame: !!game, 
+        hasWord: !!currentWord.trim(), 
+        isSubmitting, 
+        status: game?.status 
+      });
+      return;
+    }
     
+    console.log('Starting word submission process');
     setIsSubmitting(true);
     
     try {
@@ -34,7 +43,6 @@ export const useGameActions = (
       if (game.used_words?.includes(trimmedWord)) {
         toast.error('Dette ord er allerede brugt!');
         setCurrentWord('');
-        setIsSubmitting(false);
         return;
       }
 
@@ -44,13 +52,9 @@ export const useGameActions = (
       if (!isValid) {
         toast.error(`"${trimmedWord}" er ikke et gyldigt ord eller indeholder ikke "${game.current_syllable}"`);
         setCurrentWord('');
-        setIsSubmitting(false);
         return;
       }
 
-      // Add word to used words
-      const updatedUsedWords = [...(game.used_words || []), trimmedWord];
-      
       // Find next player
       const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
       const nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
@@ -58,7 +62,6 @@ export const useGameActions = (
 
       if (!nextPlayer) {
         console.error('No next player found');
-        setIsSubmitting(false);
         return;
       }
 
@@ -67,17 +70,19 @@ export const useGameActions = (
       
       if (!newSyllable) {
         toast.error('Kunne ikke vælge ny stavelse');
-        setIsSubmitting(false);
         return;
       }
 
       console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
 
+      // Add word to used words
+      const updatedUsedWords = [...(game.used_words || []), trimmedWord];
+      
       // Calculate new timer end time
       const timerDuration = game.timer_duration || 15;
       const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
 
-      // Update game
+      // Update game in a single transaction-like operation
       const { error } = await supabase
         .from('games')
         .update({
@@ -87,18 +92,23 @@ export const useGameActions = (
           timer_end_time: newTimerEndTime,
           updated_at: new Date().toISOString()
         })
-        .eq('id', game.id);
+        .eq('id', game.id)
+        .eq('updated_at', game.updated_at); // Optimistic concurrency control
 
       if (error) {
         console.error('Error updating game:', error);
-        toast.error('Fejl ved opdatering af spil');
-      } else {
-        toast.success(`"${trimmedWord}" accepteret! Ny stavelse: "${newSyllable}"`);
-        setCurrentWord('');
+        toast.error('Fejl ved opdatering af spil - prøv igen');
+        return;
       }
+
+      // Success - clear the input and show success message
+      setCurrentWord('');
+      toast.success(`"${trimmedWord}" accepteret! Ny stavelse: "${newSyllable}"`);
+      console.log('Word submission successful');
+
     } catch (err) {
       console.error('Error submitting word:', err);
-      toast.error('Fejl ved indsendelse af ord');
+      toast.error('Fejl ved indsendelse af ord - prøv igen');
     } finally {
       setIsSubmitting(false);
     }

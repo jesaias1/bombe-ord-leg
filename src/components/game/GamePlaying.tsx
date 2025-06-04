@@ -16,6 +16,7 @@ interface GamePlayingProps {
   isSinglePlayer: boolean;
   currentUserId?: string;
   onWordSubmit: (word: string) => void;
+  isSubmitting?: boolean;
 }
 
 export const GamePlaying = ({
@@ -26,7 +27,8 @@ export const GamePlaying = ({
   isCurrentUser,
   isSinglePlayer,
   currentUserId,
-  onWordSubmit
+  onWordSubmit,
+  isSubmitting = false
 }: GamePlayingProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -54,6 +56,7 @@ export const GamePlaying = ({
             onSubmit={onWordSubmit}
             disabled={!isCurrentUser || timeLeft <= 0}
             currentSyllable={game.current_syllable || ''}
+            isSubmitting={isSubmitting}
           />
 
           {game.used_words && game.used_words.length > 0 && (
