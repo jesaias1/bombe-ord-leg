@@ -63,13 +63,17 @@ export const HomePage = () => {
       const roomId = generateRoomId();
       
       console.log('Creating room with user ID:', user.id);
+      console.log('User type:', 'isGuest' in user ? 'guest' : 'authenticated');
+      
+      // For guest users, use their guest ID directly as creator_id
+      const creatorId = user.id;
       
       const { error } = await supabase
         .from('rooms')
         .insert({
           id: roomId,
           name: roomName.trim(),
-          creator_id: user.id,
+          creator_id: creatorId,
           difficulty,
           bonus_letters_enabled: bonusLetters,
         });

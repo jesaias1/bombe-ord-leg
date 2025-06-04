@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,8 +70,10 @@ export const GameRoom = () => {
         // Join as player
         const displayName = user.user_metadata?.display_name || user.email || 'Anonym';
         
-        // For guest users, we'll insert with a special user_id pattern
-        const userId = 'isGuest' in user && user.isGuest ? user.id : user.id;
+        // For guest users, use their guest ID directly
+        const userId = user.id;
+        
+        console.log('Attempting to join room with user:', { userId, displayName, isGuest: 'isGuest' in user });
         
         const { error: playerError } = await supabase
           .from('players')
@@ -84,14 +87,17 @@ export const GameRoom = () => {
             onConflict: 'user_id, room_id'
           });
 
-        if (playerError) throw playerError;
+        if (playerError) {
+          console.error('Player join error:', playerError);
+          throw playerError;
+        }
 
         loadPlayers();
       } catch (error: any) {
         console.error('Error loading room:', error);
         toast({
           title: "Fejl",
-          description: "Kunne ikke indlæse rummet",
+          description: error.message || "Kunne ikke indlæse rummet",
           variant: "destructive",
         });
         navigate('/');
