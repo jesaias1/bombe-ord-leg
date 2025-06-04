@@ -151,17 +151,23 @@ export const GameRoom = () => {
       return;
     }
 
+    // Use improved syllable selection
+    const { selectRandomSyllable } = await import('@/utils/syllableSelection');
+    const randomSyllable = await selectRandomSyllable(room.difficulty);
+    
+    if (!randomSyllable) {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke vælge startstavelse",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const firstPlayer = alivePlayers[0];
     
-    const { data: syllables } = await supabase
-      .from('syllables')
-      .select('syllable')
-      .eq('difficulty', room.difficulty)
-      .gte('word_count', 10);
-
-    const randomSyllable = syllables?.[Math.floor(Math.random() * syllables.length)]?.syllable || 'ing';
-
-    const timerDuration = Math.floor(Math.random() * 16) + 10;
+    // More varied timer duration
+    const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
     const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
     await supabase

@@ -29,14 +29,14 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
       .from('syllables')
       .select('syllable, word_count')
       .eq('difficulty', difficulty)
-      .gte('word_count', 20) // Higher threshold for better word coverage
+      .gte('word_count', 15) // Slightly lower threshold for more variety
       .gte('length(syllable)', 2)
       .lte('length(syllable)', 4)
       .order('word_count', { ascending: false })
-      .limit(100);
+      .limit(200); // Increased limit for more variety
 
     if (data && data.length > 0) {
-      // Filter out problematic syllables and ensure they're good for gameplay
+      // Filter out problematic syllables but be less restrictive for better variety
       const validSyllables = data.filter(s => {
         const syllable = s.syllable.toLowerCase();
         return (
@@ -44,43 +44,57 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
           syllable.length <= 4 &&
           // Must contain at least one vowel
           /[aeiouyæøå]/.test(syllable) &&
-          // Exclude consonant clusters that are hard to use
-          !['ng', 'st', 'nd', 'nt', 'mp', 'nk', 'sk', 'sp', 'sn', 'sl', 'sm', 'sw', 'tw', 'dw', 'kw', 'ck', 'ft', 'pt', 'kt'].includes(syllable) &&
-          // Avoid starting with double consonants
-          !/^[bcdfghjklmnpqrstvwxz]{2}/.test(syllable) &&
-          // Ensure it's pronounceable (no triple consonants)
-          !/[bcdfghjklmnpqrstvwxz]{3}/.test(syllable) &&
+          // Only exclude the most problematic consonant clusters
+          !['ck', 'ft', 'pt', 'kt', 'xt', 'mp'].includes(syllable) &&
+          // Avoid starting with triple consonants
+          !/^[bcdfghjklmnpqrstvwxz]{3}/.test(syllable) &&
           // Exclude single consonants
           syllable.length > 1
         );
       });
 
       if (validSyllables.length > 0) {
-        // Weight selection towards syllables with more words
-        const weightedSelection = [];
-        for (const syllableData of validSyllables) {
-          const weight = Math.min(syllableData.word_count, 100); // Cap weight at 100
-          for (let i = 0; i < weight; i++) {
-            weightedSelection.push(syllableData.syllable);
-          }
-        }
+        // Use a more balanced approach - mix random selection with weighted selection
+        const useRandomSelection = Math.random() < 0.5; // 50% chance for pure random
         
-        const randomIndex = Math.floor(Math.random() * weightedSelection.length);
-        const selectedSyllable = weightedSelection[randomIndex];
-        console.log(`Selected syllable from database: "${selectedSyllable}"`);
-        return selectedSyllable;
+        if (useRandomSelection || validSyllables.length < 10) {
+          // Pure random selection for better variety
+          const randomIndex = Math.floor(Math.random() * validSyllables.length);
+          const selectedSyllable = validSyllables[randomIndex].syllable;
+          console.log(`Selected syllable from database (random): "${selectedSyllable}"`);
+          return selectedSyllable;
+        } else {
+          // Weighted selection but with reduced weight differences
+          const weightedSelection = [];
+          for (const syllableData of validSyllables) {
+            const weight = Math.min(Math.max(syllableData.word_count / 5, 1), 10); // Reduced weight range
+            for (let i = 0; i < weight; i++) {
+              weightedSelection.push(syllableData.syllable);
+            }
+          }
+          
+          const randomIndex = Math.floor(Math.random() * weightedSelection.length);
+          const selectedSyllable = weightedSelection[randomIndex];
+          console.log(`Selected syllable from database (weighted): "${selectedSyllable}"`);
+          return selectedSyllable;
+        }
       }
     }
   } catch (error) {
     console.error('Error fetching syllables from database:', error);
   }
 
-  // Fallback to curated syllables
+  // Fallback to curated syllables with better shuffling
   console.log('Using fallback curated syllables');
-  const syllables = CURATED_SYLLABLES[difficulty];
-  const randomIndex = Math.floor(Math.random() * syllables.length);
-  const selectedSyllable = syllables[randomIndex];
+  const syllables = [...CURATED_SYLLABLES[difficulty]]; // Create a copy
   
+  // Fisher-Yates shuffle for better randomization
+  for (let i = syllables.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [syllables[i], syllables[j]] = [syllables[j], syllables[i]];
+  }
+  
+  const selectedSyllable = syllables[0];
   console.log(`Selected fallback syllable: "${selectedSyllable}"`);
   return selectedSyllable;
 };
