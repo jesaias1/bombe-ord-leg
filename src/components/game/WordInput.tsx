@@ -24,14 +24,27 @@ export const WordInput = ({
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset states when syllable changes
+  // Focus input when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Reset states when syllable changes and refocus
   useEffect(() => {
     setError('');
     setIsLocalSubmitting(false);
     // Refocus input when syllable changes
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    const timer = setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
   }, [currentSyllable]);
 
   // Reset local submitting when parent isSubmitting changes
@@ -68,9 +81,11 @@ export const WordInput = ({
       if (success) {
         setWord('');
         // Refocus input after successful submission
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 100);
       }
     } catch (err) {
       console.error('Error in word submission:', err);
@@ -86,13 +101,21 @@ export const WordInput = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    console.log('Key pressed:', e.key, 'Current word:', word);
+    console.log('Key pressed:', e.key, 'Current word:', word, 'Input focused:', document.activeElement === inputRef.current);
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
       console.log('Enter key detected, calling handleSubmit');
       handleSubmit();
     }
+  };
+
+  const handleInputFocus = () => {
+    console.log('Input focused');
+  };
+
+  const handleInputBlur = () => {
+    console.log('Input blurred');
   };
 
   const isDisabled = disabled || isLocalSubmitting || isSubmitting;
@@ -108,6 +131,8 @@ export const WordInput = ({
             value={word}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             placeholder={placeholder || `Indtast et ord med "${currentSyllable}"`}
             disabled={isDisabled}
             className={cn(
