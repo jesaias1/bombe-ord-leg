@@ -274,8 +274,13 @@ export const GameRoom = () => {
 
   const handleWordSubmit = async (word: string): Promise<boolean> => {
     if (!game || !user) return false;
-    gameLogic.setCurrentWord(word);
     return await gameLogic.submitWord();
+  };
+
+  const handleWordChange = (word: string) => {
+    if (gameLogic.setCurrentWord) {
+      gameLogic.setCurrentWord(word);
+    }
   };
 
   if (loading) {
@@ -322,6 +327,7 @@ export const GameRoom = () => {
             isSinglePlayer={isSinglePlayer}
             currentUserId={user?.id}
             onWordSubmit={handleWordSubmit}
+            onWordChange={handleWordChange}
             isSubmitting={gameLogic.isSubmitting}
           />
         )}

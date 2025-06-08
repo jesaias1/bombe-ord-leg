@@ -10,6 +10,7 @@ interface WordInputProps {
   currentSyllable: string;
   placeholder?: string;
   isSubmitting?: boolean;
+  onWordChange?: (word: string) => void;
 }
 
 export const WordInput = ({ 
@@ -17,7 +18,8 @@ export const WordInput = ({
   disabled, 
   currentSyllable, 
   placeholder,
-  isSubmitting = false 
+  isSubmitting = false,
+  onWordChange
 }: WordInputProps) => {
   const [word, setWord] = useState('');
   const [error, setError] = useState('');
@@ -38,6 +40,7 @@ export const WordInput = ({
   useEffect(() => {
     setError('');
     setIsLocalSubmitting(false);
+    setWord('');
     // Refocus input when syllable changes
     const timer = setTimeout(() => {
       if (inputRef.current && !disabled) {
@@ -80,6 +83,10 @@ export const WordInput = ({
       const success = await onSubmit(trimmedWord.toLowerCase());
       if (success) {
         setWord('');
+        // Clear the word in parent component too
+        if (onWordChange) {
+          onWordChange('');
+        }
         // Refocus input after successful submission
         setTimeout(() => {
           if (inputRef.current) {
@@ -96,8 +103,14 @@ export const WordInput = ({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setWord(e.target.value);
+    const newWord = e.target.value;
+    setWord(newWord);
     if (error) setError('');
+    
+    // Update the word in parent component as user types
+    if (onWordChange) {
+      onWordChange(newWord.trim());
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
