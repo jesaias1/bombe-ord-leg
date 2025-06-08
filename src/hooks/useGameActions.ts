@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +8,8 @@ import { useUserStats } from '@/hooks/useUserStats';
 export const useGameActions = (roomId: string) => {
   const { user, isGuest } = useAuth();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentWord, setCurrentWord] = useState('');
   const { 
     incrementWordsGuessed, 
     updateStreak, 
@@ -18,12 +20,13 @@ export const useGameActions = (roomId: string) => {
   } = useUserStats();
 
   const submitWord = useCallback(async (word: string): Promise<boolean> => {
-    if (!user) {
-      console.error('No user logged in');
+    if (!user || isSubmitting) {
+      console.error('No user logged in or already submitting');
       return false;
     }
 
     console.log('Submitting word:', word, 'for user:', user.id);
+    setIsSubmitting(true);
 
     const wordStartTime = Date.now();
 
@@ -87,6 +90,9 @@ export const useGameActions = (roomId: string) => {
         description: `"${word}" blev accepteret`,
       });
 
+      // Clear the current word after successful submission
+      setCurrentWord('');
+
       return true;
     } catch (err) {
       console.error('Unexpected error submitting word:', err);
@@ -102,8 +108,10 @@ export const useGameActions = (roomId: string) => {
       }
       
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [user, roomId, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime]);
+  }, [user, roomId, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime, isSubmitting]);
 
   const startGame = useCallback(async () => {
     if (!user) {
@@ -188,5 +196,8 @@ export const useGameActions = (roomId: string) => {
     startGame,
     leaveRoom,
     trackGameCompletion,
+    isSubmitting,
+    currentWord,
+    setCurrentWord,
   };
 };

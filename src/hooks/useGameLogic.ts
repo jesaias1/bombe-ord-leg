@@ -13,7 +13,10 @@ export const useGameLogic = (
   currentUserId?: string, 
   room?: Room | null
 ) => {
-  const gameActions = useGameActions(game, players, room);
+  // Get the room ID from the game or room
+  const roomId = game?.room_id || room?.id || '';
+  
+  const gameActions = useGameActions(roomId);
   const timerHandler = useTimerHandler(game, players, room);
 
   // Get current player

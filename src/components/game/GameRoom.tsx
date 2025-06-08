@@ -274,7 +274,7 @@ export const GameRoom = () => {
 
   const handleWordSubmit = async (word: string): Promise<boolean> => {
     if (!game || !user) return false;
-    return await gameLogic.submitWord();
+    return await gameLogic.submitWord(word);
   };
 
   const handleWordChange = (word: string) => {
