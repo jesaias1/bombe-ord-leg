@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -22,30 +22,51 @@ export const WordInput = ({
   const [word, setWord] = useState('');
   const [error, setError] = useState('');
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+  const [shouldMaintainFocus, setShouldMaintainFocus] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Maintain focus more aggressively
+  const maintainFocus = useCallback(() => {
+    if (shouldMaintainFocus && inputRef.current && !disabled && !isLocalSubmitting && !isSubmitting) {
+      const timer = setTimeout(() => {
+        if (inputRef.current && document.activeElement !== inputRef.current) {
+          console.log('Refocusing input');
+          inputRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldMaintainFocus, disabled, isLocalSubmitting, isSubmitting]);
 
   // Focus input when component mounts
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (inputRef.current) {
+      if (inputRef.current && !disabled) {
         inputRef.current.focus();
+        setShouldMaintainFocus(true);
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [disabled]);
 
   // Reset states when syllable changes and refocus
   useEffect(() => {
     setError('');
     setIsLocalSubmitting(false);
+    setShouldMaintainFocus(true);
     // Refocus input when syllable changes
     const timer = setTimeout(() => {
-      if (inputRef.current) {
+      if (inputRef.current && !disabled) {
         inputRef.current.focus();
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [currentSyllable]);
+  }, [currentSyllable, disabled]);
+
+  // Maintain focus during re-renders
+  useEffect(() => {
+    return maintainFocus();
+  }, [maintainFocus]);
 
   // Reset local submitting when parent isSubmitting changes
   useEffect(() => {
@@ -75,6 +96,7 @@ export const WordInput = ({
 
     setIsLocalSubmitting(true);
     setError('');
+    setShouldMaintainFocus(false); // Stop trying to maintain focus during submission
     
     try {
       const success = await onSubmit(trimmedWord.toLowerCase());
@@ -84,12 +106,14 @@ export const WordInput = ({
         setTimeout(() => {
           if (inputRef.current) {
             inputRef.current.focus();
+            setShouldMaintainFocus(true);
           }
         }, 100);
       }
     } catch (err) {
       console.error('Error in word submission:', err);
       setError('Fejl ved indsendelse - prøv igen');
+      setShouldMaintainFocus(true);
     } finally {
       setIsLocalSubmitting(false);
     }
@@ -98,6 +122,7 @@ export const WordInput = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWord(e.target.value);
     if (error) setError('');
+    setShouldMaintainFocus(true); // Ensure we maintain focus while typing
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -112,10 +137,21 @@ export const WordInput = ({
 
   const handleInputFocus = () => {
     console.log('Input focused');
+    setShouldMaintainFocus(true);
   };
 
-  const handleInputBlur = () => {
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     console.log('Input blurred');
+    // Only allow blur if we're clicking on the submit button or form is disabled
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!relatedTarget || (!relatedTarget.closest('button') && !disabled && !isLocalSubmitting && !isSubmitting)) {
+      // Re-focus if blur wasn't intentional
+      setTimeout(() => {
+        if (inputRef.current && shouldMaintainFocus) {
+          inputRef.current.focus();
+        }
+      }, 10);
+    }
   };
 
   const isDisabled = disabled || isLocalSubmitting || isSubmitting;
