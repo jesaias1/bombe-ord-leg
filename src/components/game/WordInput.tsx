@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -22,11 +22,16 @@ export const WordInput = ({
   const [word, setWord] = useState('');
   const [error, setError] = useState('');
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset states when syllable changes
   useEffect(() => {
     setError('');
     setIsLocalSubmitting(false);
+    // Refocus input when syllable changes
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   }, [currentSyllable]);
 
   // Reset local submitting when parent isSubmitting changes
@@ -36,12 +41,9 @@ export const WordInput = ({
     }
   }, [isSubmitting]);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    
+  const handleSubmit = async () => {
     const trimmedWord = word.trim();
+    console.log('handleSubmit called with word:', trimmedWord);
     
     if (!trimmedWord) {
       setError('Indtast et ord');
@@ -65,6 +67,10 @@ export const WordInput = ({
       const success = await onSubmit(trimmedWord.toLowerCase());
       if (success) {
         setWord('');
+        // Refocus input after successful submission
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
       }
     } catch (err) {
       console.error('Error in word submission:', err);
@@ -80,10 +86,11 @@ export const WordInput = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    console.log('Key pressed:', e.key, 'Current word:', word);
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Enter key pressed, submitting word:', word);
+      console.log('Enter key detected, calling handleSubmit');
       handleSubmit();
     }
   };
@@ -96,6 +103,7 @@ export const WordInput = ({
       <div className="flex space-x-2">
         <div className="flex-1">
           <Input
+            ref={inputRef}
             type="text"
             value={word}
             onChange={handleInputChange}
@@ -114,7 +122,7 @@ export const WordInput = ({
         </div>
         <Button 
           type="button"
-          onClick={() => handleSubmit()}
+          onClick={handleSubmit}
           disabled={isDisabled || !word.trim()}
           className="px-6"
         >
