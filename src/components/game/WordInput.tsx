@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,29 +25,29 @@ export const WordInput = ({
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus input when component mounts
+  // Focus input when component mounts or becomes enabled
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (inputRef.current && !disabled) {
-        inputRef.current.focus();
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!disabled && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [disabled]);
 
-  // Reset states when syllable changes and refocus
+  // Reset states when syllable changes and ensure focus
   useEffect(() => {
     setError('');
     setIsLocalSubmitting(false);
     setWord('');
-    // Refocus input when syllable changes
-    const timer = setTimeout(() => {
-      if (inputRef.current && !disabled) {
-        inputRef.current.focus();
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [currentSyllable, disabled]);
+    
+    // Clear word in parent component
+    if (onWordChange) {
+      onWordChange('');
+    }
+    
+    // Focus input when syllable changes
+    if (!disabled && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [currentSyllable, disabled, onWordChange]);
 
   // Reset local submitting when parent isSubmitting changes
   useEffect(() => {
@@ -63,11 +62,19 @@ export const WordInput = ({
     
     if (!trimmedWord) {
       setError('Indtast et ord');
+      // Keep focus on input
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
       return;
     }
 
     if (!trimmedWord.toLowerCase().includes(currentSyllable.toLowerCase())) {
       setError(`Ordet skal indeholde "${currentSyllable}"`);
+      // Keep focus on input
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
       return;
     }
 
@@ -87,16 +94,25 @@ export const WordInput = ({
         if (onWordChange) {
           onWordChange('');
         }
-        // Refocus input after successful submission
+        // Ensure input stays focused after successful submission
         setTimeout(() => {
-          if (inputRef.current) {
+          if (inputRef.current && !disabled) {
             inputRef.current.focus();
           }
-        }, 100);
+        }, 50); // Shorter timeout for better responsiveness
+      } else {
+        // Keep focus if submission failed
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
       }
     } catch (err) {
       console.error('Error in word submission:', err);
       setError('Fejl ved indsendelse - prøv igen');
+      // Keep focus on error
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     } finally {
       setIsLocalSubmitting(false);
     }
