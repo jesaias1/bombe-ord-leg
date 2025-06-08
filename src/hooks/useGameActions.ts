@@ -1,172 +1,192 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Tables } from '@/integrations/supabase/types';
-import { validateWord } from '@/utils/wordValidation';
-import { selectRandomSyllable } from '@/utils/syllableSelection';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
+import { useUserStats } from '@/hooks/useUserStats';
 
-type Game = Tables<'games'>;
-type Player = Tables<'players'>;
-type Room = Tables<'rooms'>;
+export const useGameActions = (roomId: string) => {
+  const { user, isGuest } = useAuth();
+  const { toast } = useToast();
+  const { 
+    incrementWordsGuessed, 
+    updateStreak, 
+    incrementGamesPlayed, 
+    incrementGamesWon,
+    updateFastestWordTime,
+    addPlaytime 
+  } = useUserStats();
 
-export const useGameActions = (
-  game: Game | null,
-  players: Player[],
-  room: Room | null
-) => {
-  const [currentWord, setCurrentWord] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const alivePlayers = players.filter(player => player.is_alive);
-
-  const submitWord = useCallback(async () => {
-    if (!game || !currentWord.trim() || isSubmitting || game.status !== 'playing') {
-      console.log('Submission blocked:', { 
-        hasGame: !!game, 
-        hasWord: !!currentWord.trim(), 
-        isSubmitting, 
-        status: game?.status 
-      });
+  const submitWord = useCallback(async (word: string): Promise<boolean> => {
+    if (!user) {
+      console.error('No user logged in');
       return false;
     }
-    
-    console.log('Starting word submission process');
-    setIsSubmitting(true);
-    
+
+    console.log('Submitting word:', word, 'for user:', user.id);
+
+    const wordStartTime = Date.now();
+
     try {
-      const trimmedWord = currentWord.toLowerCase().trim();
-      
-      console.log(`Submitting word: "${trimmedWord}" for syllable: "${game.current_syllable}"`);
-      
-      // Check if word was already used
-      if (game.used_words?.includes(trimmedWord)) {
-        toast.error('Dette ord er allerede brugt!');
-        setCurrentWord('');
-        return false;
-      }
-
-      // Validate the word
-      const isValid = await validateWord(trimmedWord, game.current_syllable || '');
-      
-      if (!isValid) {
-        toast.error(`"${trimmedWord}" er ikke et gyldigt ord eller indeholder ikke "${game.current_syllable}"`);
-        setCurrentWord('');
-        return false;
-      }
-
-      // Find next player
-      const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
-      const nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
-      const nextPlayer = alivePlayers[nextPlayerIndex];
-
-      if (!nextPlayer) {
-        console.error('No next player found');
-        toast.error('Fejl: Kunne ikke finde næste spiller');
-        return false;
-      }
-
-      // Select new random syllable
-      const newSyllable = await selectRandomSyllable(room?.difficulty || 'mellem');
-      
-      if (!newSyllable) {
-        toast.error('Kunne ikke vælge ny stavelse');
-        return false;
-      }
-
-      console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
-
-      // Add word to used words
-      const updatedUsedWords = [...(game.used_words || []), trimmedWord];
-      
-      // Calculate new timer end time
-      const timerDuration = game.timer_duration || 15;
-      const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
-
-      // Update game in database
-      const { error } = await supabase
-        .from('games')
-        .update({
-          used_words: updatedUsedWords,
-          current_player_id: nextPlayer.id,
-          current_syllable: newSyllable,
-          timer_end_time: newTimerEndTime,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', game.id);
+      const { data, error } = await supabase.rpc('submit_word', {
+        p_room_id: roomId,
+        p_user_id: user.id,
+        p_word: word.toLowerCase().trim()
+      });
 
       if (error) {
-        console.error('Error updating game:', error);
-        toast.error('Fejl ved opdatering af spil - prøv igen');
+        console.error('RPC Error:', error);
+        
+        // Show user-friendly error messages
+        if (error.message.includes('already used')) {
+          toast({
+            title: "Ord allerede brugt",
+            description: "Dette ord er allerede blevet brugt i spillet",
+            variant: "destructive",
+          });
+        } else if (error.message.includes('not contain')) {
+          toast({
+            title: "Ord indeholder ikke stavelsen",
+            description: "Dit ord skal indeholde den viste stavelse",
+            variant: "destructive",
+          });
+        } else if (error.message.includes('not valid')) {
+          toast({
+            title: "Ugyldigt ord",
+            description: "Ordet blev ikke fundet i ordbogen",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Fejl",
+            description: error.message || "Kunne ikke indsende ordet",
+            variant: "destructive",
+          });
+        }
+        
+        // Update streak for wrong answer (only for registered users)
+        if (!isGuest) {
+          updateStreak(false);
+        }
+        
         return false;
       }
 
-      // Success - clear the input and show success message
-      setCurrentWord('');
-      toast.success(`"${trimmedWord}" accepteret! Ny stavelse: "${newSyllable}"`);
-      console.log('Word submission successful');
-      return true;
+      console.log('Word submitted successfully:', data);
+      
+      // Track stats for registered users only
+      if (!isGuest) {
+        const wordTime = Date.now() - wordStartTime;
+        incrementWordsGuessed();
+        updateStreak(true);
+        updateFastestWordTime(wordTime);
+      }
 
+      toast({
+        title: "Godt ord! 🎉",
+        description: `"${word}" blev accepteret`,
+      });
+
+      return true;
     } catch (err) {
-      console.error('Error submitting word:', err);
-      toast.error('Fejl ved indsendelse af ord - prøv igen');
+      console.error('Unexpected error submitting word:', err);
+      toast({
+        title: "Fejl",
+        description: "Uventet fejl - prøv igen",
+        variant: "destructive",
+      });
+      
+      // Update streak for wrong answer (only for registered users)
+      if (!isGuest) {
+        updateStreak(false);
+      }
+      
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
-  }, [game, currentWord, isSubmitting, alivePlayers, room]);
+  }, [user, roomId, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime]);
 
   const startGame = useCallback(async () => {
-    if (!game || !room) return;
+    if (!user) {
+      console.error('No user logged in');
+      return false;
+    }
 
     try {
-      const startingSyllable = await selectRandomSyllable(room.difficulty);
-      
-      if (!startingSyllable) {
-        toast.error('Kunne ikke vælge startstavelse');
-        return;
-      }
-
-      const randomPlayerIndex = Math.floor(Math.random() * alivePlayers.length);
-      const startingPlayer = alivePlayers[randomPlayerIndex];
-
-      if (!startingPlayer) {
-        toast.error('Ingen spillere tilgængelige');
-        return;
-      }
-
-      const timerDuration = game.timer_duration || 15;
-      const timerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
-
-      const { error } = await supabase
-        .from('games')
-        .update({
-          status: 'playing',
-          current_player_id: startingPlayer.id,
-          current_syllable: startingSyllable,
-          timer_end_time: timerEndTime,
-          used_words: [],
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', game.id);
+      const { error } = await supabase.rpc('start_game', {
+        p_room_id: roomId,
+        p_user_id: user.id
+      });
 
       if (error) {
         console.error('Error starting game:', error);
-        toast.error('Fejl ved start af spil');
-      } else {
-        toast.success(`Spillet starter! Stavelse: "${startingSyllable}"`);
+        toast({
+          title: "Fejl",
+          description: error.message || "Kunne ikke starte spillet",
+          variant: "destructive",
+        });
+        return false;
       }
+
+      // Track game started for registered users
+      if (!isGuest) {
+        incrementGamesPlayed();
+      }
+
+      toast({
+        title: "Spil startet! 🚀",
+        description: "Spillet er nu i gang",
+      });
+
+      return true;
     } catch (err) {
-      console.error('Error starting game:', err);
-      toast.error('Fejl ved start af spil');
+      console.error('Unexpected error starting game:', err);
+      toast({
+        title: "Fejl",
+        description: "Uventet fejl ved start af spil",
+        variant: "destructive",
+      });
+      return false;
     }
-  }, [game, room, alivePlayers]);
+  }, [user, roomId, toast, isGuest, incrementGamesPlayed]);
+
+  const leaveRoom = useCallback(async () => {
+    if (!user) {
+      console.error('No user logged in');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.rpc('leave_room', {
+        p_room_id: roomId,
+        p_user_id: user.id
+      });
+
+      if (error) {
+        console.error('Error leaving room:', error);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Unexpected error leaving room:', err);
+      return false;
+    }
+  }, [user, roomId]);
+
+  // Helper function to track game completion
+  const trackGameCompletion = useCallback((won: boolean, playtimeSeconds: number) => {
+    if (!isGuest) {
+      if (won) {
+        incrementGamesWon();
+      }
+      addPlaytime(playtimeSeconds);
+    }
+  }, [isGuest, incrementGamesWon, addPlaytime]);
 
   return {
-    currentWord,
-    setCurrentWord,
-    isSubmitting,
     submitWord,
-    startGame
+    startGame,
+    leaveRoom,
+    trackGameCompletion,
   };
 };

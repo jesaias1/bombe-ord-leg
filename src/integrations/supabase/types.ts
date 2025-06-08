@@ -181,6 +181,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stats: {
+        Row: {
+          created_at: string
+          current_streak: number
+          fastest_word_time: number | null
+          favorite_syllable: string | null
+          id: string
+          longest_streak: number
+          total_games_played: number
+          total_games_won: number
+          total_playtime_seconds: number
+          total_words_guessed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          fastest_word_time?: number | null
+          favorite_syllable?: string | null
+          id?: string
+          longest_streak?: number
+          total_games_played?: number
+          total_games_won?: number
+          total_playtime_seconds?: number
+          total_words_guessed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          fastest_word_time?: number | null
+          favorite_syllable?: string | null
+          id?: string
+          longest_streak?: number
+          total_games_played?: number
+          total_games_won?: number
+          total_playtime_seconds?: number
+          total_words_guessed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
