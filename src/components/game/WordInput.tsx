@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -38,16 +39,13 @@ export const WordInput = ({
     setIsLocalSubmitting(false);
     setWord('');
     
-    // Clear word in parent component
-    if (onWordChange) {
-      onWordChange('');
-    }
-    
     // Focus input when syllable changes
     if (!disabled && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
-  }, [currentSyllable, disabled, onWordChange]);
+  }, [currentSyllable, disabled]);
 
   // Reset local submitting when parent isSubmitting changes
   useEffect(() => {
@@ -56,13 +54,28 @@ export const WordInput = ({
     }
   }, [isSubmitting]);
 
+  // Memoize the word change callback to prevent unnecessary re-renders
+  const handleWordChangeCallback = useCallback((newWord: string) => {
+    if (onWordChange) {
+      onWordChange(newWord);
+    }
+  }, [onWordChange]);
+
+  // Debounce the word change callback to reduce re-renders
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleWordChangeCallback(word.trim());
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [word, handleWordChangeCallback]);
+
   const handleSubmit = async () => {
     const trimmedWord = word.trim();
     console.log('handleSubmit called with word:', trimmedWord);
     
     if (!trimmedWord) {
       setError('Indtast et ord');
-      // Keep focus on input
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -71,7 +84,6 @@ export const WordInput = ({
 
     if (!trimmedWord.toLowerCase().includes(currentSyllable.toLowerCase())) {
       setError(`Ordet skal indeholde "${currentSyllable}"`);
-      // Keep focus on input
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -90,18 +102,12 @@ export const WordInput = ({
       const success = await onSubmit(trimmedWord.toLowerCase());
       if (success) {
         setWord('');
-        // Clear the word in parent component too
-        if (onWordChange) {
-          onWordChange('');
-        }
-        // Ensure input stays focused after successful submission
         setTimeout(() => {
           if (inputRef.current && !disabled) {
             inputRef.current.focus();
           }
-        }, 50); // Shorter timeout for better responsiveness
+        }, 50);
       } else {
-        // Keep focus if submission failed
         if (inputRef.current) {
           inputRef.current.focus();
         }
@@ -109,7 +115,6 @@ export const WordInput = ({
     } catch (err) {
       console.error('Error in word submission:', err);
       setError('Fejl ved indsendelse - prøv igen');
-      // Keep focus on error
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -122,11 +127,6 @@ export const WordInput = ({
     const newWord = e.target.value;
     setWord(newWord);
     if (error) setError('');
-    
-    // Update the word in parent component as user types
-    if (onWordChange) {
-      onWordChange(newWord.trim());
-    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

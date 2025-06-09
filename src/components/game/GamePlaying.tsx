@@ -29,7 +29,6 @@ export const GamePlaying = ({
   isSinglePlayer,
   currentUserId,
   onWordSubmit,
-  onWordChange,
   isSubmitting = false
 }: GamePlayingProps) => {
   return (
@@ -56,7 +55,6 @@ export const GamePlaying = ({
           
           <WordInput
             onSubmit={onWordSubmit}
-            onWordChange={onWordChange}
             disabled={!isCurrentUser || timeLeft <= 0}
             currentSyllable={game.current_syllable || ''}
             isSubmitting={isSubmitting}
