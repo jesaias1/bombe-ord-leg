@@ -85,7 +85,7 @@ export const useUserStats = () => {
     updateStatsMutation.mutate(updates);
   };
 
-  // Helper functions for common stat updates - properly accepting parameters
+  // Helper functions for common stat updates
   const incrementWordsGuessed = () => {
     if (stats) {
       updateStats({
@@ -143,7 +143,7 @@ export const useUserStats = () => {
     isLoading,
     updateStats,
     incrementWordsGuessed,
-    updateStreak: updateStreak as (isCorrect: boolean) => void,
+    updateStreak,
     incrementGamesPlayed,
     incrementGamesWon,
     updateFastestWordTime,
