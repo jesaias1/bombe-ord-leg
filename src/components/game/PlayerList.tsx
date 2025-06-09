@@ -24,24 +24,34 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerLi
           <div
             key={player.id}
             className={cn(
-              "flex items-center justify-between p-3 rounded-lg transition-colors",
-              currentPlayerId === player.id && "bg-blue-100 border-2 border-blue-300",
-              !player.is_alive && "opacity-50 bg-gray-100",
-              player.user_id === currentUserId && "ring-2 ring-green-300"
+              "flex items-center justify-between p-3 rounded-lg transition-all duration-300",
+              currentPlayerId === player.id && [
+                "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg",
+                "ring-4 ring-blue-300 ring-opacity-50",
+                "transform scale-105",
+                "animate-pulse"
+              ],
+              currentPlayerId !== player.id && !player.is_alive && "opacity-50 bg-gray-100",
+              currentPlayerId !== player.id && player.is_alive && "bg-gray-50 hover:bg-gray-100",
+              player.user_id === currentUserId && currentPlayerId !== player.id && "ring-2 ring-green-300"
             )}
           >
             <div className="flex items-center space-x-3">
               <div className={cn(
-                "w-3 h-3 rounded-full",
-                player.is_alive ? "bg-green-500" : "bg-red-500"
+                "w-4 h-4 rounded-full transition-all duration-300",
+                currentPlayerId === player.id && "w-5 h-5 bg-yellow-400 shadow-lg animate-bounce",
+                currentPlayerId !== player.id && player.is_alive && "bg-green-500",
+                !player.is_alive && "bg-red-500"
               )} />
               <span className={cn(
-                "font-medium",
-                currentPlayerId === player.id && "font-bold text-blue-700",
+                "font-medium transition-all duration-300",
+                currentPlayerId === player.id && "font-bold text-white text-lg drop-shadow-sm",
+                currentPlayerId !== player.id && player.is_alive && "text-gray-700",
                 !player.is_alive && "line-through text-gray-500"
               )}>
                 {player.name}
                 {player.user_id === currentUserId && " (dig)"}
+                {currentPlayerId === player.id && " - DIN TUR! 🎯"}
               </span>
             </div>
             
@@ -50,8 +60,10 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerLi
                 <div
                   key={i}
                   className={cn(
-                    "w-4 h-4 rounded-full border-2",
-                    i < player.lives ? "bg-red-500 border-red-600" : "bg-gray-200 border-gray-300"
+                    "w-4 h-4 rounded-full border-2 transition-all duration-300",
+                    currentPlayerId === player.id && "w-5 h-5 shadow-md",
+                    i < player.lives ? "bg-red-500 border-red-600" : "bg-gray-200 border-gray-300",
+                    currentPlayerId === player.id && i < player.lives && "bg-red-400 border-red-500"
                   )}
                 />
               ))}
