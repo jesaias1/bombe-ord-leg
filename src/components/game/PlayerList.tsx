@@ -28,8 +28,7 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerLi
               currentPlayerId === player.id && [
                 "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg",
                 "ring-4 ring-blue-300 ring-opacity-50",
-                "transform scale-105",
-                "animate-pulse"
+                "transform scale-105"
               ],
               currentPlayerId !== player.id && !player.is_alive && "opacity-50 bg-gray-100",
               currentPlayerId !== player.id && player.is_alive && "bg-gray-50 hover:bg-gray-100",
@@ -39,7 +38,7 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerLi
             <div className="flex items-center space-x-3">
               <div className={cn(
                 "w-4 h-4 rounded-full transition-all duration-300",
-                currentPlayerId === player.id && "w-5 h-5 bg-yellow-400 shadow-lg animate-bounce",
+                currentPlayerId === player.id && "w-5 h-5 bg-yellow-400 shadow-lg",
                 currentPlayerId !== player.id && player.is_alive && "bg-green-500",
                 !player.is_alive && "bg-red-500"
               )} />

@@ -1,35 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Curated list of common Danish syllables that create many valid words
-const CURATED_SYLLABLES = {
-  'let': [
-    'er', 'en', 'et', 'de', 'se', 'te', 'le', 'ke', 're', 'ne',
-    'me', 'ge', 'be', 'he', 'pe', 've', 'fe', 'je', 'at', 'og',
-    'in', 'an', 'on', 'ar', 'or', 'el', 'al', 'ul', 'il', 'ol',
-    'is', 'as', 'os', 'us', 'av', 'ov', 'iv', 'ry', 'ly', 'my',
-    'ind', 'and', 'end', 'ing', 'age', 'ide', 'ade', 'ede', 'ige'
-  ],
-  'mellem': [
-    'ing', 'end', 'and', 'hed', 'ter', 'der', 'ner', 'ler', 'rer', 'ser',
-    'ker', 'ger', 'ber', 'per', 'ver', 'fer', 'mer', 'her', 'ste', 'nde',
-    'nne', 'lle', 'rre', 'sse', 'tte', 'kke', 'mme', 'nge', 'rse', 'lse',
-    'age', 'ige', 'uge', 'ege', 'øge', 'åge', 'ide', 'ade', 'ude', 'ede',
-    'or', 'er', 'ar', 'el', 'al', 'il', 'ol', 'ul', 'en', 'an', 'on',
-    'tion', 'ning', 'ling', 'ring', 'ding', 'sing', 'king', 'ting'
-  ],
-  'svaer': [
-    'tion', 'ning', 'ling', 'ring', 'ding', 'sing', 'king', 'ting',
-    'ende', 'ande', 'inde', 'unde', 'erde', 'orde', 'ilde', 'else', 'anse',
-    'ense', 'iske', 'aste', 'este', 'iste', 'oste', 'uste', 'erte', 'arte',
-    'sion', 'gion', 'kion', 'pion', 'vion', 'fion', 'mion', 'nion',
-    'er', 'ar', 'or', 'el', 'al', 'il', 'ol', 'ul', 'en', 'an', 'on'
-  ]
-};
-
 // Keep track of recently used syllables to avoid immediate repetition
 let recentlyUsed: string[] = [];
 let lastSyllableLength: number | null = null;
-const MAX_RECENT = 8; // Remember last 8 syllables for better variety
+const MAX_RECENT = 15; // Remember last 15 syllables for better variety
 
 const addToRecentlyUsed = (syllable: string) => {
   recentlyUsed.push(syllable.toLowerCase());
@@ -61,19 +35,21 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
   console.log('Preferred length:', preferredLength);
   
   try {
-    // Try to get syllables from database with good word coverage
+    // Try to get syllables from database with better filtering for variation
     const { data, error } = await supabase
       .from('syllables')
       .select('syllable, word_count')
       .eq('difficulty', difficulty)
-      .gte('word_count', 5) // Lower threshold for more variety
+      .gte('word_count', 3) // Ensure syllables have enough words
       .gte('length(syllable)', 2)
-      .lte('length(syllable)', 3) // Focus on 2-3 letter syllables
+      .lte('length(syllable)', 3)
       .order('word_count', { ascending: false })
-      .limit(1000); // Higher limit for more options
+      .limit(2000); // Get more options for better filtering
 
     if (data && data.length > 0) {
-      // Filter syllables by quality and avoid recently used ones
+      console.log(`Found ${data.length} syllables from database`);
+      
+      // Filter syllables for quality and variety
       const validSyllables = data.filter(s => {
         const syllable = s.syllable.toLowerCase();
         return (
@@ -81,33 +57,43 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
           syllable.length <= 3 &&
           // Must contain at least one vowel
           /[aeiouyæøå]/.test(syllable) &&
-          // Exclude problematic consonant clusters
-          !['ck', 'ft', 'pt', 'kt', 'xt', 'mp', 'ng', 'nt', 'st'].some(cluster => syllable === cluster) &&
-          // Exclude single consonants
+          // Exclude problematic single/double consonant combinations
+          !['ck', 'ft', 'pt', 'kt', 'xt', 'mp', 'ng', 'nt', 'st', 'sk', 'sp', 'sl', 'sm', 'sn'].includes(syllable) &&
+          // Exclude pure consonant clusters
           !/^[bcdfghjklmnpqrstvwxz]+$/.test(syllable) &&
-          // Avoid recently used syllables (strict anti-repetition)
-          !isRecentlyUsed(syllable)
+          // Avoid recently used syllables
+          !isRecentlyUsed(syllable) &&
+          // Ensure it's not just repeated letters
+          !(syllable.length === 2 && syllable[0] === syllable[1]) &&
+          // Exclude very common but boring syllables
+          !['er', 'en', 'et', 'de', 'se', 'te', 'le', 'ke', 're', 'ne'].includes(syllable) ||
+          (syllable.length === 3 && s.word_count > 10) // Allow some common ones if they're 3 letters and have many words
         );
       });
 
+      console.log(`Filtered to ${validSyllables.length} valid syllables`);
+
       // First try to get syllables of preferred length
       let preferredSyllables = validSyllables.filter(s => s.syllable.length === preferredLength);
+      console.log(`Found ${preferredSyllables.length} syllables of preferred length ${preferredLength}`);
       
       // If not enough of preferred length, use any valid syllables
-      let syllablesToChooseFrom = preferredSyllables.length >= 3 ? preferredSyllables : validSyllables;
+      let syllablesToChooseFrom = preferredSyllables.length >= 5 ? preferredSyllables : validSyllables;
       
-      // If we still don't have enough options, allow some recently used (but not the last one)
-      if (syllablesToChooseFrom.length < 3 && recentlyUsed.length > 0) {
-        const lastUsed = recentlyUsed[recentlyUsed.length - 1]; // Only avoid the very last one
+      // If we still don't have enough options, be less strict about recently used
+      if (syllablesToChooseFrom.length < 5 && recentlyUsed.length > 0) {
+        console.log('Not enough syllables, being less strict about recently used');
+        const recentToAvoid = recentlyUsed.slice(-5); // Only avoid last 5
         syllablesToChooseFrom = data.filter(s => {
           const syllable = s.syllable.toLowerCase();
           return (
             syllable.length >= 2 && 
             syllable.length <= 3 &&
             /[aeiouyæøå]/.test(syllable) &&
-            !['ck', 'ft', 'pt', 'kt', 'xt', 'mp', 'ng', 'nt', 'st'].some(cluster => syllable === cluster) &&
+            !['ck', 'ft', 'pt', 'kt', 'xt', 'mp', 'ng', 'nt', 'st', 'sk', 'sp', 'sl', 'sm', 'sn'].includes(syllable) &&
             !/^[bcdfghjklmnpqrstvwxz]+$/.test(syllable) &&
-            syllable !== lastUsed // Only avoid the very last syllable
+            !recentToAvoid.includes(syllable) &&
+            !(syllable.length === 2 && syllable[0] === syllable[1])
           );
         });
       }
@@ -115,10 +101,14 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
       if (syllablesToChooseFrom.length > 0) {
         // Use weighted random selection favoring higher word counts and preferred length
         const weights = syllablesToChooseFrom.map((s, i) => {
-          let weight = Math.max(1, s.word_count - i * 0.1);
+          let weight = Math.max(1, s.word_count - i * 0.05);
           // Boost weight for preferred length
           if (s.syllable.length === preferredLength) {
-            weight *= 1.5;
+            weight *= 2;
+          }
+          // Boost weight for 3-letter syllables as they tend to be more interesting
+          if (s.syllable.length === 3) {
+            weight *= 1.3;
           }
           return weight;
         });
@@ -131,7 +121,7 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
           currentWeight += weights[i];
           if (randomWeight <= currentWeight) {
             const selectedSyllable = syllablesToChooseFrom[i].syllable;
-            console.log(`Selected syllable from database: "${selectedSyllable}" (length: ${selectedSyllable.length})`);
+            console.log(`Selected syllable from database: "${selectedSyllable}" (length: ${selectedSyllable.length}, word_count: ${syllablesToChooseFrom[i].word_count})`);
             addToRecentlyUsed(selectedSyllable);
             return selectedSyllable;
           }
@@ -142,9 +132,33 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
     console.error('Error fetching syllables from database:', error);
   }
 
-  // Fallback to curated syllables with strict anti-repetition and length preference
-  console.log('Using fallback curated syllables');
-  const allSyllables = [...CURATED_SYLLABLES[difficulty]];
+  // Enhanced fallback with more varied syllables
+  console.log('Using enhanced fallback syllables');
+  const fallbackSyllables = {
+    'let': [
+      'ba', 'bi', 'bo', 'bu', 'da', 'di', 'do', 'fa', 'fi', 'fo', 'ga', 'gi', 'go', 'ha', 'hi', 'ho', 'ka', 'ki', 'ko',
+      'la', 'li', 'lo', 'ma', 'mi', 'mo', 'na', 'ni', 'no', 'pa', 'pi', 'po', 'ra', 'ri', 'ro', 'sa', 'si', 'so',
+      'ta', 'ti', 'to', 'va', 'vi', 'vo', 'za', 'zi', 'zo',
+      'bil', 'dal', 'fal', 'gal', 'hal', 'kal', 'mal', 'pal', 'sal', 'tal', 'val',
+      'bre', 'dre', 'fre', 'gre', 'kre', 'pre', 'tre'
+    ],
+    'mellem': [
+      'ber', 'der', 'fer', 'ger', 'her', 'ker', 'ler', 'mer', 'per', 'ser', 'ter', 'ver',
+      'bil', 'fil', 'mil', 'sil', 'til', 'vil',
+      'bor', 'dor', 'for', 'kor', 'mor', 'por', 'sor', 'tor',
+      'bro', 'dro', 'fro', 'gro', 'kro', 'pro', 'tro',
+      'ble', 'fle', 'gle', 'kle', 'ple', 'tle',
+      'bra', 'dra', 'fra', 'gra', 'kra', 'pra', 'tra'
+    ],
+    'svaer': [
+      'tion', 'sion', 'ning', 'ling', 'ring', 'ding', 'sing', 'king', 'ting',
+      'ende', 'ande', 'inde', 'unde', 'orde', 'erde',
+      'else', 'anse', 'ense', 'iske', 'aste', 'este', 'iste', 'oste', 'uste',
+      'bel', 'del', 'fel', 'gel', 'hel', 'kel', 'mel', 'pel', 'sel', 'tel', 'vel'
+    ]
+  };
+  
+  const allSyllables = [...fallbackSyllables[difficulty]];
   
   // Filter out recently used syllables and prefer length variety
   let availableSyllables = allSyllables.filter(s => !isRecentlyUsed(s));
@@ -155,12 +169,12 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
   // Use preferred length if we have enough options, otherwise use any available
   let finalSyllables = preferredLengthSyllables.length >= 3 ? preferredLengthSyllables : availableSyllables;
   
-  // If we've used most syllables recently, reset but keep last one off-limits
+  // If we've used most syllables recently, partial reset
   if (finalSyllables.length < 3) {
     console.log('Most syllables recently used, partial reset...');
-    const lastOne = recentlyUsed.slice(-1);
-    recentlyUsed = lastOne; // Keep only last 1 to avoid immediate repetition
-    finalSyllables = allSyllables.filter(s => !lastOne.includes(s));
+    const lastFew = recentlyUsed.slice(-3); // Keep only last 3 to avoid immediate repetition
+    recentlyUsed = lastFew;
+    finalSyllables = allSyllables.filter(s => !lastFew.includes(s));
     
     // Again try preferred length first
     preferredLengthSyllables = finalSyllables.filter(s => s.length === preferredLength);
