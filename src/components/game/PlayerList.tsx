@@ -24,16 +24,21 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerLi
           <div
             key={player.id}
             className={cn(
-              "flex items-center justify-between p-3 rounded-lg transition-all duration-300",
+              "flex items-center justify-between p-3 rounded-lg transition-all duration-500",
               currentPlayerId === player.id && [
                 "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg",
                 "ring-4 ring-blue-300 ring-opacity-50",
-                "transform scale-105"
+                "transform scale-105",
+                "animate-pulse"
               ],
               currentPlayerId !== player.id && !player.is_alive && "opacity-50 bg-gray-100",
               currentPlayerId !== player.id && player.is_alive && "bg-gray-50 hover:bg-gray-100",
               player.user_id === currentUserId && currentPlayerId !== player.id && "ring-2 ring-green-300"
             )}
+            style={currentPlayerId === player.id ? {
+              animationDuration: '2s',
+              animationIterationCount: 'infinite'
+            } : {}}
           >
             <div className="flex items-center space-x-3">
               <div className={cn(
