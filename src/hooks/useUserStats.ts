@@ -85,7 +85,7 @@ export const useUserStats = () => {
     updateStatsMutation.mutate(updates);
   };
 
-  // Helper functions for common stat updates
+  // Helper functions for common stat updates - now properly accepting parameters
   const incrementWordsGuessed = () => {
     if (stats) {
       updateStats({
