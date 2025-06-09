@@ -231,7 +231,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      submit_word: {
+        Args: { p_room_id: string; p_user_id: string; p_word: string }
+        Returns: boolean
+      }
     }
     Enums: {
       difficulty_level: "let" | "mellem" | "svaer"

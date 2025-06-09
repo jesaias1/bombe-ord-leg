@@ -143,7 +143,7 @@ export const useUserStats = () => {
     isLoading,
     updateStats,
     incrementWordsGuessed,
-    updateStreak,
+    updateStreak: updateStreak as (isCorrect: boolean) => void,
     incrementGamesPlayed,
     incrementGamesWon,
     updateFastestWordTime,
