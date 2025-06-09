@@ -24,7 +24,7 @@ const CURATED_SYLLABLES = {
 
 // Keep track of recently used syllables to avoid immediate repetition
 let recentlyUsed: string[] = [];
-const MAX_RECENT = 10; // Remember last 10 syllables
+const MAX_RECENT = 15; // Remember last 15 syllables for better variety
 
 const addToRecentlyUsed = (syllable: string) => {
   recentlyUsed.push(syllable.toLowerCase());
@@ -47,11 +47,11 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
       .from('syllables')
       .select('syllable, word_count')
       .eq('difficulty', difficulty)
-      .gte('word_count', 10) // Lower threshold for more variety
-      .gte('length(syllable)', 2)
-      .lte('length(syllable)', 4)
+      .gte('word_count', 8) // Slightly lower threshold for more variety
+      .gte('char_length(syllable)', 2)
+      .lte('char_length(syllable)', 4)
       .order('word_count', { ascending: false })
-      .limit(300); // Higher limit for more options
+      .limit(500); // Higher limit for more options
 
     if (data && data.length > 0) {
       // Filter out problematic syllables and recently used ones
@@ -62,58 +62,70 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
           syllable.length <= 4 &&
           // Must contain at least one vowel
           /[aeiouyæøå]/.test(syllable) &&
-          // Only exclude the most problematic consonant clusters
-          !['ck', 'ft', 'pt', 'kt', 'xt', 'mp'].includes(syllable) &&
+          // Exclude problematic consonant clusters
+          !['ck', 'ft', 'pt', 'kt', 'xt', 'mp', 'ng'].includes(syllable) &&
           // Avoid starting with triple consonants
           !/^[bcdfghjklmnpqrstvwxz]{3}/.test(syllable) &&
-          // Exclude single consonants
-          syllable.length > 1 &&
+          // Exclude single consonants and very short problematic combinations
+          !(syllable.length === 2 && /^[bcdfghjklmnpqrstvwxz]{2}$/.test(syllable)) &&
           // Avoid recently used syllables
           !isRecentlyUsed(syllable)
         );
       });
 
-      // If we filtered out too many, allow recently used ones back in
+      // If we filtered out too many, allow some recently used ones back but still avoid immediate repetition
       let syllablesToChooseFrom = validSyllables;
-      if (validSyllables.length < 5) {
+      if (validSyllables.length < 3) {
+        const lastUsed = recentlyUsed.slice(-3); // Avoid only the last 3
         syllablesToChooseFrom = data.filter(s => {
           const syllable = s.syllable.toLowerCase();
           return (
             syllable.length >= 2 && 
             syllable.length <= 4 &&
             /[aeiouyæøå]/.test(syllable) &&
-            !['ck', 'ft', 'pt', 'kt', 'xt', 'mp'].includes(syllable) &&
+            !['ck', 'ft', 'pt', 'kt', 'xt', 'mp', 'ng'].includes(syllable) &&
             !/^[bcdfghjklmnpqrstvwxz]{3}/.test(syllable) &&
-            syllable.length > 1
+            !(syllable.length === 2 && /^[bcdfghjklmnpqrstvwxz]{2}$/.test(syllable)) &&
+            !lastUsed.includes(syllable)
           );
         });
       }
 
       if (syllablesToChooseFrom.length > 0) {
-        // Use pure random selection for better variety
-        const randomIndex = Math.floor(Math.random() * syllablesToChooseFrom.length);
-        const selectedSyllable = syllablesToChooseFrom[randomIndex].syllable;
-        console.log(`Selected syllable from database: "${selectedSyllable}"`);
-        addToRecentlyUsed(selectedSyllable);
-        return selectedSyllable;
+        // Use weighted random selection favoring higher word counts
+        const weights = syllablesToChooseFrom.map((s, i) => Math.max(1, s.word_count - i * 0.1));
+        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+        const randomWeight = Math.random() * totalWeight;
+        
+        let currentWeight = 0;
+        for (let i = 0; i < syllablesToChooseFrom.length; i++) {
+          currentWeight += weights[i];
+          if (randomWeight <= currentWeight) {
+            const selectedSyllable = syllablesToChooseFrom[i].syllable;
+            console.log(`Selected syllable from database: "${selectedSyllable}"`);
+            addToRecentlyUsed(selectedSyllable);
+            return selectedSyllable;
+          }
+        }
       }
     }
   } catch (error) {
     console.error('Error fetching syllables from database:', error);
   }
 
-  // Fallback to curated syllables with better anti-repetition
+  // Fallback to curated syllables with strict anti-repetition
   console.log('Using fallback curated syllables');
   const allSyllables = [...CURATED_SYLLABLES[difficulty]];
   
   // Filter out recently used syllables first
   let availableSyllables = allSyllables.filter(s => !isRecentlyUsed(s));
   
-  // If we've used most syllables recently, reset and use all
-  if (availableSyllables.length < 3) {
-    console.log('Most syllables recently used, resetting...');
-    recentlyUsed = [];
-    availableSyllables = allSyllables;
+  // If we've used most syllables recently, reset but keep last 3 off-limits
+  if (availableSyllables.length < 5) {
+    console.log('Most syllables recently used, partial reset...');
+    const lastThree = recentlyUsed.slice(-3);
+    recentlyUsed = lastThree; // Keep only last 3 to avoid immediate repetition
+    availableSyllables = allSyllables.filter(s => !lastThree.includes(s));
   }
   
   // Fisher-Yates shuffle for better randomization
