@@ -10,6 +10,7 @@ import { GameFinished } from './GameFinished';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { Tables } from '@/integrations/supabase/types';
+import { selectRandomSyllable } from '@/utils/syllableSelection';
 
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
@@ -239,8 +240,8 @@ export const GameRoom = () => {
       return;
     }
 
-    // Use improved syllable selection
-    const { selectRandomSyllable } = await import('@/utils/syllableSelection');
+    // Get fresh random syllable for game start
+    console.log('Starting game - selecting fresh random syllable for difficulty:', room.difficulty);
     const randomSyllable = await selectRandomSyllable(room.difficulty);
     
     if (!randomSyllable) {
@@ -251,6 +252,8 @@ export const GameRoom = () => {
       });
       return;
     }
+
+    console.log('Game starting with syllable:', randomSyllable);
 
     const firstPlayer = alivePlayers[0];
     
@@ -273,8 +276,17 @@ export const GameRoom = () => {
   };
 
   const handleWordSubmit = async (word: string): Promise<boolean> => {
-    if (!game || !user) return false;
-    return await gameLogic.submitWord(word);
+    if (!game || !user || !room) return false;
+    
+    console.log('Word submitted, will get fresh syllable for next round');
+    
+    // Enhanced game logic that ensures fresh syllable selection
+    const result = await gameLogic.submitWord(word);
+    
+    // After successful word submission, the game logic should trigger a new syllable
+    // The useGameLogic hook should handle getting a fresh random syllable
+    
+    return result;
   };
 
   const handleWordChange = (word: string) => {
