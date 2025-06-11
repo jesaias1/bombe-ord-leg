@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +17,22 @@ export const useGameLogic = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
   const { toast } = useToast();
+
+  const validateWord = async (word: string): Promise<boolean> => {
+    // Check if word exists in Danish dictionary
+    const { data, error } = await supabase
+      .from('danish_words')
+      .select('id')
+      .eq('word', word.toLowerCase())
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error validating word:', error);
+      return false;
+    }
+
+    return !!data;
+  };
 
   const submitWord = async (word: string): Promise<boolean> => {
     if (!game || !currentUserId || !room) return false;
@@ -51,6 +66,17 @@ export const useGameLogic = (
       return false;
     }
 
+    // Validate word exists in Danish dictionary
+    const isValidWord = await validateWord(trimmedWord);
+    if (!isValidWord) {
+      toast({
+        title: "Ugyldigt ord",
+        description: "Dette ord findes ikke i ordbogen",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -59,7 +85,7 @@ export const useGameLogic = (
       const nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
       const nextPlayer = alivePlayers[nextPlayerIndex];
 
-      // Get a FRESH random syllable for the next round - this is key!
+      // Get a fresh random syllable for the next round
       console.log('Getting fresh random syllable for next round with difficulty:', room.difficulty);
       const nextSyllable = await selectRandomSyllable(room.difficulty);
       
@@ -84,7 +110,7 @@ export const useGameLogic = (
         .from('games')
         .update({
           current_player_id: nextPlayer.id,
-          current_syllable: nextSyllable, // Always fresh syllable
+          current_syllable: nextSyllable,
           used_words: updatedUsedWords,
           timer_end_time: timerEndTime.toISOString(),
           timer_duration: timerDuration,
@@ -181,7 +207,7 @@ export const useGameLogic = (
           .from('games')
           .update({
             current_player_id: nextPlayer.id,
-            current_syllable: nextSyllable, // Fresh syllable after timer expires
+            current_syllable: nextSyllable,
             timer_end_time: timerEndTime.toISOString(),
             timer_duration: timerDuration,
             round_number: (game.round_number || 1) + 1
