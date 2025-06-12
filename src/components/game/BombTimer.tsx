@@ -13,7 +13,7 @@ export const BombTimer = ({ timeLeft, totalTime, isActive, syllable }: BombTimer
   const [shake, setShake] = useState(false);
   
   useEffect(() => {
-    if (timeLeft <= 5 && timeLeft > 0 && isActive) {
+    if (timeLeft <= 3 && timeLeft > 0 && isActive) {
       setShake(true);
       const timer = setTimeout(() => setShake(false), 200);
       return () => clearTimeout(timer);
