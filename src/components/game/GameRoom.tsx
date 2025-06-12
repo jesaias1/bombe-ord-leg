@@ -11,6 +11,7 @@ import { useGameTimer } from '@/hooks/useGameTimer';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { Tables } from '@/integrations/supabase/types';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
+import { resetGameSyllables } from '@/utils/danishSyllables';
 
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
@@ -239,6 +240,10 @@ export const GameRoom = () => {
       });
       return;
     }
+
+    // Reset syllables for new game to ensure fresh variety
+    console.log('Starting new game - resetting syllable pool for maximum variety');
+    resetGameSyllables();
 
     // Get fresh random syllable for game start
     console.log('Starting game - selecting fresh random syllable for difficulty:', room.difficulty);
