@@ -1,5 +1,6 @@
 
 import { cn } from '@/lib/utils';
+import { ArrowRight, Heart } from 'lucide-react';
 
 interface Player {
   id: string;
@@ -17,61 +18,95 @@ interface PlayerListProps {
 
 export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerListProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="font-bold text-lg mb-3 text-gray-800">Spillere</h3>
-      <div className="space-y-2">
-        {players.map((player) => (
+    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+      <h3 className="font-bold text-xl mb-4 text-gray-800 text-center">Spillere</h3>
+      <div className="space-y-3">
+        {players.map((player, index) => (
           <div
             key={player.id}
             className={cn(
-              "flex items-center justify-between p-3 rounded-lg transition-all duration-500",
+              "relative flex items-center justify-between p-4 rounded-xl transition-all duration-500 border-2",
               currentPlayerId === player.id && [
-                "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg",
-                "ring-4 ring-blue-300 ring-opacity-50",
+                "bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white shadow-xl",
+                "border-yellow-400",
                 "transform scale-105",
                 "animate-pulse"
               ],
-              currentPlayerId !== player.id && !player.is_alive && "opacity-50 bg-gray-100",
-              currentPlayerId !== player.id && player.is_alive && "bg-gray-50 hover:bg-gray-100",
-              player.user_id === currentUserId && currentPlayerId !== player.id && "ring-2 ring-green-300"
+              currentPlayerId !== player.id && !player.is_alive && "opacity-60 bg-gray-50 border-gray-200",
+              currentPlayerId !== player.id && player.is_alive && "bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200",
+              player.user_id === currentUserId && currentPlayerId !== player.id && "ring-2 ring-green-400 border-green-300"
             )}
             style={currentPlayerId === player.id ? {
               animationDuration: '2s',
               animationIterationCount: 'infinite'
             } : {}}
           >
-            <div className="flex items-center space-x-3">
+            {/* Arrow pointing to current player */}
+            {currentPlayerId === player.id && (
+              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2">
+                <ArrowRight 
+                  size={24} 
+                  className="text-yellow-400 animate-bounce drop-shadow-lg" 
+                />
+              </div>
+            )}
+
+            {/* Hearts animation for current player */}
+            {currentPlayerId === player.id && (
+              <>
+                <div className="absolute -top-2 left-4 animate-bounce animation-delay-500">
+                  <Heart size={16} className="text-red-400 fill-current drop-shadow-sm" />
+                </div>
+                <div className="absolute -top-1 right-8 animate-bounce animation-delay-1000">
+                  <Heart size={12} className="text-pink-400 fill-current drop-shadow-sm" />
+                </div>
+                <div className="absolute -top-2 right-16 animate-bounce animation-delay-1500">
+                  <Heart size={14} className="text-red-300 fill-current drop-shadow-sm" />
+                </div>
+              </>
+            )}
+
+            <div className="flex items-center space-x-4 z-10 relative">
               <div className={cn(
-                "w-4 h-4 rounded-full transition-all duration-300",
-                currentPlayerId === player.id && "w-5 h-5 bg-yellow-400 shadow-lg",
-                currentPlayerId !== player.id && player.is_alive && "bg-green-500",
-                !player.is_alive && "bg-red-500"
+                "w-5 h-5 rounded-full transition-all duration-300 shadow-md",
+                currentPlayerId === player.id && "w-6 h-6 bg-yellow-300 shadow-lg animate-pulse",
+                currentPlayerId !== player.id && player.is_alive && "bg-green-400",
+                !player.is_alive && "bg-red-400"
               )} />
               <span className={cn(
-                "font-medium transition-all duration-300",
-                currentPlayerId === player.id && "font-bold text-white text-lg drop-shadow-sm",
+                "font-semibold transition-all duration-300",
+                currentPlayerId === player.id && "font-bold text-white text-lg drop-shadow-md",
                 currentPlayerId !== player.id && player.is_alive && "text-gray-700",
                 !player.is_alive && "line-through text-gray-500"
               )}>
                 {player.name}
                 {player.user_id === currentUserId && " (dig)"}
-                {currentPlayerId === player.id && " - DIN TUR! 🎯"}
+                {currentPlayerId === player.id && " 🎯"}
               </span>
             </div>
             
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 z-10 relative">
               {Array.from({ length: 3 }, (_, i) => (
                 <div
                   key={i}
                   className={cn(
-                    "w-4 h-4 rounded-full border-2 transition-all duration-300",
-                    currentPlayerId === player.id && "w-5 h-5 shadow-md",
-                    i < player.lives ? "bg-red-500 border-red-600" : "bg-gray-200 border-gray-300",
-                    currentPlayerId === player.id && i < player.lives && "bg-red-400 border-red-500"
+                    "w-5 h-5 rounded-full border-2 transition-all duration-300 shadow-sm",
+                    currentPlayerId === player.id && "w-6 h-6 shadow-md animate-pulse",
+                    i < player.lives ? "bg-red-400 border-red-500" : "bg-gray-200 border-gray-300",
+                    currentPlayerId === player.id && i < player.lives && "bg-red-300 border-red-400"
                   )}
                 />
               ))}
             </div>
+
+            {/* Sparkle effect for current player */}
+            {currentPlayerId === player.id && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-2 left-8 w-1 h-1 bg-yellow-200 rounded-full animate-ping"></div>
+                <div className="absolute bottom-3 right-12 w-1 h-1 bg-white rounded-full animate-ping animation-delay-1000"></div>
+                <div className="absolute top-6 right-4 w-1 h-1 bg-yellow-100 rounded-full animate-ping animation-delay-2000"></div>
+              </div>
+            )}
           </div>
         ))}
       </div>
