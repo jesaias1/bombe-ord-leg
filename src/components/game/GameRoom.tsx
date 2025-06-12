@@ -8,7 +8,8 @@ import { GameWaiting } from './GameWaiting';
 import { GamePlaying } from './GamePlaying';
 import { GameFinished } from './GameFinished';
 import { QuickWordImport } from '../admin/QuickWordImport';
-import { resetGameSyllables } from '@/utils/danishSyllables';
+import { useGameLogic } from '@/hooks/useGameLogic';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
@@ -17,11 +18,7 @@ type Player = Tables<'players'>;
 
 export const GameRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
-
-  // Reset syllables when entering a new game room
-  useEffect(() => {
-    resetGameSyllables();
-  }, [roomId]);
+  const { user } = useAuth();
 
   const { data: room } = useQuery({
     queryKey: ['room', roomId],
@@ -80,6 +77,21 @@ export const GameRoom = () => {
     }
   });
 
+  const { initializeGameSyllables, submitWord, isSubmitting } = useGameLogic(
+    game,
+    players,
+    user?.id,
+    room
+  );
+
+  // Initialize game syllables when game starts
+  useEffect(() => {
+    if (game && game.status === 'playing' && (!game.game_syllables || game.game_syllables.length === 0)) {
+      console.log('Initializing game syllables for game:', game.id);
+      initializeGameSyllables(game.id);
+    }
+  }, [game, initializeGameSyllables]);
+
   if (!room) {
     return <div className="text-center p-8">Indlæser værelse...</div>;
   }
@@ -97,14 +109,20 @@ export const GameRoom = () => {
     }
     
     if (game.status === 'playing') {
+      const currentPlayer = players.find(p => p.id === game.current_player_id);
+      const isCurrentUser = currentPlayer?.user_id === user?.id;
+      
       return (
         <GamePlaying 
           game={game}
           players={players}
           timeLeft={0}
-          isCurrentUser={false}
+          currentPlayer={currentPlayer}
+          isCurrentUser={isCurrentUser}
           isSinglePlayer={false}
-          onWordSubmit={async () => false}
+          currentUserId={user?.id}
+          onWordSubmit={submitWord}
+          isSubmitting={isSubmitting}
         />
       );
     }

@@ -1,12 +1,12 @@
 
-import { getRandomDanishSyllable } from './danishSyllables';
+import { DANISH_SYLLABLES } from './danishSyllables';
 
 export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer'): Promise<string | null> => {
-  console.log(`Selecting Danish syllable (difficulty setting ignored for better variety)`);
+  console.log(`Selecting Danish syllable (this function is now deprecated, use game syllables instead)`);
   
   try {
-    // Use our comprehensive Danish syllable system
-    const selectedSyllable = getRandomDanishSyllable();
+    // Fallback for backward compatibility
+    const selectedSyllable = DANISH_SYLLABLES[Math.floor(Math.random() * DANISH_SYLLABLES.length)];
     
     console.log(`Selected Danish syllable: "${selectedSyllable}"`);
     

@@ -1,3 +1,4 @@
+
 // Comprehensive list of Danish syllables for the Bomb Party game
 export const DANISH_SYLLABLES = [
   // Common 2-letter combinations
@@ -46,58 +47,13 @@ export const DANISH_SYLLABLES = [
   'lyd', 'ryd', 'syd', 'tyd', 'vyd', 'byd', 'dyd', 'fyd', 'gyd', 'hyd', 'kyd', 'myd', 'pyd'
 ];
 
-// Keep track of syllables used in current game session
-let currentGameSyllables: string[] = [];
-let usedSyllablesInGame: Set<string> = new Set();
-
+// Deprecated: This function is no longer needed as syllables are now managed by the database
 export const resetGameSyllables = () => {
-  console.log('Resetting game syllables for new game session');
-  currentGameSyllables = [...DANISH_SYLLABLES];
-  usedSyllablesInGame = new Set();
-  
-  // Shuffle the syllables for this game session
-  for (let i = currentGameSyllables.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [currentGameSyllables[i], currentGameSyllables[j]] = [currentGameSyllables[j], currentGameSyllables[i]];
-  }
-  
-  console.log(`Game session initialized with ${currentGameSyllables.length} shuffled syllables`);
+  console.log('resetGameSyllables is deprecated - syllables are now managed by the database');
 };
 
+// Deprecated: This function is no longer needed as syllables are now managed by the database
 export const getRandomDanishSyllable = (): string => {
-  // Initialize if not done yet
-  if (currentGameSyllables.length === 0) {
-    resetGameSyllables();
-  }
-  
-  // Find available syllables (not used in this game yet)
-  const availableSyllables = currentGameSyllables.filter(s => !usedSyllablesInGame.has(s));
-  
-  // If we've used all syllables, reset the used set but keep the shuffled order
-  if (availableSyllables.length === 0) {
-    console.log('All syllables used, allowing reuse but maintaining variety');
-    usedSyllablesInGame.clear();
-    // Only allow reuse of syllables used more than 10 rounds ago
-    const recentlyUsed = Array.from(usedSyllablesInGame).slice(-10);
-    const syllablesForReuse = currentGameSyllables.filter(s => !recentlyUsed.includes(s));
-    
-    if (syllablesForReuse.length > 0) {
-      availableSyllables.push(...syllablesForReuse);
-    } else {
-      // Fallback: use all syllables again
-      availableSyllables.push(...currentGameSyllables);
-    }
-  }
-  
-  // Select random syllable from available ones
-  const randomIndex = Math.floor(Math.random() * availableSyllables.length);
-  const selectedSyllable = availableSyllables[randomIndex];
-  
-  // Mark as used in this game
-  usedSyllablesInGame.add(selectedSyllable);
-  
-  console.log(`Selected syllable: "${selectedSyllable}" from ${availableSyllables.length} available options`);
-  console.log(`Used syllables in game: ${usedSyllablesInGame.size}/${DANISH_SYLLABLES.length}`);
-  
-  return selectedSyllable;
+  console.log('getRandomDanishSyllable is deprecated - use game syllables from database instead');
+  return DANISH_SYLLABLES[Math.floor(Math.random() * DANISH_SYLLABLES.length)];
 };
