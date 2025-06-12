@@ -86,15 +86,39 @@ export const GameRoom = () => {
 
   const renderGameContent = () => {
     if (!game || game.status === 'waiting') {
-      return <GameWaiting room={room} players={players} />;
+      return (
+        <GameWaiting 
+          isSinglePlayer={false}
+          players={players}
+          canStartGame={false}
+          onStartGame={() => {}}
+        />
+      );
     }
     
     if (game.status === 'playing') {
-      return <GamePlaying room={room} game={game} players={players} />;
+      return (
+        <GamePlaying 
+          game={game}
+          players={players}
+          timeLeft={0}
+          isCurrentUser={false}
+          isSinglePlayer={false}
+          onWordSubmit={async () => false}
+        />
+      );
     }
     
     if (game.status === 'finished') {
-      return <GameFinished room={room} game={game} players={players} />;
+      return (
+        <GameFinished 
+          isSinglePlayer={false}
+          alivePlayers={players.filter(p => p.is_alive)}
+          players={players}
+          game={game}
+          onBackHome={() => {}}
+        />
+      );
     }
     
     return null;
@@ -103,7 +127,12 @@ export const GameRoom = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        <GameHeader room={room} />
+        <GameHeader 
+          roomName={room.name}
+          roomId={room.id}
+          difficulty={room.difficulty}
+          isSinglePlayer={false}
+        />
         
         {/* Show word import option if word count is low */}
         {wordCount < 50000 && (
