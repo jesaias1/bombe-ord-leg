@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { DANISH_SYLLABLES } from '@/utils/danishSyllables';
+import { selectRandomSyllable } from '@/utils/syllableSelection';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
@@ -17,24 +18,6 @@ export const useGameLogic = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
   const { toast } = useToast();
-
-  const generateGameSyllables = (): string[] => {
-    const syllables = [...DANISH_SYLLABLES];
-    
-    // Shuffle the syllables for this game session
-    for (let i = syllables.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [syllables[i], syllables[j]] = [syllables[j], syllables[i]];
-    }
-    
-    console.log(`Generated ${syllables.length} shuffled syllables for game`);
-    return syllables;
-  };
-
-  const getNextSyllable = (gameData: Game): string | null => {
-    // Use the database syllables table for now, we'll enhance this later
-    return DANISH_SYLLABLES[Math.floor(Math.random() * DANISH_SYLLABLES.length)];
-  };
 
   const validateWord = async (word: string): Promise<boolean> => {
     // Check if word exists in Danish dictionary
@@ -105,7 +88,7 @@ export const useGameLogic = (
 
       // Get next syllable
       console.log('Getting next syllable');
-      const nextSyllable = getNextSyllable(game);
+      const nextSyllable = await selectRandomSyllable(room.difficulty);
       
       if (!nextSyllable) {
         toast({
@@ -213,7 +196,7 @@ export const useGameLogic = (
 
     if (nextPlayer) {
       // Get next syllable
-      const nextSyllable = getNextSyllable(game);
+      const nextSyllable = await selectRandomSyllable(room.difficulty);
       
       if (nextSyllable) {
         console.log('Timer expired - selected next syllable:', nextSyllable);
@@ -236,8 +219,7 @@ export const useGameLogic = (
   };
 
   const initializeGameSyllables = async (gameId: string): Promise<boolean> => {
-    // For now, we'll keep using the existing syllable selection
-    // This can be enhanced later to use the database columns
+    // This function is kept for compatibility but not used in the current implementation
     console.log('Game syllables initialization - using existing system');
     return true;
   };

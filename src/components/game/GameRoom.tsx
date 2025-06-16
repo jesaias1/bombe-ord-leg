@@ -9,6 +9,8 @@ import { GamePlaying } from './GamePlaying';
 import { GameFinished } from './GameFinished';
 import { QuickWordImport } from '../admin/QuickWordImport';
 import { useGameLogic } from '@/hooks/useGameLogic';
+import { useGameTimer } from '@/hooks/useGameTimer';
+import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -77,12 +79,15 @@ export const GameRoom = () => {
     }
   });
 
-  const { initializeGameSyllables, submitWord, isSubmitting } = useGameLogic(
+  const { submitWord, handleTimerExpired, isSubmitting } = useGameLogic(
     game,
     players,
     user?.id,
     room
   );
+
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room);
+  const timeLeft = useGameTimer(game, timerHandlerExpired);
 
   if (!room) {
     return <div className="text-center p-8">Indlæser værelse...</div>;
@@ -108,7 +113,7 @@ export const GameRoom = () => {
         <GamePlaying 
           game={game}
           players={players}
-          timeLeft={0}
+          timeLeft={timeLeft}
           currentPlayer={currentPlayer}
           isCurrentUser={isCurrentUser}
           isSinglePlayer={false}
