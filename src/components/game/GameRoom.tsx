@@ -84,14 +84,6 @@ export const GameRoom = () => {
     room
   );
 
-  // Initialize game syllables when game starts
-  useEffect(() => {
-    if (game && game.status === 'playing' && (!game.game_syllables || game.game_syllables.length === 0)) {
-      console.log('Initializing game syllables for game:', game.id);
-      initializeGameSyllables(game.id);
-    }
-  }, [game, initializeGameSyllables]);
-
   if (!room) {
     return <div className="text-center p-8">Indlæser værelse...</div>;
   }

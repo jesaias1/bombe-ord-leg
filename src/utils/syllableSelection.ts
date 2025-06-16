@@ -2,10 +2,10 @@
 import { DANISH_SYLLABLES } from './danishSyllables';
 
 export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer'): Promise<string | null> => {
-  console.log(`Selecting Danish syllable (this function is now deprecated, use game syllables instead)`);
+  console.log(`Selecting Danish syllable for difficulty: ${difficulty}`);
   
   try {
-    // Fallback for backward compatibility
+    // Select a random syllable from the comprehensive list
     const selectedSyllable = DANISH_SYLLABLES[Math.floor(Math.random() * DANISH_SYLLABLES.length)];
     
     console.log(`Selected Danish syllable: "${selectedSyllable}"`);

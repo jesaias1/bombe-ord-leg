@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -33,31 +32,8 @@ export const useGameLogic = (
   };
 
   const getNextSyllable = (gameData: Game): string | null => {
-    // If no game syllables exist, generate them
-    if (!gameData.game_syllables || gameData.game_syllables.length === 0) {
-      console.log('No game syllables found, this should not happen in an active game');
-      return null;
-    }
-
-    const currentIndex = gameData.syllable_index || 0;
-    
-    // If we've used all syllables, start over but skip recently used ones
-    if (currentIndex >= gameData.game_syllables.length) {
-      const recentlyUsed = gameData.used_words?.slice(-10) || [];
-      const availableSyllables = gameData.game_syllables.filter(s => 
-        !recentlyUsed.some(word => word.toLowerCase().includes(s.toLowerCase()))
-      );
-      
-      if (availableSyllables.length > 0) {
-        const randomIndex = Math.floor(Math.random() * availableSyllables.length);
-        return availableSyllables[randomIndex];
-      }
-      
-      // Fallback: restart from beginning
-      return gameData.game_syllables[0];
-    }
-    
-    return gameData.game_syllables[currentIndex];
+    // Use the database syllables table for now, we'll enhance this later
+    return DANISH_SYLLABLES[Math.floor(Math.random() * DANISH_SYLLABLES.length)];
   };
 
   const validateWord = async (word: string): Promise<boolean> => {
@@ -127,8 +103,8 @@ export const useGameLogic = (
       const nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
       const nextPlayer = alivePlayers[nextPlayerIndex];
 
-      // Get next syllable from the game's syllable sequence
-      console.log('Getting next syllable from game sequence');
+      // Get next syllable
+      console.log('Getting next syllable');
       const nextSyllable = getNextSyllable(game);
       
       if (!nextSyllable) {
@@ -140,16 +116,13 @@ export const useGameLogic = (
         return false;
       }
 
-      console.log('Selected next syllable from sequence:', nextSyllable);
+      console.log('Selected next syllable:', nextSyllable);
 
       const updatedUsedWords = [...(game.used_words || []), trimmedWord];
       
       // Varied timer duration for each round
       const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
       const timerEndTime = new Date(Date.now() + timerDuration * 1000);
-      
-      // Update syllable index
-      const newSyllableIndex = ((game.syllable_index || 0) + 1);
 
       const { error } = await supabase
         .from('games')
@@ -159,8 +132,7 @@ export const useGameLogic = (
           used_words: updatedUsedWords,
           timer_end_time: timerEndTime.toISOString(),
           timer_duration: timerDuration,
-          round_number: (game.round_number || 1) + 1,
-          syllable_index: newSyllableIndex
+          round_number: (game.round_number || 1) + 1
         })
         .eq('id', game.id);
 
@@ -196,7 +168,7 @@ export const useGameLogic = (
     const currentPlayer = players.find(p => p.id === game.current_player_id);
     if (!currentPlayer) return;
 
-    console.log('Timer expired, getting next syllable from sequence');
+    console.log('Timer expired, getting next syllable');
 
     // Remove a life from current player
     const newLives = Math.max(0, currentPlayer.lives - 1);
@@ -223,7 +195,7 @@ export const useGameLogic = (
       return;
     }
 
-    // Continue with next player and next syllable from sequence
+    // Continue with next player and next syllable
     const alivePlayers = players.filter(p => p.is_alive);
     const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
     let nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
@@ -240,17 +212,14 @@ export const useGameLogic = (
     const nextPlayer = nextAlivePlayers[nextPlayerIndex];
 
     if (nextPlayer) {
-      // Get next syllable from game sequence
+      // Get next syllable
       const nextSyllable = getNextSyllable(game);
       
       if (nextSyllable) {
-        console.log('Timer expired - selected next syllable from sequence:', nextSyllable);
+        console.log('Timer expired - selected next syllable:', nextSyllable);
         
         const timerDuration = Math.floor(Math.random() * 11) + 10;
         const timerEndTime = new Date(Date.now() + timerDuration * 1000);
-        
-        // Update syllable index
-        const newSyllableIndex = ((game.syllable_index || 0) + 1);
 
         await supabase
           .from('games')
@@ -259,8 +228,7 @@ export const useGameLogic = (
             current_syllable: nextSyllable,
             timer_end_time: timerEndTime.toISOString(),
             timer_duration: timerDuration,
-            round_number: (game.round_number || 1) + 1,
-            syllable_index: newSyllableIndex
+            round_number: (game.round_number || 1) + 1
           })
           .eq('id', game.id);
       }
@@ -268,28 +236,10 @@ export const useGameLogic = (
   };
 
   const initializeGameSyllables = async (gameId: string): Promise<boolean> => {
-    try {
-      const gameSyllables = generateGameSyllables();
-      
-      const { error } = await supabase
-        .from('games')
-        .update({
-          game_syllables: gameSyllables,
-          syllable_index: 0
-        })
-        .eq('id', gameId);
-
-      if (error) {
-        console.error('Error initializing game syllables:', error);
-        return false;
-      }
-
-      console.log('Game syllables initialized successfully');
-      return true;
-    } catch (error) {
-      console.error('Error in initializeGameSyllables:', error);
-      return false;
-    }
+    // For now, we'll keep using the existing syllable selection
+    // This can be enhanced later to use the database columns
+    console.log('Game syllables initialization - using existing system');
+    return true;
   };
 
   return {

@@ -38,10 +38,12 @@ export type Database = {
           created_at: string
           current_player_id: string | null
           current_syllable: string | null
+          game_syllables: string[] | null
           id: string
           room_id: string | null
           round_number: number | null
           status: Database["public"]["Enums"]["game_status"]
+          syllable_index: number | null
           timer_duration: number | null
           timer_end_time: string | null
           updated_at: string
@@ -51,10 +53,12 @@ export type Database = {
           created_at?: string
           current_player_id?: string | null
           current_syllable?: string | null
+          game_syllables?: string[] | null
           id?: string
           room_id?: string | null
           round_number?: number | null
           status?: Database["public"]["Enums"]["game_status"]
+          syllable_index?: number | null
           timer_duration?: number | null
           timer_end_time?: string | null
           updated_at?: string
@@ -64,10 +68,12 @@ export type Database = {
           created_at?: string
           current_player_id?: string | null
           current_syllable?: string | null
+          game_syllables?: string[] | null
           id?: string
           room_id?: string | null
           round_number?: number | null
           status?: Database["public"]["Enums"]["game_status"]
+          syllable_index?: number | null
           timer_duration?: number | null
           timer_end_time?: string | null
           updated_at?: string
