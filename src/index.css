@@ -172,6 +172,22 @@
     }
   }
 
+  /* Rocket flying animation */
+  @keyframes rocket-fly {
+    0% {
+      transform: translateY(200px) translateX(-200px) scale(1) rotate(45deg);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-100px) translateX(0px) scale(1.5) rotate(45deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-300px) translateX(200px) scale(2) rotate(45deg);
+      opacity: 0;
+    }
+  }
+
   .animate-blob {
     animation: blob 7s infinite;
   }

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { PlayerList } from './PlayerList';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tables } from '@/integrations/supabase/types';
+import { useState } from 'react';
 
 type Player = Tables<'players'>;
 
@@ -23,6 +24,16 @@ export const GameWaiting = ({
   onStartGame,
   isLoading = false
 }: GameWaitingProps) => {
+  const [isRocketFlying, setIsRocketFlying] = useState(false);
+
+  const handleStartClick = () => {
+    setIsRocketFlying(true);
+    // Wait for animation to complete before starting the game
+    setTimeout(() => {
+      onStartGame();
+    }, 1500);
+  };
+
   if (isLoading) {
     return (
       <div className="text-center space-y-6 animate-fade-in">
@@ -39,7 +50,16 @@ export const GameWaiting = ({
   }
 
   return (
-    <div className="text-center space-y-8 animate-fade-in">
+    <div className="text-center space-y-8 animate-fade-in relative">
+      {/* Flying rocket animation */}
+      {isRocketFlying && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="text-6xl animate-[rocket-fly_1.5s_ease-in-out_forwards]">
+            🚀
+          </div>
+        </div>
+      )}
+
       <div className="relative">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
           {isSinglePlayer ? "🎯 Klar til solo træning!" : "⏳ Venter på at spillet starter..."}
@@ -62,9 +82,10 @@ export const GameWaiting = ({
       {canStartGame && (
         <div className="space-y-4 pt-4">
           <Button 
-            onClick={onStartGame} 
+            onClick={handleStartClick} 
             size="lg" 
             className="text-xl px-12 py-5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-xl transform hover:scale-105 transition-all duration-300"
+            disabled={isRocketFlying}
           >
             {isSinglePlayer ? "🚀 Start træning" : "🎮 Start Spil"}
           </Button>
