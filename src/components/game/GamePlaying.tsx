@@ -59,29 +59,20 @@ export const GamePlaying = ({
         <div className="text-center space-y-6">
           {currentPlayer && (
             <div className={cn(
-              "rounded-xl p-6 shadow-xl border-2 transition-all duration-500 transform hover:scale-[1.02]",
+              "rounded-xl p-4 shadow-xl border-2 transition-all duration-500 transform hover:scale-[1.02]",
               isCurrentUser 
                 ? "bg-gradient-to-r from-purple-100 via-pink-50 to-purple-100 border-purple-300" 
                 : "bg-gradient-to-r from-gray-100 to-gray-50 border-gray-200"
             )}>
-              <div className="flex items-center justify-center space-x-3 mb-3">
-                {isCurrentUser && <div className="w-3 h-3 bg-green-500 rounded-full animate-[ping_3s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>}
-                <p className={cn(
-                  "text-2xl font-bold transition-all duration-300",
-                  isCurrentUser ? "text-purple-700" : "text-gray-700"
-                )}>
-                  {isCurrentUser ? 
-                    (isSinglePlayer ? "🎯 Find et ord!" : "🎉 Din tur!") : 
-                    `🎮 ${currentPlayer.name}s tur`
-                  }
-                </p>
-                {isCurrentUser && <div className="w-3 h-3 bg-green-500 rounded-full animate-[ping_3s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>}
-              </div>
-              {isCurrentUser && (
-                <p className="text-purple-600 font-medium animate-fade-in">
-                  Skriv et ord der indeholder "<span className="font-bold text-purple-800">{game.current_syllable}</span>"
-                </p>
-              )}
+              <p className={cn(
+                "text-xl font-bold transition-all duration-300",
+                isCurrentUser ? "text-purple-700" : "text-gray-700"
+              )}>
+                {isCurrentUser ? 
+                  (isSinglePlayer ? "🎯 Din tur!" : "🎉 Din tur!") : 
+                  `🎮 ${currentPlayer.name}s tur`
+                }
+              </p>
             </div>
           )}
           
