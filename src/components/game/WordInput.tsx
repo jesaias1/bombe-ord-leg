@@ -142,7 +142,16 @@ export const WordInput = ({
   const showSubmitting = isLocalSubmitting || isSubmitting;
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md space-y-4">
+      {/* Display the syllable prominently */}
+      <div className="text-center">
+        <div className="inline-block bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300 rounded-xl px-8 py-4 shadow-lg">
+          <div className="text-4xl font-bold text-purple-800 tracking-wider">
+            {currentSyllable.toUpperCase()}
+          </div>
+        </div>
+      </div>
+      
       <div className="flex space-x-2">
         <div className="flex-1">
           <Input
@@ -151,7 +160,7 @@ export const WordInput = ({
             value={word}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder || `Indtast et ord med "${currentSyllable}"`}
+            placeholder={placeholder || "Indtast dit ord her..."}
             disabled={isDisabled}
             className={cn(
               "text-lg",
