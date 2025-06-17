@@ -25,13 +25,18 @@ export const GameWaiting = ({
   isLoading = false
 }: GameWaitingProps) => {
   const [isRocketFlying, setIsRocketFlying] = useState(false);
+  const [showExplosion, setShowExplosion] = useState(false);
 
   const handleStartClick = () => {
     setIsRocketFlying(true);
-    // Wait for animation to complete before starting the game
+    // Show explosion at 90% of animation (2.7s out of 3s)
+    setTimeout(() => {
+      setShowExplosion(true);
+    }, 2700);
+    // Wait for full animation to complete before starting the game
     setTimeout(() => {
       onStartGame();
-    }, 1500);
+    }, 3000);
   };
 
   if (isLoading) {
@@ -54,8 +59,17 @@ export const GameWaiting = ({
       {/* Flying rocket animation */}
       {isRocketFlying && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div className="text-6xl animate-[rocket-fly_1.5s_ease-in-out_forwards]">
+          <div className="text-6xl animate-[rocket-fly_3s_ease-in-out_forwards]">
             🚀
+          </div>
+        </div>
+      )}
+
+      {/* Explosion animation */}
+      {showExplosion && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="text-8xl animate-[explosion_0.5s_ease-out_forwards]">
+            💥
           </div>
         </div>
       )}

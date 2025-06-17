@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -172,18 +171,50 @@
     }
   }
 
-  /* Rocket flying animation */
+  /* Rocket flying animation with circular path and explosion */
   @keyframes rocket-fly {
     0% {
       transform: translateY(200px) translateX(-200px) scale(1) rotate(45deg);
       opacity: 1;
     }
+    25% {
+      transform: translateY(-100px) translateX(-200px) scale(1.2) rotate(135deg);
+      opacity: 1;
+    }
     50% {
-      transform: translateY(-100px) translateX(0px) scale(1.5) rotate(45deg);
+      transform: translateY(-200px) translateX(0px) scale(1.5) rotate(225deg);
+      opacity: 1;
+    }
+    75% {
+      transform: translateY(-100px) translateX(200px) scale(1.8) rotate(315deg);
+      opacity: 1;
+    }
+    85% {
+      transform: translateY(0px) translateX(100px) scale(2) rotate(405deg);
+      opacity: 1;
+    }
+    90% {
+      transform: translateY(0px) translateX(0px) scale(3) rotate(450deg);
       opacity: 1;
     }
     100% {
-      transform: translateY(-300px) translateX(200px) scale(2) rotate(45deg);
+      transform: translateY(0px) translateX(0px) scale(0) rotate(450deg);
+      opacity: 0;
+    }
+  }
+
+  /* Explosion animation */
+  @keyframes explosion {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(2);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(4);
       opacity: 0;
     }
   }
