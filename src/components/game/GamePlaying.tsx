@@ -34,7 +34,7 @@ export const GamePlaying = ({
 }: GamePlayingProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
-      <div className="lg:col-span-2 space-y-12">
+      <div className="lg:col-span-2 space-y-16">
         <div className="text-center relative">
           {/* Glowing ring around timer - much slower pulse */}
           <div className="absolute inset-0 flex items-center justify-center">

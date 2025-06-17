@@ -13,6 +13,7 @@ import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
+import { selectRandomSyllable } from '@/utils/syllableSelection';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
@@ -175,6 +176,19 @@ export const GameRoom = () => {
           currentUserId={user?.id}
           canStartGame={canStartGame}
           onStartGame={async () => {
+            // Get a random syllable for the initial game state
+            const initialSyllable = await selectRandomSyllable(room!.difficulty);
+            
+            if (!initialSyllable) {
+              console.error('Failed to get initial syllable');
+              return;
+            }
+
+            console.log('Starting game with syllable:', initialSyllable);
+            
+            const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
+            const timerEndTime = new Date(Date.now() + timerDuration * 1000);
+
             // Create a new game for this room
             const { error } = await supabase
               .from('games')
@@ -182,9 +196,10 @@ export const GameRoom = () => {
                 room_id: roomId,
                 status: 'playing',
                 current_player_id: players[0]?.id,
-                current_syllable: 'ka', // Will be overridden by first syllable selection
-                timer_duration: 15,
-                timer_end_time: new Date(Date.now() + 15000).toISOString()
+                current_syllable: initialSyllable,
+                timer_duration: timerDuration,
+                timer_end_time: timerEndTime.toISOString(),
+                round_number: 1
               });
             
             if (error) {
@@ -233,7 +248,7 @@ export const GameRoom = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-8">
         <div className="animate-fade-in">
           <GameHeader 
             roomName={room.name}
