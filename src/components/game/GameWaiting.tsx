@@ -29,14 +29,14 @@ export const GameWaiting = ({
 
   const handleStartClick = () => {
     setIsRocketFlying(true);
-    // Show explosion at 90% of animation (2.7s out of 3s)
+    // Show explosion at 90% of animation (0.9s out of 1s)
     setTimeout(() => {
       setShowExplosion(true);
-    }, 2700);
+    }, 900);
     // Wait for full animation to complete before starting the game
     setTimeout(() => {
       onStartGame();
-    }, 3000);
+    }, 1000);
   };
 
   if (isLoading) {
