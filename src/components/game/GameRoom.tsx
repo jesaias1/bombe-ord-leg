@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -68,6 +67,33 @@ export const GameRoom = () => {
     enabled: !!roomId,
     refetchInterval: 1000,
   });
+
+  // Ensure current user is added as a player when they enter the room
+  useEffect(() => {
+    if (!user || !roomId || !room || playersLoading) return;
+    
+    const currentUserPlayer = players.find(p => p.user_id === user.id);
+    
+    if (!currentUserPlayer) {
+      console.log('Adding current user as player to room');
+      supabase
+        .from('players')
+        .insert({
+          room_id: roomId,
+          user_id: user.id,
+          name: user.displayName || 'Anonymous',
+          lives: 3,
+          is_alive: true
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('Error adding player:', error);
+          } else {
+            console.log('Player added successfully');
+          }
+        });
+    }
+  }, [user, roomId, room, players, playersLoading]);
 
   // Check word count and show import option if low
   const { data: wordCount = 0 } = useQuery({

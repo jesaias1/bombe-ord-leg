@@ -148,13 +148,27 @@
     }
   }
 
-  /* Pulse glow animation */
+  /* Gentler pulse glow animation */
   @keyframes pulse-glow {
     0%, 100% {
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+      transform: scale(1);
     }
     50% {
-      box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+      box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+      transform: scale(1.02);
+    }
+  }
+
+  /* Slower, gentler pulse animation */
+  @keyframes gentle-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.02);
     }
   }
 
@@ -175,7 +189,11 @@
   }
 
   .animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .animate-gentle-pulse {
+    animation: gentle-pulse 3s ease-in-out infinite;
   }
 
   .animation-delay-2000 {
