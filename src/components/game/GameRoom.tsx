@@ -81,7 +81,7 @@ export const GameRoom = () => {
         .insert({
           room_id: roomId,
           user_id: user.id,
-          name: user.displayName || 'Anonymous',
+          name: user.user_metadata?.display_name || user.email || 'Anonymous',
           lives: 3,
           is_alive: true
         })
