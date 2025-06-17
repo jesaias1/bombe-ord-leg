@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -76,12 +77,21 @@ export const GameRoom = () => {
     
     if (!currentUserPlayer) {
       console.log('Adding current user as player to room');
+      
+      // Get the proper display name for both authenticated and guest users
+      let displayName = 'Anonymous';
+      if (user.user_metadata?.display_name) {
+        displayName = user.user_metadata.display_name;
+      } else if (user.email) {
+        displayName = user.email;
+      }
+      
       supabase
         .from('players')
         .insert({
           room_id: roomId,
           user_id: user.id,
-          name: user.user_metadata?.display_name || user.email || 'Anonymous',
+          name: displayName,
           lives: 3,
           is_alive: true
         })
@@ -223,10 +233,10 @@ export const GameRoom = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4 relative overflow-hidden">
-      {/* Animated background elements */}
+      {/* Animated background elements - positioned to not interfere with text */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob"></div>
-        <div className="absolute top-40 right-20 w-32 h-32 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-32 left-20 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob"></div>
+        <div className="absolute top-48 right-20 w-32 h-32 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-20 left-1/3 w-32 h-32 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-4000"></div>
       </div>
 
