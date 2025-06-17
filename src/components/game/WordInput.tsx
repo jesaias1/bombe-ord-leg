@@ -142,16 +142,7 @@ export const WordInput = ({
   const showSubmitting = isLocalSubmitting || isSubmitting;
 
   return (
-    <div className="w-full max-w-md space-y-6">
-      {/* Display only the syllable letters prominently */}
-      <div className="text-center">
-        <div className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl px-12 py-8 shadow-xl border-4 border-white">
-          <div className="text-6xl font-black text-white tracking-widest drop-shadow-lg">
-            {currentSyllable.toUpperCase()}
-          </div>
-        </div>
-      </div>
-      
+    <div className="w-full max-w-md space-y-4">
       <div className="flex space-x-2">
         <div className="flex-1">
           <Input

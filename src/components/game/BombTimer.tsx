@@ -27,7 +27,7 @@ export const BombTimer = ({ timeLeft, totalTime, isActive, syllable }: BombTimer
     <div className="flex flex-col items-center space-y-4">
       <div
         className={cn(
-          "relative w-32 h-32 rounded-full flex items-center justify-center text-white font-bold text-lg",
+          "relative w-48 h-48 rounded-full flex items-center justify-center text-white font-bold text-lg",
           "border-4 transition-all duration-300",
           isUrgent ? "bg-red-600 border-red-800" : "bg-orange-500 border-orange-700",
           shake && "animate-pulse",
@@ -38,13 +38,13 @@ export const BombTimer = ({ timeLeft, totalTime, isActive, syllable }: BombTimer
         }}
       >
         <div className={cn(
-          "absolute inset-2 rounded-full flex flex-col items-center justify-center",
+          "absolute inset-3 rounded-full flex flex-col items-center justify-center",
           isUrgent ? "bg-red-500" : "bg-orange-400"
         )}>
-          <div className="text-2xl font-black text-center leading-tight">
-            {syllable}
+          <div className="text-5xl font-black text-center leading-tight mb-2">
+            {syllable.toUpperCase()}
           </div>
-          <div className="text-sm font-bold">
+          <div className="text-lg font-bold">
             {timeLeft}s
           </div>
         </div>

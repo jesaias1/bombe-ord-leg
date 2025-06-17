@@ -34,12 +34,12 @@ export const GamePlaying = ({
 }: GamePlayingProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
-      <div className="lg:col-span-2 space-y-8">
+      <div className="lg:col-span-2 space-y-12">
         <div className="text-center relative">
           {/* Glowing ring around timer - much slower pulse */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className={cn(
-              "w-48 h-48 rounded-full border-4",
+              "w-64 h-64 rounded-full border-4",
               timeLeft <= 5 
                 ? "border-red-400 shadow-lg shadow-red-400/50 animate-[pulse_4s_ease-in-out_infinite]" 
                 : "border-orange-400 shadow-lg shadow-orange-400/30"
@@ -56,7 +56,7 @@ export const GamePlaying = ({
           </div>
         </div>
 
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-8">
           {currentPlayer && (
             <div className={cn(
               "rounded-xl p-4 shadow-xl border-2 transition-all duration-500 transform hover:scale-[1.02]",
