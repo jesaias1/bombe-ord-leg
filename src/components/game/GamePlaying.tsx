@@ -36,20 +36,13 @@ export const GamePlaying = ({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
       <div className="lg:col-span-2 space-y-8">
         <div className="text-center relative">
-          {/* Enhanced decorative elements around the bomb timer */}
-          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10">
-            <div className="flex space-x-3">
-              <div className="w-3 h-3 bg-orange-400 rounded-full animate-bounce shadow-lg"></div>
-              <div className="w-3 h-3 bg-red-400 rounded-full animate-bounce animation-delay-500 shadow-lg"></div>
-              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce animation-delay-1000 shadow-lg"></div>
-            </div>
-          </div>
-          
-          {/* Glowing ring around timer */}
+          {/* Glowing ring around timer - much slower pulse */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className={cn(
-              "w-48 h-48 rounded-full border-4 animate-pulse",
-              timeLeft <= 5 ? "border-red-400 shadow-lg shadow-red-400/50" : "border-orange-400 shadow-lg shadow-orange-400/30"
+              "w-48 h-48 rounded-full border-4",
+              timeLeft <= 5 
+                ? "border-red-400 shadow-lg shadow-red-400/50 animate-[pulse_4s_ease-in-out_infinite]" 
+                : "border-orange-400 shadow-lg shadow-orange-400/30"
             )}></div>
           </div>
           
@@ -68,11 +61,11 @@ export const GamePlaying = ({
             <div className={cn(
               "rounded-xl p-6 shadow-xl border-2 transition-all duration-500 transform hover:scale-[1.02]",
               isCurrentUser 
-                ? "bg-gradient-to-r from-purple-100 via-pink-50 to-purple-100 border-purple-300 animate-pulse" 
+                ? "bg-gradient-to-r from-purple-100 via-pink-50 to-purple-100 border-purple-300" 
                 : "bg-gradient-to-r from-gray-100 to-gray-50 border-gray-200"
             )}>
               <div className="flex items-center justify-center space-x-3 mb-3">
-                {isCurrentUser && <div className="w-3 h-3 bg-green-500 rounded-full animate-ping"></div>}
+                {isCurrentUser && <div className="w-3 h-3 bg-green-500 rounded-full animate-[ping_3s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>}
                 <p className={cn(
                   "text-2xl font-bold transition-all duration-300",
                   isCurrentUser ? "text-purple-700" : "text-gray-700"
@@ -82,7 +75,7 @@ export const GamePlaying = ({
                     `🎮 ${currentPlayer.name}s tur`
                   }
                 </p>
-                {isCurrentUser && <div className="w-3 h-3 bg-green-500 rounded-full animate-ping"></div>}
+                {isCurrentUser && <div className="w-3 h-3 bg-green-500 rounded-full animate-[ping_3s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>}
               </div>
               {isCurrentUser && (
                 <p className="text-purple-600 font-medium animate-fade-in">
