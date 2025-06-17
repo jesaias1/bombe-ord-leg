@@ -232,15 +232,8 @@ export const GameRoom = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4 relative overflow-hidden">
-      {/* Animated background elements - positioned to not interfere with text */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-32 left-20 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob"></div>
-        <div className="absolute top-48 right-20 w-32 h-32 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/3 w-32 h-32 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-4000"></div>
-      </div>
-
-      <div className="max-w-4xl mx-auto space-y-6 relative z-10">
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div className="animate-fade-in">
           <GameHeader 
             roomName={room.name}

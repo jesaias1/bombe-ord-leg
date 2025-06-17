@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -129,9 +130,9 @@ export const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4">
       <div className="max-w-6xl mx-auto pt-12">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-fade-in">
           <h1 className="text-5xl font-bold text-gray-800 mb-4">
             💣 Ordbomben 💣
           </h1>
@@ -162,8 +163,8 @@ export const HomePage = () => {
 
         {/* Admin section - visible when logged in as admin */}
         {isAdmin && (
-          <div className="mb-8">
-            <Card>
+          <div className="mb-8 animate-fade-in">
+            <Card className="bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>🔧 Administrator Panel</span>
@@ -189,16 +190,16 @@ export const HomePage = () => {
           <>
             {/* User Stats Section - Only show for registered users */}
             {!isGuest && (
-              <div className="mb-8">
+              <div className="mb-8 animate-fade-in">
                 <UserStats />
               </div>
             )}
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto animate-scale-in">
               {/* Create Room Card */}
-              <Card>
+              <Card className="bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200 transform hover:scale-[1.02] transition-all duration-300">
                 <CardHeader>
-                  <CardTitle>Opret nyt rum</CardTitle>
+                  <CardTitle className="text-xl font-bold text-gray-800">Opret nyt rum</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -241,7 +242,7 @@ export const HomePage = () => {
                   <Button 
                     onClick={createRoom} 
                     disabled={loading}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
                   >
                     {loading ? "Opretter..." : "Opret rum"}
                   </Button>
@@ -249,9 +250,9 @@ export const HomePage = () => {
               </Card>
 
               {/* Join Room Card */}
-              <Card>
+              <Card className="bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200 transform hover:scale-[1.02] transition-all duration-300">
                 <CardHeader>
-                  <CardTitle>Tilslut eksisterende rum</CardTitle>
+                  <CardTitle className="text-xl font-bold text-gray-800">Tilslut eksisterende rum</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -268,13 +269,13 @@ export const HomePage = () => {
 
                   <Button 
                     onClick={joinRoom}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
                     variant="outline"
                   >
                     Tilslut rum
                   </Button>
 
-                  <div className="text-sm text-gray-600 space-y-2">
+                  <div className="text-sm text-gray-600 space-y-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
                     <p><strong>Sådan spiller du:</strong></p>
                     <ul className="list-disc list-inside space-y-1">
                       <li>Skriv et dansk ord der indeholder den viste stavelse</li>
