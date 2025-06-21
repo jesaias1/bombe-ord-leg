@@ -15,6 +15,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
 import { Tables } from '@/integrations/supabase/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
@@ -23,6 +24,7 @@ type Player = Tables<'players'>;
 export const GameRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', roomId],
@@ -87,22 +89,30 @@ export const GameRoom = () => {
         displayName = user.email;
       }
       
-      supabase
-        .from('players')
-        .insert({
-          room_id: roomId,
-          user_id: user.id,
-          name: displayName,
-          lives: 3,
-          is_alive: true
-        })
-        .then(({ error }) => {
-          if (error) {
-            console.error('Error adding player:', error);
-          } else {
-            console.log('Player added successfully');
-          }
-        });
+      // Force immediate player addition for mobile
+      const addPlayer = async () => {
+        const { error } = await supabase
+          .from('players')
+          .insert({
+            room_id: roomId,
+            user_id: user.id,
+            name: displayName,
+            lives: 3,
+            is_alive: true
+          });
+          
+        if (error) {
+          console.error('Error adding player:', error);
+        } else {
+          console.log('Player added successfully');
+          // Force refresh of players query
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }
+      };
+      
+      addPlayer();
     }
   }, [user, roomId, room, players, playersLoading]);
 
@@ -136,8 +146,8 @@ export const GameRoom = () => {
             <Skeleton className="h-16 w-full" />
             <Skeleton className="h-8 w-48" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
+          <div className={`grid gap-8 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+            <div className={`space-y-6 ${isMobile ? '' : 'lg:col-span-2'}`}>
               <Skeleton className="h-64 w-full" />
               <Skeleton className="h-32 w-full" />
             </div>
@@ -259,7 +269,7 @@ export const GameRoom = () => {
         </div>
         
         {/* Show word import option if word count is low */}
-        {wordCount < 50000 && (
+        {wordCount < 50000 && !isMobile && (
           <div className="animate-fade-in">
             <QuickWordImport />
           </div>

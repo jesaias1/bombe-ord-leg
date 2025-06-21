@@ -4,6 +4,7 @@ import { PlayerList } from './PlayerList';
 import { WordInput } from './WordInput';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -32,14 +33,23 @@ export const GamePlaying = ({
   onWordSubmit,
   isSubmitting = false
 }: GamePlayingProps) => {
+  const isMobile = useIsMobile();
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
-      <div className="lg:col-span-2 space-y-24">
+    <div className={cn(
+      "gap-8 animate-fade-in",
+      isMobile ? "flex flex-col space-y-8" : "grid grid-cols-1 lg:grid-cols-3"
+    )}>
+      <div className={cn(
+        "space-y-24",
+        isMobile ? "order-1" : "lg:col-span-2"
+      )}>
         <div className="text-center relative mt-12">
           {/* Glowing ring around timer - much slower pulse */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className={cn(
-              "w-72 h-72 rounded-full border-4",
+              "rounded-full border-4",
+              isMobile ? "w-64 h-64" : "w-72 h-72",
               timeLeft <= 5 
                 ? "border-red-400 shadow-lg shadow-red-400/50 animate-[pulse_4s_ease-in-out_infinite]" 
                 : "border-orange-400 shadow-lg shadow-orange-400/30"
@@ -106,7 +116,10 @@ export const GamePlaying = ({
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className={cn(
+        "space-y-6",
+        isMobile ? "order-2" : ""
+      )}>
         <div className="transform hover:scale-[1.02] transition-all duration-300">
           <PlayerList 
             players={players} 
