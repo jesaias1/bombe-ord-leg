@@ -104,11 +104,10 @@ export const useTimerHandler = (
         if (newSyllable) {
           console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
           
-          // Use server time for consistent timer calculation
-          const serverTime = new Date();
-          const newTimerEndTime = new Date(serverTime.getTime() + TIMER_DURATION * 1000);
+          // Calculate timer end time - exactly 15 seconds from now
+          const newTimerEndTime = new Date(Date.now() + TIMER_DURATION * 1000);
 
-          console.log(`Setting consistent timer for ${TIMER_DURATION} seconds from server time:`, serverTime.toISOString(), 'ending at:', newTimerEndTime.toISOString());
+          console.log(`Setting consistent timer for ${TIMER_DURATION} seconds, ending at:`, newTimerEndTime.toISOString());
 
           const { error: gameError } = await supabase
             .from('games')
@@ -117,7 +116,7 @@ export const useTimerHandler = (
               current_syllable: newSyllable,
               timer_end_time: newTimerEndTime.toISOString(),
               timer_duration: TIMER_DURATION,
-              updated_at: serverTime.toISOString()
+              updated_at: new Date().toISOString()
             })
             .eq('id', game.id);
 

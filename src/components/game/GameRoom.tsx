@@ -195,12 +195,11 @@ export const GameRoom = () => {
 
             console.log('Starting game with syllable:', initialSyllable);
             
-            // Use server time for consistent timer calculation
-            const serverTime = new Date();
+            // Calculate timer end time - exactly 15 seconds from now
             const timerDuration = 15; // Fixed 15 seconds for all players
-            const timerEndTime = new Date(serverTime.getTime() + timerDuration * 1000);
+            const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
-            console.log(`Game starting with ${timerDuration} second timer from server time:`, serverTime.toISOString(), 'ending at:', timerEndTime.toISOString());
+            console.log(`Game starting with ${timerDuration} second timer, ending at:`, timerEndTime.toISOString());
 
             // Create a new game for this room
             const { error } = await supabase
@@ -213,8 +212,8 @@ export const GameRoom = () => {
                 timer_duration: timerDuration,
                 timer_end_time: timerEndTime.toISOString(),
                 round_number: 1,
-                created_at: serverTime.toISOString(),
-                updated_at: serverTime.toISOString()
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
               });
             
             if (error) {

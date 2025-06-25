@@ -42,11 +42,11 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
 
     const updateTimer = () => {
       const endTime = new Date(game.timer_end_time!).getTime();
-      const now = new Date().getTime();
+      const now = Date.now(); // Use Date.now() for consistency
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       
       setTimeLeft(remaining);
-      console.log(`Timer update: ${remaining}s remaining, end time: ${game.timer_end_time}`);
+      console.log(`Timer update: ${remaining}s remaining, current time: ${new Date(now).toISOString()}, end time: ${game.timer_end_time}`);
 
       // Only call onTimerExpired once when timer reaches 0
       if (remaining === 0 && !hasExpiredRef.current) {
@@ -63,7 +63,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
 
     // Set up interval if timer hasn't expired
     if (!hasExpiredRef.current) {
-      intervalRef.current = setInterval(updateTimer, 100); // More frequent updates for accuracy
+      intervalRef.current = setInterval(updateTimer, 1000); // Back to 1 second intervals for stability
     }
 
     return clearTimer;
