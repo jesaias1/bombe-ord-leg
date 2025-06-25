@@ -106,10 +106,11 @@ export const useGameLogic = (
 
       const updatedUsedWords = [...(game.used_words || []), trimmedWord];
       
-      // Use fixed timer duration for consistency
-      const timerEndTime = new Date(Date.now() + TIMER_DURATION * 1000);
+      // Use server time for consistent timer calculation
+      const serverTime = new Date();
+      const timerEndTime = new Date(serverTime.getTime() + TIMER_DURATION * 1000);
 
-      console.log(`Setting timer for ${TIMER_DURATION} seconds, ending at:`, timerEndTime.toISOString());
+      console.log(`Setting timer for ${TIMER_DURATION} seconds from server time:`, serverTime.toISOString(), 'ending at:', timerEndTime.toISOString());
 
       const { error } = await supabase
         .from('games')
@@ -119,7 +120,8 @@ export const useGameLogic = (
           used_words: updatedUsedWords,
           timer_end_time: timerEndTime.toISOString(),
           timer_duration: TIMER_DURATION,
-          round_number: (game.round_number || 1) + 1
+          round_number: (game.round_number || 1) + 1,
+          updated_at: serverTime.toISOString()
         })
         .eq('id', game.id);
 
