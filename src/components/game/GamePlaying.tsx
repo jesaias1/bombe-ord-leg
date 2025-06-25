@@ -1,10 +1,10 @@
-
 import { BombTimer } from './BombTimer';
 import { PlayerList } from './PlayerList';
 import { WordInput } from './WordInput';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useEffect, useRef } from 'react';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -34,12 +34,32 @@ export const GamePlaying = ({
   isSubmitting = false
 }: GamePlayingProps) => {
   const isMobile = useIsMobile();
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const lastRoundRef = useRef(game.round_number);
+
+  // Prevent auto-scroll on mobile when new words are added
+  useEffect(() => {
+    if (isMobile && game.round_number !== lastRoundRef.current) {
+      // Keep the current scroll position when round changes
+      const currentScrollY = window.scrollY;
+      
+      // Use setTimeout to restore scroll position after DOM updates
+      setTimeout(() => {
+        window.scrollTo(0, currentScrollY);
+      }, 100);
+      
+      lastRoundRef.current = game.round_number || 1;
+    }
+  }, [game.round_number, isMobile]);
 
   return (
-    <div className={cn(
-      "gap-8 animate-fade-in",
-      isMobile ? "flex flex-col space-y-8" : "grid grid-cols-1 lg:grid-cols-3"
-    )}>
+    <div 
+      ref={gameContainerRef}
+      className={cn(
+        "gap-8 animate-fade-in",
+        isMobile ? "flex flex-col space-y-8" : "grid grid-cols-1 lg:grid-cols-3"
+      )}
+    >
       <div className={cn(
         "space-y-24",
         isMobile ? "order-1" : "lg:col-span-2"
@@ -100,7 +120,13 @@ export const GamePlaying = ({
               <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center justify-center">
                 📝 Brugte ord ({game.used_words.length})
               </h3>
-              <div className="flex flex-wrap gap-3 justify-center max-h-32 overflow-y-auto">
+              <div 
+                className="flex flex-wrap gap-3 justify-center max-h-32 overflow-y-auto"
+                style={{
+                  // Prevent scroll jumping on mobile
+                  scrollBehavior: isMobile ? 'auto' : 'smooth'
+                }}
+              >
                 {game.used_words.map((word, index) => (
                   <span 
                     key={index} 

@@ -79,8 +79,9 @@ export const useTimerHandler = (
           console.error('Error ending game:', gameError);
         }
 
-        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`} - Spillet er slut!`, {
-          duration: 2000
+        const wordsGuessed = game.used_words?.length || 0;
+        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`} - Spillet er slut! ${wordsGuessed} ord gættet i alt.`, {
+          duration: 3000
         });
       } else {
         // Continue game with next player
@@ -104,10 +105,17 @@ export const useTimerHandler = (
         if (newSyllable) {
           console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
           
-          // Calculate timer end time - exactly 15 seconds from now
-          const newTimerEndTime = new Date(Date.now() + TIMER_DURATION * 1000);
+          // Use server timestamp for consistency - add exactly 15 seconds from server time
+          const { data: serverTime } = await supabase
+            .from('games')
+            .select('updated_at')
+            .limit(1)
+            .single();
 
-          console.log(`Setting consistent timer for ${TIMER_DURATION} seconds, ending at:`, newTimerEndTime.toISOString());
+          const baseTime = serverTime?.updated_at ? new Date(serverTime.updated_at).getTime() : Date.now();
+          const newTimerEndTime = new Date(baseTime + TIMER_DURATION * 1000);
+
+          console.log(`Setting server-based timer for ${TIMER_DURATION} seconds, ending at:`, newTimerEndTime.toISOString());
 
           const { error: gameError } = await supabase
             .from('games')
