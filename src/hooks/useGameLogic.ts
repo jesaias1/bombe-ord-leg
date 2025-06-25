@@ -19,6 +19,9 @@ export const useGameLogic = (
   const [currentWord, setCurrentWord] = useState('');
   const { toast } = useToast();
 
+  // Fixed timer duration - consistent for all players
+  const TIMER_DURATION = 15; // seconds
+
   const validateWord = async (word: string): Promise<boolean> => {
     // Check if word exists in Danish dictionary
     const { data, error } = await supabase
@@ -103,9 +106,10 @@ export const useGameLogic = (
 
       const updatedUsedWords = [...(game.used_words || []), trimmedWord];
       
-      // Varied timer duration for each round
-      const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
-      const timerEndTime = new Date(Date.now() + timerDuration * 1000);
+      // Use fixed timer duration for consistency
+      const timerEndTime = new Date(Date.now() + TIMER_DURATION * 1000);
+
+      console.log(`Setting timer for ${TIMER_DURATION} seconds, ending at:`, timerEndTime.toISOString());
 
       const { error } = await supabase
         .from('games')
@@ -114,7 +118,7 @@ export const useGameLogic = (
           current_syllable: nextSyllable,
           used_words: updatedUsedWords,
           timer_end_time: timerEndTime.toISOString(),
-          timer_duration: timerDuration,
+          timer_duration: TIMER_DURATION,
           round_number: (game.round_number || 1) + 1
         })
         .eq('id', game.id);

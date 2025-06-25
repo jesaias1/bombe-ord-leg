@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -196,8 +195,11 @@ export const GameRoom = () => {
 
             console.log('Starting game with syllable:', initialSyllable);
             
-            const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
+            // Use fixed timer duration for consistency
+            const timerDuration = 15; // Fixed 15 seconds for all players
             const timerEndTime = new Date(Date.now() + timerDuration * 1000);
+
+            console.log(`Game starting with ${timerDuration} second timer, ending at:`, timerEndTime.toISOString());
 
             // Create a new game for this room
             const { error } = await supabase

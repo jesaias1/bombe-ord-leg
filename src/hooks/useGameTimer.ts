@@ -9,6 +9,12 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasExpiredRef = useRef(false);
   const lastTimerEndTimeRef = useRef<string | null>(null);
+  const expiredCallbackRef = useRef(onTimerExpired);
+
+  // Update callback ref when it changes
+  useEffect(() => {
+    expiredCallbackRef.current = onTimerExpired;
+  }, [onTimerExpired]);
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -31,6 +37,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
     if (lastTimerEndTimeRef.current !== game.timer_end_time) {
       hasExpiredRef.current = false;
       lastTimerEndTimeRef.current = game.timer_end_time;
+      console.log('Timer reset for new turn:', game.timer_end_time);
     }
 
     const updateTimer = () => {
@@ -39,13 +46,15 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
       const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
       
       setTimeLeft(remaining);
+      console.log(`Timer update: ${remaining}s remaining`);
 
       // Only call onTimerExpired once when timer reaches 0
       if (remaining === 0 && !hasExpiredRef.current) {
         hasExpiredRef.current = true;
         console.log('Timer expired, calling onTimerExpired');
         clearTimer();
-        onTimerExpired();
+        // Use the ref to avoid stale closure issues
+        expiredCallbackRef.current();
       }
     };
 
@@ -58,7 +67,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
     }
 
     return clearTimer;
-  }, [game?.timer_end_time, game?.status, onTimerExpired, clearTimer]);
+  }, [game?.timer_end_time, game?.status, clearTimer]);
 
   return timeLeft;
 };
