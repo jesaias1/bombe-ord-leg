@@ -105,17 +105,10 @@ export const useTimerHandler = (
         if (newSyllable) {
           console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
           
-          // Use server timestamp for consistency - add exactly 15 seconds from server time
-          const { data: serverTime } = await supabase
-            .from('games')
-            .select('updated_at')
-            .limit(1)
-            .single();
+          // Create a proper timer end time - exactly 15 seconds from now
+          const newTimerEndTime = new Date(Date.now() + TIMER_DURATION * 1000);
 
-          const baseTime = serverTime?.updated_at ? new Date(serverTime.updated_at).getTime() : Date.now();
-          const newTimerEndTime = new Date(baseTime + TIMER_DURATION * 1000);
-
-          console.log(`Setting server-based timer for ${TIMER_DURATION} seconds, ending at:`, newTimerEndTime.toISOString());
+          console.log(`Setting timer for ${TIMER_DURATION} seconds, ending at:`, newTimerEndTime.toISOString());
 
           const { error: gameError } = await supabase
             .from('games')
