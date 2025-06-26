@@ -35,8 +35,8 @@ export const BombTimer = ({
   }, [wordResult, onAnimationComplete]);
 
   const percentage = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
-  const radius = 140; // Increased from 120 to replace the orange ring
-  const strokeWidth = 12; // Increased stroke width for better visibility
+  const radius = 120; // Reduced size for better fit
+  const strokeWidth = 10; // Slightly reduced stroke width
   const normalizedRadius = radius - strokeWidth * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDasharray = `${circumference} ${circumference}`;
@@ -116,11 +116,11 @@ export const BombTimer = ({
 
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-          <div className="text-6xl mb-2 animate-bounce">
+          <div className="text-5xl mb-2 animate-bounce">
             {getBombEmoji()}
           </div>
           <div className={cn(
-            "text-4xl font-bold transition-all duration-300",
+            "text-3xl font-bold transition-all duration-300",
             showResult && wordResult === 'success' ? "text-green-600 scale-110" :
             showResult && wordResult === 'error' ? "text-red-600 scale-110" :
             timeLeft <= 5 ? "text-red-600" : "text-gray-800"
@@ -132,7 +132,7 @@ export const BombTimer = ({
 
       {/* Syllable display with result animation */}
       <div className={cn(
-        "mt-8 px-8 py-4 rounded-xl font-bold text-3xl transition-all duration-300 relative z-30",
+        "mt-6 px-6 py-3 rounded-xl font-bold text-2xl transition-all duration-300 relative z-30",
         showResult && wordResult === 'success' 
           ? "bg-green-100 text-green-800 border-2 border-green-400 shadow-lg scale-110" 
           : showResult && wordResult === 'error'
