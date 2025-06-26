@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
+import { validateDanishWord } from '@/utils/danishInflections';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
@@ -22,19 +23,7 @@ export const useGameLogic = (
   const TIMER_DURATION = 15; // seconds
 
   const validateWord = async (word: string): Promise<boolean> => {
-    // Check if word exists in Danish dictionary
-    const { data, error } = await supabase
-      .from('danish_words')
-      .select('id')
-      .eq('word', word.toLowerCase())
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error validating word:', error);
-      return false;
-    }
-
-    return !!data;
+    return await validateDanishWord(word);
   };
 
   const submitWord = async (word: string): Promise<boolean> => {
@@ -69,12 +58,12 @@ export const useGameLogic = (
       return false;
     }
 
-    // Validate word exists in Danish dictionary
+    // Validate word exists in Danish dictionary (now with inflection support)
     const isValidWord = await validateWord(trimmedWord);
     if (!isValidWord) {
       toast({
         title: "Ugyldigt ord",
-        description: "Dette ord findes ikke i ordbogen",
+        description: "Dette ord findes ikke i ordbogen (inkl. bøjninger)",
         variant: "destructive",
       });
       return false;
