@@ -35,8 +35,8 @@ export const BombTimer = ({
   }, [wordResult, onAnimationComplete]);
 
   const percentage = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
-  const radius = 120;
-  const strokeWidth = 8;
+  const radius = 140; // Increased from 120 to replace the orange ring
+  const strokeWidth = 12; // Increased stroke width for better visibility
   const normalizedRadius = radius - strokeWidth * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDasharray = `${circumference} ${circumference}`;
@@ -90,7 +90,7 @@ export const BombTimer = ({
             cy={radius}
             className="text-gray-300"
           />
-          {/* Progress circle */}
+          {/* Progress circle with enhanced styling */}
           <circle
             stroke="currentColor"
             fill="transparent"
@@ -103,8 +103,14 @@ export const BombTimer = ({
             cy={radius}
             className={cn(
               getTimerColor(),
-              "transition-all duration-1000 ease-linear"
+              "transition-all duration-1000 ease-linear drop-shadow-lg",
+              timeLeft <= 5 && "animate-pulse"
             )}
+            style={{
+              filter: timeLeft <= 5 ? 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))' : 
+                     timeLeft <= 10 ? 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.4))' :
+                     'drop-shadow(0 0 8px rgba(34, 197, 94, 0.4))'
+            }}
           />
         </svg>
 

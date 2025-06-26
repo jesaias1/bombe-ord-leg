@@ -1,4 +1,3 @@
-
 import { BombTimer } from './BombTimer';
 import { PlayerList } from './PlayerList';
 import { WordInput } from './WordInput';
@@ -81,17 +80,6 @@ export const GamePlaying = ({
         isMobile ? "order-1" : "lg:col-span-2"
       )}>
         <div className="text-center relative mt-12">
-          {/* Glowing ring around timer - much slower pulse */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className={cn(
-              "rounded-full border-4",
-              isMobile ? "w-64 h-64" : "w-72 h-72",
-              timeLeft <= 5 
-                ? "border-red-400 shadow-lg shadow-red-400/50 animate-[pulse_4s_ease-in-out_infinite]" 
-                : "border-orange-400 shadow-lg shadow-orange-400/30"
-            )}></div>
-          </div>
-          
           <div className="relative z-20">
             <BombTimer
               timeLeft={timeLeft}
