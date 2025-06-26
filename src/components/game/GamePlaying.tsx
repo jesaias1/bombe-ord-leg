@@ -1,10 +1,11 @@
+
 import { BombTimer } from './BombTimer';
 import { PlayerList } from './PlayerList';
 import { WordInput } from './WordInput';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -36,6 +37,21 @@ export const GamePlaying = ({
   const isMobile = useIsMobile();
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const lastRoundRef = useRef(game.round_number);
+  const [wordResult, setWordResult] = useState<'success' | 'error' | null>(null);
+
+  // Enhanced word submit handler with animation feedback
+  const handleWordSubmit = async (word: string): Promise<boolean> => {
+    const success = await onWordSubmit(word);
+    
+    // Show result animation
+    setWordResult(success ? 'success' : 'error');
+    
+    return success;
+  };
+
+  const handleAnimationComplete = () => {
+    setWordResult(null);
+  };
 
   // Prevent auto-scroll on mobile when new words are added
   useEffect(() => {
@@ -82,6 +98,8 @@ export const GamePlaying = ({
               totalTime={game.timer_duration || 15}
               isActive={game.status === 'playing'}
               syllable={game.current_syllable || ''}
+              wordResult={wordResult}
+              onAnimationComplete={handleAnimationComplete}
             />
           </div>
         </div>
@@ -108,7 +126,7 @@ export const GamePlaying = ({
           
           <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200 transform hover:shadow-2xl transition-all duration-300">
             <WordInput
-              onSubmit={onWordSubmit}
+              onSubmit={handleWordSubmit}
               disabled={!isCurrentUser || timeLeft <= 0}
               currentSyllable={game.current_syllable || ''}
               isSubmitting={isSubmitting}
