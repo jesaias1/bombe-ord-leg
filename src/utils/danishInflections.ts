@@ -3,71 +3,71 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Udvidede danske bøjningsendelser med flere mønstre
 const DANISH_ENDINGS = [
-  // Substantiver - pluralis og bestemt form
-  { ending: 'erne', minStem: 3 }, // skolerne -> skole
-  { ending: 'ene', minStem: 3 },  // hundene -> hund
-  { ending: 'ne', minStem: 3 },   // bilerne -> bil (efter -er)
-  { ending: 'en', minStem: 3 },   // katten -> kat
-  { ending: 'et', minStem: 3 },   // huset -> hus
-  { ending: 'ets', minStem: 3 },  // husets -> hus
-  { ending: 'ens', minStem: 3 },  // kattens -> kat
-  { ending: 'es', minStem: 3 },   // drages -> drage
-  { ending: 'er', minStem: 3 },   // skoler -> skole
-  { ending: 'e', minStem: 3 },    // skole -> skol (men også skole er et ord)
-  
-  // Verber - forskellige tider og former
-  { ending: 'erede', minStem: 3 }, // arbejderede -> arbejd
-  { ending: 'ede', minStem: 3 },   // arbejdede -> arbejd
-  { ending: 'ende', minStem: 3 },  // arbejdende -> arbejd
-  { ending: 'erer', minStem: 3 },  // arbejderer -> arbejd
-  { ending: 'ede', minStem: 3 },   // spiste -> spis
-  { ending: 'te', minStem: 3 },    // lavede -> lav
-  { ending: 'de', minStem: 3 },    // byggede -> bygg
-  { ending: 'et', minStem: 3 },    // arbejdet -> arbejd
-  { ending: 'es', minStem: 3 },    // arbejdes -> arbejd
-  
-  // Adjektiver
-  { ending: 'ere', minStem: 3 },   // større -> stor
-  { ending: 'este', minStem: 3 },  // største -> stor
-  { ending: 'ede', minStem: 3 },   // koldede -> kold (gammeldags)
-  
-  // Sammensatte og andre former
+  // Substantiver - pluralis og bestemt form (sorteret efter længde for bedre matching)
+  { ending: 'ernes', minStem: 3 }, // skolernes -> skole
+  { ending: 'erne', minStem: 3 },  // skolerne -> skole
+  { ending: 'enes', minStem: 3 },  // hundenes -> hund
+  { ending: 'ene', minStem: 3 },   // hundene -> hund
   { ending: 'nes', minStem: 3 },   // arbejdernes -> arbejder
-  { ending: 'rets', minStem: 3 },  // arbejdets -> arbejd
-  { ending: 'heds', minStem: 3 },  // sandheds -> sandhed
-  { ending: 'doms', minStem: 3 },  // kongedoms -> kongedome
-  { ending: 'skab', minStem: 3 },  // venskab -> ven
-  { ending: 'hed', minStem: 3 },   // sandhed -> sand
+  { ending: 'ets', minStem: 3 },   // husets -> hus
+  { ending: 'ens', minStem: 3 },   // kattens -> kat
+  { ending: 'ers', minStem: 3 },   // skolers -> skole
+  { ending: 'ede', minStem: 3 },   // arbejdede -> arbejd
+  { ending: 'ere', minStem: 3 },   // større -> stor
+  { ending: 'est', minStem: 3 },   // størst -> stor
+  { ending: 'ne', minStem: 3 },    // bilerne -> bil (efter -er)
+  { ending: 'en', minStem: 3 },    // katten -> kat
+  { ending: 'et', minStem: 3 },    // huset -> hus
+  { ending: 'es', minStem: 3 },    // drages -> drage
+  { ending: 'er', minStem: 3 },    // skoler -> skole
+  { ending: 'de', minStem: 3 },    // byggede -> bygg
+  { ending: 'te', minStem: 3 },    // lavede -> lav
+  { ending: 'se', minStem: 3 },    // rejse -> rejs
+  { ending: 'e', minStem: 2 },     // skole -> skol (men også skole er et ord)
+  { ending: 's', minStem: 3 },     // hus -> hu (genitiv)
 ];
 
 // Specielle regler for danske ord
 const SPECIAL_PATTERNS = [
-  // e-endelser hvor vi både tjekker med og uden e
-  { pattern: /e$/, alternatives: (word: string) => [word, word.slice(0, -1)] },
+  // Dobbelt-e fjernelse
+  { pattern: /ee$/, alternatives: (word: string) => [word.slice(0, -1)] },
   // Dobbeltkonsonanter
   { pattern: /([bcdfghjklmnpqrstvwxz])\1$/, alternatives: (word: string) => [word.slice(0, -1)] },
-  // Vokalskift i nogle ord (ikke implementeret endnu)
+  // Almindelige vokalskift
+  { pattern: /å$/, alternatives: (word: string) => [word.slice(0, -1) + 'a'] },
+  { pattern: /ø$/, alternatives: (word: string) => [word.slice(0, -1) + 'o'] },
 ];
 
 export const findWordStem = (word: string): string[] => {
   const stems = [word]; // Start med det originale ord
   const lowerWord = word.toLowerCase();
   
-  // Prøv almindelige danske endelser
+  // Prøv almindelige danske endelser (sorteret efter længde for bedre matching)
   for (const { ending, minStem } of DANISH_ENDINGS) {
     if (lowerWord.length > ending.length + minStem && lowerWord.endsWith(ending)) {
       const stem = lowerWord.slice(0, -ending.length);
       if (stem.length >= minStem) {
         stems.push(stem);
         
-        // For e-endelser, prøv også at tilføje e tilbage
-        if (ending === 'er' || ending === 'erne') {
-          stems.push(stem + 'e'); // skoler -> skole, skolerne -> skole
+        // Specielle regler for e-endelser
+        if (ending === 'e' && stem.length >= 3) {
+          // Prøv både med og uden e
+          stems.push(stem + 'e');
         }
         
-        // For ne-endelser efter r
-        if (ending === 'ne' && stem.endsWith('r')) {
-          stems.push(stem + 'e'); // bilerne -> biler -> bile (ikke relevant her)
+        // For pluralis endelser, prøv at tilføje e tilbage
+        if (['er', 'erne', 'ernes'].includes(ending)) {
+          if (!stem.endsWith('e')) {
+            stems.push(stem + 'e'); // skoler -> skole, skolerne -> skole
+          }
+        }
+        
+        // For bestemt form, prøv forskellige varianter
+        if (['en', 'et', 'ene', 'erne'].includes(ending)) {
+          // Prøv grundform med e
+          if (!stem.endsWith('e') && stem.length >= 3) {
+            stems.push(stem + 'e');
+          }
         }
       }
     }
@@ -77,7 +77,7 @@ export const findWordStem = (word: string): string[] => {
   for (const { pattern, alternatives } of SPECIAL_PATTERNS) {
     if (pattern.test(lowerWord)) {
       const alts = alternatives(lowerWord);
-      stems.push(...alts);
+      stems.push(...alts.filter(alt => alt.length >= 2));
     }
   }
   
