@@ -172,9 +172,8 @@ export const GameRoom = () => {
     );
   }
 
-  // Check if user is room creator to enable start game
-  const isRoomCreator = room.creator_id === user?.id;
-  const canStartGame = isRoomCreator || players.length >= 1; // Allow solo practice
+  // Allow anyone to start the game - remove room creator restriction
+  const canStartGame = players.length >= 1;
 
   const renderGameContent = () => {
     if (!game || game.status === 'waiting') {
