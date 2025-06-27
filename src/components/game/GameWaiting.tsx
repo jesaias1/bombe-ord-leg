@@ -93,8 +93,8 @@ export const GameWaiting = ({
         <PlayerList players={players} currentUserId={currentUserId} />
       </div>
       
-      {/* Anyone can start the game now */}
-      {players.length >= 1 && (
+      {/* Only room creator can start the game */}
+      {canStartGame && (
         <div className="space-y-4 pt-4">
           <Button 
             onClick={handleStartClick} 
@@ -105,7 +105,15 @@ export const GameWaiting = ({
             {isSinglePlayer ? "🚀 Start træning" : "🎮 Start Spil"}
           </Button>
           <p className="text-sm text-gray-600 animate-fade-in mt-3">
-            Alle spillere kan starte spillet! 🎉
+            Kun rumskaberen kan starte spillet! 👑
+          </p>
+        </div>
+      )}
+      
+      {!canStartGame && players.length >= 1 && (
+        <div className="space-y-4 pt-4">
+          <p className="text-lg text-gray-600 animate-fade-in">
+            Venter på at rumskaberen starter spillet... ⏳
           </p>
         </div>
       )}

@@ -31,9 +31,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { guestUser, signInAsGuest: signInGuestUser, signOutGuest, isGuest } = useGuestAuth();
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
@@ -42,23 +46,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          // Clear any corrupted session data
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        setSession(null);
+        setUser(null);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // If there's a guest user but no authenticated user, use the guest
   const effectiveUser = user || (guestUser as User);
 
   const signOut = async () => {
-    if (isGuest) {
-      signOutGuest();
-    } else {
-      await supabase.auth.signOut();
+    try {
+      if (isGuest) {
+        signOutGuest();
+      } else {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('Error signing out:', error);
+        }
+        // Clear state immediately
+        setSession(null);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error during sign out:', error);
     }
   };
 

@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -22,7 +23,7 @@ type Player = Tables<'players'>;
 
 export const GameRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const isMobile = useIsMobile();
 
   const { data: room, isLoading: roomLoading } = useQuery({
@@ -82,38 +83,41 @@ export const GameRoom = () => {
       
       // Get the proper display name for both authenticated and guest users
       let displayName = 'Anonymous';
-      if (user.user_metadata?.display_name) {
+      
+      if (isGuest && user.user_metadata?.display_name) {
         displayName = user.user_metadata.display_name;
-      } else if (user.email) {
+      } else if (!isGuest && user.email) {
         displayName = user.email;
+      } else if (user.user_metadata?.display_name) {
+        displayName = user.user_metadata.display_name;
       }
       
-      // Force immediate player addition for mobile
+      // Add player to room
       const addPlayer = async () => {
-        const { error } = await supabase
-          .from('players')
-          .insert({
-            room_id: roomId,
-            user_id: user.id,
-            name: displayName,
-            lives: 3,
-            is_alive: true
-          });
-          
-        if (error) {
+        try {
+          const { error } = await supabase
+            .from('players')
+            .insert({
+              room_id: roomId,
+              user_id: user.id,
+              name: displayName,
+              lives: 3,
+              is_alive: true
+            });
+            
+          if (error) {
+            console.error('Error adding player:', error);
+          } else {
+            console.log('Player added successfully');
+          }
+        } catch (error) {
           console.error('Error adding player:', error);
-        } else {
-          console.log('Player added successfully');
-          // Force refresh of players query
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
         }
       };
       
       addPlayer();
     }
-  }, [user, roomId, room, players, playersLoading]);
+  }, [user, roomId, room, players, playersLoading, isGuest]);
 
   // Check word count and show import option if low
   const { data: wordCount = 0 } = useQuery({
@@ -172,8 +176,8 @@ export const GameRoom = () => {
     );
   }
 
-  // Allow anyone to start the game - remove room creator restriction
-  const canStartGame = players.length >= 1;
+  // Only room creator can start the game
+  const canStartGame = room.creator_id === user?.id && players.length >= 1;
 
   const renderGameContent = () => {
     if (!game || game.status === 'waiting') {
