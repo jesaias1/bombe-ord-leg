@@ -17,11 +17,20 @@ export const WordImporter = () => {
 
   // Check if user is admin
   const { data: isAdmin = false } = useQuery({
-    queryKey: ['is-admin'],
+    queryKey: ['is-admin-word-importer'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      return user.email === 'lin4s@live.dk';
+      
+      // Check if user has admin role in user_roles table
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+      
+      return !error && data?.role === 'admin';
     }
   });
 
