@@ -33,7 +33,16 @@ export const HomePage = () => {
     queryKey: ['is-admin'],
     queryFn: async () => {
       if (!user || isGuest) return false;
-      return user.email === 'lin4s@live.dk';
+      
+      // Check if user has admin role in user_roles table
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+      
+      return !error && data?.role === 'admin';
     },
     enabled: !!user && !isGuest
   });
