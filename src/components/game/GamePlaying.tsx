@@ -47,14 +47,19 @@ export const GamePlaying = ({
       {isMobile ? (
         <div className="fixed inset-0 flex flex-col">
           {/* Top section - always visible above keyboard */}
-          <div className="flex-none bg-background border-b border-border p-4 space-y-3">
-            {/* Timer and syllable in one line */}
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-foreground">
+          <div className="flex-none bg-background border-b border-border p-4 space-y-4">
+            {/* Timer - compact at top */}
+            <div className="text-center">
+              <div className="text-lg font-bold text-foreground">
                 {timeLeft}s
               </div>
-              <div className="bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg px-4 py-2 border border-yellow-300 dark:border-yellow-700">
-                <span className="text-lg font-black text-orange-900 dark:text-orange-100">{game.current_syllable}</span>
+            </div>
+            
+            {/* Syllable - prominent and centered */}
+            <div className="text-center">
+              <div className="bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-6 border-2 border-yellow-300 dark:border-yellow-700">
+                <p className="text-sm text-orange-700 dark:text-orange-300 mb-2">Dit ord skal indeholde:</p>
+                <p className="text-5xl font-black text-orange-900 dark:text-orange-100">{game.current_syllable}</p>
               </div>
             </div>
 
