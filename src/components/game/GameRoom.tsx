@@ -9,6 +9,7 @@ import { GamePlaying } from './GamePlaying';
 import { GameFinished } from './GameFinished';
 import { QuickWordImport } from '../admin/QuickWordImport';
 import { useGameLogic } from '@/hooks/useGameLogic';
+import { useGameActions } from '@/hooks/useGameActions';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -144,12 +145,15 @@ export const GameRoom = () => {
     }
   });
 
-  const { submitWord, handleTimerExpired, isSubmitting } = useGameLogic(
+  const { handleTimerExpired } = useGameLogic(
     game,
     players,
     user?.id,
     room
   );
+
+  // Use the proper RPC-based word submission from useGameActions
+  const { submitWord, isSubmitting } = useGameActions(roomId!);
 
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
