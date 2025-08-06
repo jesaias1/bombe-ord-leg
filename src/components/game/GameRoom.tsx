@@ -142,6 +142,7 @@ export const GameRoom = () => {
 
   // Show loading skeleton while data is loading
   if (roomLoading || gameLoading || playersLoading) {
+    console.log('Loading states:', { roomLoading, gameLoading, playersLoading, room, game, players });
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 p-4">
         <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
@@ -166,6 +167,7 @@ export const GameRoom = () => {
 
   // Handle room query error
   if (roomError) {
+    console.error('Room error:', roomError);
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
         <div className="text-center space-y-4 animate-fade-in">
@@ -178,6 +180,7 @@ export const GameRoom = () => {
   }
 
   if (!room) {
+    console.log('No room found for roomId:', roomId);
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
         <div className="text-center space-y-4 animate-fade-in">
