@@ -257,14 +257,22 @@ export const GameRoom = () => {
             
             console.log('Creating game with data:', gameData);
             
-            const { data, error } = await supabase
-              .from('games')
-              .insert(gameData);
-            
-            if (error) {
-              console.error('Error starting game:', error);
-            } else {
-              console.log('Game started successfully:', data);
+            try {
+              const { data, error } = await supabase
+                .from('games')
+                .insert(gameData)
+                .select();
+              
+              if (error) {
+                console.error('Supabase error starting game:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                console.error('Error details:', error.details);
+              } else {
+                console.log('Game started successfully:', data);
+              }
+            } catch (err) {
+              console.error('Unexpected error starting game:', err);
             }
           }}
           isLoading={playersLoading}
