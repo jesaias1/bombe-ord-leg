@@ -67,6 +67,10 @@ const ESSENTIAL_WORDS = [
   'skomager', 'skumag', 'slum', 'slummet', 'slummer', 'slumrer',
   'syden', 'syde', 'syder', 'sydede', 'sydet',
   
+  // Words with 'dyd' and inflections
+  'dyd', 'dyder', 'dydighed', 'dydig', 'dydige', 'dydigt', 'dyders', 'dydens',
+  'dydigheder', 'dydigheds', 'dydighed', 'dydigheder', 'dydige', 'dydigt',
+  
   // More Danish inflections that might be missing
   'hendes', 'hans', 'deres', 'vores', 'jeres', 'mit', 'dit', 'sit',
   'manden', 'kvinden', 'barnet', 'børnene', 'menneskene', 'folkene',
