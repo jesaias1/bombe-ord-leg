@@ -240,8 +240,12 @@ export const HomePage = () => {
                   </div>
 
                   <Button 
-                    onClick={createRoom} 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      createRoom();
+                    }} 
                     disabled={loading}
+                    type="button"
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
                   >
                     {loading ? "Opretter..." : "Opret rum"}
@@ -268,7 +272,11 @@ export const HomePage = () => {
                   </div>
 
                   <Button 
-                    onClick={joinRoom}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      joinRoom();
+                    }}
+                    type="button"
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
                     variant="outline"
                   >
