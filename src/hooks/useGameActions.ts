@@ -31,19 +31,11 @@ export const useGameActions = (roomId: string) => {
     const wordStartTime = Date.now();
 
     try {
-      console.log('🎯 Calling submit_word RPC with:', {
-        p_room_id: roomId,
-        p_user_id: user.id,
-        p_word: word.toLowerCase().trim()
-      });
-      
       const { data, error } = await supabase.rpc('submit_word', {
         p_room_id: roomId,
         p_user_id: user.id,
         p_word: word.toLowerCase().trim()
       });
-      
-      console.log('🎯 RPC Response - data:', data, 'error:', error);
 
       if (error) {
         console.error('RPC Error:', error);

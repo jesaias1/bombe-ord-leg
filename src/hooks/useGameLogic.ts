@@ -1,8 +1,8 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
-import { validateDanishWord } from '@/utils/danishInflections';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
@@ -19,11 +19,20 @@ export const useGameLogic = (
   const [currentWord, setCurrentWord] = useState('');
   const { toast } = useToast();
 
-  // Fixed timer duration - consistent for all players
-  const TIMER_DURATION = 15; // seconds
-
   const validateWord = async (word: string): Promise<boolean> => {
-    return await validateDanishWord(word);
+    // Check if word exists in Danish dictionary
+    const { data, error } = await supabase
+      .from('danish_words')
+      .select('id')
+      .eq('word', word.toLowerCase())
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error validating word:', error);
+      return false;
+    }
+
+    return !!data;
   };
 
   const submitWord = async (word: string): Promise<boolean> => {
@@ -58,12 +67,12 @@ export const useGameLogic = (
       return false;
     }
 
-    // Validate word exists in Danish dictionary (now with inflection support)
+    // Validate word exists in Danish dictionary
     const isValidWord = await validateWord(trimmedWord);
     if (!isValidWord) {
       toast({
         title: "Ugyldigt ord",
-        description: "Dette ord findes ikke i ordbogen (inkl. bøjninger)",
+        description: "Dette ord findes ikke i ordbogen",
         variant: "destructive",
       });
       return false;
@@ -94,10 +103,9 @@ export const useGameLogic = (
 
       const updatedUsedWords = [...(game.used_words || []), trimmedWord];
       
-      // Calculate timer end time - exactly 15 seconds from now
-      const timerEndTime = new Date(Date.now() + TIMER_DURATION * 1000);
-
-      console.log(`Setting timer for ${TIMER_DURATION} seconds, ending at:`, timerEndTime.toISOString());
+      // Varied timer duration for each round
+      const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
+      const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
       const { error } = await supabase
         .from('games')
@@ -106,9 +114,8 @@ export const useGameLogic = (
           current_syllable: nextSyllable,
           used_words: updatedUsedWords,
           timer_end_time: timerEndTime.toISOString(),
-          timer_duration: TIMER_DURATION,
-          round_number: (game.round_number || 1) + 1,
-          updated_at: new Date().toISOString()
+          timer_duration: timerDuration,
+          round_number: (game.round_number || 1) + 1
         })
         .eq('id', game.id);
 

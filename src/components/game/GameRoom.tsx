@@ -9,7 +9,6 @@ import { GamePlaying } from './GamePlaying';
 import { GameFinished } from './GameFinished';
 import { QuickWordImport } from '../admin/QuickWordImport';
 import { useGameLogic } from '@/hooks/useGameLogic';
-import { useGameActions } from '@/hooks/useGameActions';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -24,24 +23,24 @@ type Player = Tables<'players'>;
 
 export const GameRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  const { user, isGuest } = useAuth();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
 
-  const { data: room, isLoading: roomLoading, error: roomError } = useQuery({
+  const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rooms')
         .select('*')
         .eq('id', roomId)
-        .maybeSingle();
+        .single();
       if (error) throw error;
-      return data as Room | null;
+      return data as Room;
     },
     enabled: !!roomId,
   });
 
-  const { data: game, isLoading: gameLoading, refetch: refetchGame } = useQuery({
+  const { data: game, isLoading: gameLoading } = useQuery({
     queryKey: ['game', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -55,9 +54,10 @@ export const GameRoom = () => {
       return data as Game | null;
     },
     enabled: !!roomId,
+    refetchInterval: 1000,
   });
 
-  const { data: players = [], isLoading: playersLoading, refetch: refetchPlayers } = useQuery({
+  const { data: players = [], isLoading: playersLoading } = useQuery({
     queryKey: ['players', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -69,35 +69,31 @@ export const GameRoom = () => {
       return data as Player[];
     },
     enabled: !!roomId,
+    refetchInterval: 1000,
   });
 
   // Ensure current user is added as a player when they enter the room
   useEffect(() => {
-    if (!user || !roomId || !room) return;
+    if (!user || !roomId || !room || playersLoading) return;
     
-    console.log('Checking players for user:', user.id, 'Players:', players);
     const currentUserPlayer = players.find(p => p.user_id === user.id);
     
-    if (!currentUserPlayer && !playersLoading) {
-      console.log('Adding current user as player to room. User ID:', user.id, 'Type:', typeof user.id);
+    if (!currentUserPlayer) {
+      console.log('Adding current user as player to room');
       
       // Get the proper display name for both authenticated and guest users
       let displayName = 'Anonymous';
-      
-      if (isGuest && user.user_metadata?.display_name) {
+      if (user.user_metadata?.display_name) {
         displayName = user.user_metadata.display_name;
-      } else if (!isGuest && user.email) {
+      } else if (user.email) {
         displayName = user.email;
-      } else if (user.user_metadata?.display_name) {
-        displayName = user.user_metadata.display_name;
       }
       
-      console.log('Display name:', displayName);
-      
-      // Add player to room
+      // Force immediate player addition for mobile
       const addPlayer = async () => {
-        try {
-          console.log('Inserting player with data:', {
+        const { error } = await supabase
+          .from('players')
+          .insert({
             room_id: roomId,
             user_id: user.id,
             name: displayName,
@@ -105,34 +101,20 @@ export const GameRoom = () => {
             is_alive: true
           });
           
-          const { data, error } = await supabase
-            .from('players')
-            .insert({
-              room_id: roomId,
-              user_id: user.id,
-              name: displayName,
-              lives: 3,
-              is_alive: true
-            })
-            .select();
-            
-          if (error) {
-            console.error('Error adding player:', error);
-          } else {
-            console.log('Player added successfully:', data);
-            // Force refresh of players
-            refetchPlayers();
-          }
-        } catch (error) {
+        if (error) {
           console.error('Error adding player:', error);
+        } else {
+          console.log('Player added successfully');
+          // Force refresh of players query
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
         }
       };
       
       addPlayer();
-    } else {
-      console.log('User already exists as player:', currentUserPlayer);
     }
-  }, [user, roomId, room, isGuest, players, playersLoading, refetchPlayers]);
+  }, [user, roomId, room, players, playersLoading]);
 
   // Check word count and show import option if low
   const { data: wordCount = 0 } = useQuery({
@@ -145,22 +127,18 @@ export const GameRoom = () => {
     }
   });
 
-  const { handleTimerExpired } = useGameLogic(
+  const { submitWord, handleTimerExpired, isSubmitting } = useGameLogic(
     game,
     players,
     user?.id,
     room
   );
 
-  // Use the proper RPC-based word submission from useGameActions
-  const { submitWord, isSubmitting } = useGameActions(roomId!);
-
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
 
   // Show loading skeleton while data is loading
   if (roomLoading || gameLoading || playersLoading) {
-    console.log('Loading states:', { roomLoading, gameLoading, playersLoading, room, game, players });
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 p-4">
         <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
@@ -183,22 +161,7 @@ export const GameRoom = () => {
     );
   }
 
-  // Handle room query error
-  if (roomError) {
-    console.error('Room error:', roomError);
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
-        <div className="text-center space-y-4 animate-fade-in">
-          <div className="text-6xl animate-bounce">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800">Fejl ved indlæsning</h2>
-          <p className="text-gray-600">Kunne ikke indlæse rummet. Prøv igen senere.</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!room) {
-    console.log('No room found for roomId:', roomId);
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
         <div className="text-center space-y-4 animate-fade-in">
@@ -210,8 +173,9 @@ export const GameRoom = () => {
     );
   }
 
-  // Only room creator can start the game
-  const canStartGame = room.creator_id === user?.id && players.length >= 1;
+  // Check if user is room creator to enable start game
+  const isRoomCreator = room.creator_id === user?.id;
+  const canStartGame = isRoomCreator || players.length >= 1; // Allow solo practice
 
   const renderGameContent = () => {
     if (!game || game.status === 'waiting') {
@@ -222,9 +186,6 @@ export const GameRoom = () => {
           currentUserId={user?.id}
           canStartGame={canStartGame}
           onStartGame={async () => {
-            console.log('🚀 START GAME BUTTON CLICKED!');
-            console.log('Starting game...');
-            
             // Get a random syllable for the initial game state
             const initialSyllable = await selectRandomSyllable(room!.difficulty);
             
@@ -234,52 +195,25 @@ export const GameRoom = () => {
             }
 
             console.log('Starting game with syllable:', initialSyllable);
-            console.log('Players available:', players);
             
-            if (players.length === 0) {
-              console.error('No players found to start game');
-              return;
-            }
-            
-            // Calculate timer end time - exactly 15 seconds from now
-            const timerDuration = 15; // Fixed 15 seconds for all players
+            const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
             const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
-            console.log(`Game starting with ${timerDuration} second timer, ending at:`, timerEndTime.toISOString());
-
             // Create a new game for this room
-            const gameData = {
-              room_id: roomId,
-              status: 'playing' as const,
-              current_player_id: players[0]?.id,
-              current_syllable: initialSyllable,
-              timer_duration: timerDuration,
-              timer_end_time: timerEndTime.toISOString(),
-              round_number: 1,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
+            const { error } = await supabase
+              .from('games')
+              .insert({
+                room_id: roomId,
+                status: 'playing',
+                current_player_id: players[0]?.id,
+                current_syllable: initialSyllable,
+                timer_duration: timerDuration,
+                timer_end_time: timerEndTime.toISOString(),
+                round_number: 1
+              });
             
-            console.log('Creating game with data:', gameData);
-            
-            try {
-              const { data, error } = await supabase
-                .from('games')
-                .insert(gameData)
-                .select();
-              
-              if (error) {
-                console.error('Supabase error starting game:', error);
-                console.error('Error code:', error.code);
-                console.error('Error message:', error.message);
-                console.error('Error details:', error.details);
-              } else {
-                console.log('Game started successfully:', data);
-                // Immediately refresh the game data to show the playing state
-                refetchGame();
-              }
-            } catch (err) {
-              console.error('Unexpected error starting game:', err);
+            if (error) {
+              console.error('Error starting game:', error);
             }
           }}
           isLoading={playersLoading}

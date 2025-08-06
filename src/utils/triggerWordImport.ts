@@ -1,21 +1,21 @@
 
-import { importExpandedDanishWords } from './expandedDanishImport';
+import { importEnhancedWords } from './improvedWordImport';
 import { ensureBasicWords } from './ensureBasicWords';
 
 export const expandWordDatabase = async () => {
-  console.log('Starting comprehensive Danish word database expansion with inflections...');
+  console.log('Starting comprehensive Danish word database expansion...');
   
   try {
-    // Først sikr vi har grundlæggende ord
+    // First ensure we have basic words
     await ensureBasicWords();
     
-    // Så kør den udvidede import med bøjninger
-    const result = await importExpandedDanishWords();
+    // Then run the enhanced import for comprehensive coverage
+    const result = await importEnhancedWords();
     
-    console.log('Word database expansion with inflections complete:', result);
+    console.log('Word database expansion complete:', result);
     return result;
   } catch (error) {
-    console.error('Error expanding word database with inflections:', error);
+    console.error('Error expanding word database:', error);
     throw error;
   }
 };

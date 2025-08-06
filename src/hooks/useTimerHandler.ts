@@ -16,9 +16,6 @@ export const useTimerHandler = (
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
 
-  // Fixed timer duration for consistency
-  const TIMER_DURATION = 15; // seconds
-
   const handleTimerExpired = useCallback(async () => {
     if (!game || !room || game.status !== 'playing') {
       console.log('Timer expired but game is not in playing state');
@@ -79,12 +76,12 @@ export const useTimerHandler = (
           console.error('Error ending game:', gameError);
         }
 
-        const wordsGuessed = game.used_words?.length || 0;
-        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`} - Spillet er slut! ${wordsGuessed} ord gættet i alt.`, {
-          duration: 3000
+        // Show quick toast and end
+        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`} - Spillet er slut!`, {
+          duration: 2000
         });
       } else {
-        // Continue game with next player
+        // Continue game with next player - faster transition
         const currentPlayerIndex = alivePlayers.findIndex(p => p.id === currentPlayer.id);
         let nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
         
@@ -105,18 +102,16 @@ export const useTimerHandler = (
         if (newSyllable) {
           console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
           
-          // Create a proper timer end time - exactly 15 seconds from now
-          const newTimerEndTime = new Date(Date.now() + TIMER_DURATION * 1000);
-
-          console.log(`Setting timer for ${TIMER_DURATION} seconds, ending at:`, newTimerEndTime.toISOString());
+          const timerDuration = game.timer_duration || 15;
+          // Start timer immediately for faster transition
+          const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
 
           const { error: gameError } = await supabase
             .from('games')
             .update({
               current_player_id: nextPlayer.id,
               current_syllable: newSyllable,
-              timer_end_time: newTimerEndTime.toISOString(),
-              timer_duration: TIMER_DURATION,
+              timer_end_time: newTimerEndTime,
               updated_at: new Date().toISOString()
             })
             .eq('id', game.id);
@@ -126,6 +121,7 @@ export const useTimerHandler = (
           }
         }
 
+        // Show quick toast for faster gameplay
         toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`}`, {
           duration: 1500
         });

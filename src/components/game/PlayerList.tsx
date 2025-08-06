@@ -11,12 +11,6 @@ interface PlayerListProps {
   currentUserId?: string;
 }
 
-// Check if user is an administrator
-const isAdministrator = (playerName: string) => {
-  // Check if the player name contains admin email or is an admin
-  return playerName.includes('lin4s@live.dk') || playerName === 'lin4s@live.dk';
-};
-
 export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerListProps) => {
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200">
@@ -43,13 +37,11 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerLi
               )}></div>
               <span className={cn(
                 "font-medium transition-colors duration-300",
-                isAdministrator(player.name) ? "text-purple-700 font-bold" : 
                 player.user_id === currentUserId ? "text-purple-700" : "text-gray-700",
                 player.id === currentPlayerId && "text-green-700"
               )}>
                 {player.name}
                 {player.user_id === currentUserId && " (dig)"}
-                {isAdministrator(player.name) && " 👑"}
               </span>
             </div>
             <div className="flex items-center space-x-2">

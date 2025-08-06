@@ -1,7 +1,6 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Tables } from '@/integrations/supabase/types';
-import { supabase } from '@/integrations/supabase/client';
 
 type Game = Tables<'games'>;
 
@@ -10,12 +9,6 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasExpiredRef = useRef(false);
   const lastTimerEndTimeRef = useRef<string | null>(null);
-  const expiredCallbackRef = useRef(onTimerExpired);
-
-  // Update callback ref when it changes
-  useEffect(() => {
-    expiredCallbackRef.current = onTimerExpired;
-  }, [onTimerExpired]);
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -25,6 +18,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
   }, []);
 
   useEffect(() => {
+    // Clear any existing timer
     clearTimer();
     
     if (!game?.timer_end_time || game.status !== 'playing') {
@@ -37,28 +31,21 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
     if (lastTimerEndTimeRef.current !== game.timer_end_time) {
       hasExpiredRef.current = false;
       lastTimerEndTimeRef.current = game.timer_end_time;
-      console.log('Timer reset for new turn:', game.timer_end_time);
     }
 
     const updateTimer = () => {
       const endTime = new Date(game.timer_end_time!).getTime();
-      const now = Date.now();
-      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      const now = new Date().getTime();
+      const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
       
-      // Ensure timer doesn't show unrealistic values
-      const maxTimer = game.timer_duration || 15;
-      const clampedRemaining = Math.min(remaining, maxTimer);
-      
-      console.log('Timer update - endTime:', endTime, 'now:', now, 'remaining:', remaining, 'clamped:', clampedRemaining);
-      
-      setTimeLeft(clampedRemaining);
-      
+      setTimeLeft(remaining);
+
       // Only call onTimerExpired once when timer reaches 0
-      if (clampedRemaining === 0 && !hasExpiredRef.current) {
+      if (remaining === 0 && !hasExpiredRef.current) {
         hasExpiredRef.current = true;
         console.log('Timer expired, calling onTimerExpired');
         clearTimer();
-        expiredCallbackRef.current();
+        onTimerExpired();
       }
     };
 
@@ -71,7 +58,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
     }
 
     return clearTimer;
-  }, [game?.timer_end_time, game?.status, game?.timer_duration, clearTimer]);
+  }, [game?.timer_end_time, game?.status, onTimerExpired, clearTimer]);
 
   return timeLeft;
 };
