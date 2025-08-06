@@ -218,6 +218,7 @@ export const GameRoom = () => {
           currentUserId={user?.id}
           canStartGame={canStartGame}
           onStartGame={async () => {
+            console.log('🚀 START GAME BUTTON CLICKED!');
             console.log('Starting game...');
             
             // Get a random syllable for the initial game state
