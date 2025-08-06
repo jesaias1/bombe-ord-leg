@@ -26,16 +26,16 @@ export const GameRoom = () => {
   const { user, isGuest } = useAuth();
   const isMobile = useIsMobile();
 
-  const { data: room, isLoading: roomLoading } = useQuery({
+  const { data: room, isLoading: roomLoading, error: roomError } = useQuery({
     queryKey: ['room', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rooms')
         .select('*')
         .eq('id', roomId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data as Room;
+      return data as Room | null;
     },
     enabled: !!roomId,
   });
@@ -159,6 +159,19 @@ export const GameRoom = () => {
               <Skeleton className="h-24 w-full" />
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle room query error
+  if (roomError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+        <div className="text-center space-y-4 animate-fade-in">
+          <div className="text-6xl animate-bounce">❌</div>
+          <h2 className="text-2xl font-bold text-gray-800">Fejl ved indlæsning</h2>
+          <p className="text-gray-600">Kunne ikke indlæse rummet. Prøv igen senere.</p>
         </div>
       </div>
     );
