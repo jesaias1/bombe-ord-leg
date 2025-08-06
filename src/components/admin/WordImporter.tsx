@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { importAllWords } from '@/utils/importDanishWords';
 import { importEnhancedWords } from '@/utils/improvedWordImport';
 import { ensureBasicWords } from '@/utils/ensureBasicWords';
+import { QuickWordImport } from './QuickWordImport';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -102,78 +103,82 @@ export const WordImporter = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Dansk Ord Importer</CardTitle>
-        <CardDescription>
-          Importer omfattende danske ordlister fra GitHub repositories.
-          Aktuelt antal ord i databasen: {wordCount.toLocaleString()}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <Button 
-            onClick={handleStandardImport} 
-            disabled={isImporting}
-            variant="outline"
-          >
-            {isImporting ? 'Importerer...' : 'Standard Import'}
-          </Button>
-          <Button 
-            onClick={handleEnhancedImport} 
-            disabled={isImporting}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isImporting ? 'Importerer...' : 'Forbedret Import'}
-          </Button>
-          <Button 
-            onClick={clearWords} 
-            variant="destructive"
-            disabled={isImporting}
-          >
-            Ryd Alle Ord
-          </Button>
-        </div>
-        
-        {isImporting && (
-          <div className="space-y-2">
-            <Progress value={undefined} className="w-full" />
-            <p className="text-sm text-gray-600">Importerer ord fra flere kilder...</p>
+    <div className="space-y-6">
+      <QuickWordImport />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Dansk Ord Importer</CardTitle>
+          <CardDescription>
+            Importer omfattende danske ordlister fra GitHub repositories.
+            Aktuelt antal ord i databasen: {wordCount.toLocaleString()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Button 
+              onClick={handleStandardImport} 
+              disabled={isImporting}
+              variant="outline"
+            >
+              {isImporting ? 'Importerer...' : 'Standard Import'}
+            </Button>
+            <Button 
+              onClick={handleEnhancedImport} 
+              disabled={isImporting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isImporting ? 'Importerer...' : 'Forbedret Import'}
+            </Button>
+            <Button 
+              onClick={clearWords} 
+              variant="destructive"
+              disabled={isImporting}
+            >
+              Ryd Alle Ord
+            </Button>
           </div>
-        )}
-        
-        {importResult && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold mb-2">Import Resultat:</h3>
-            <p>Importerede ord: {importResult.imported.toLocaleString()}</p>
-            <p>Fejl: {importResult.errors}</p>
-            {importResult.sourceStats && (
-              <div className="mt-2">
-                <p className="font-medium">Kilder:</p>
-                {Object.entries(importResult.sourceStats).map(([source, count]) => (
-                  <p key={source} className="text-sm">
-                    {new URL(source).hostname}: {typeof count === 'number' ? count : 0} ord
-                  </p>
-                ))}
-              </div>
-            )}
-            {importResult.imported > 0 && (
-              <p className="text-green-600 font-medium">Import gennemført succesfuldt!</p>
-            )}
+          
+          {isImporting && (
+            <div className="space-y-2">
+              <Progress value={undefined} className="w-full" />
+              <p className="text-sm text-gray-600">Importerer ord fra flere kilder...</p>
+            </div>
+          )}
+          
+          {importResult && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold mb-2">Import Resultat:</h3>
+              <p>Importerede ord: {importResult.imported.toLocaleString()}</p>
+              <p>Fejl: {importResult.errors}</p>
+              {importResult.sourceStats && (
+                <div className="mt-2">
+                  <p className="font-medium">Kilder:</p>
+                  {Object.entries(importResult.sourceStats).map(([source, count]) => (
+                    <p key={source} className="text-sm">
+                      {new URL(source).hostname}: {typeof count === 'number' ? count : 0} ord
+                    </p>
+                  ))}
+                </div>
+              )}
+              {importResult.imported > 0 && (
+                <p className="text-green-600 font-medium">Import gennemført succesfuldt!</p>
+              )}
+            </div>
+          )}
+          
+          <div className="text-sm text-gray-600 space-y-1">
+            <p><strong>Standard Import:</strong> Grundlæggende danske ordlister</p>
+            <p><strong>Forbedret Import:</strong> Omfattende ordsamling fra flere kilder inklusiv:</p>
+            <ul className="list-disc list-inside space-y-1 ml-4">
+              <li>LibreOffice ordbøger</li>
+              <li>Frekvensbaserede ordlister</li>
+              <li>Lemmatiserede danske ord</li>
+              <li>Forbedret filtrering og kvalitetskontrol</li>
+            </ul>
           </div>
-        )}
-        
-        <div className="text-sm text-gray-600 space-y-1">
-          <p><strong>Standard Import:</strong> Grundlæggende danske ordlister</p>
-          <p><strong>Forbedret Import:</strong> Omfattende ordsamling fra flere kilder inklusiv:</p>
-          <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>LibreOffice ordbøger</li>
-            <li>Frekvensbaserede ordlister</li>
-            <li>Lemmatiserede danske ord</li>
-            <li>Forbedret filtrering og kvalitetskontrol</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

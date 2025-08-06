@@ -18,11 +18,38 @@ const ESSENTIAL_WORDS = [
   // Words with 'nd'
   'hånd', 'land', 'sand', 'brand', 'strand', 'grund', 'hund', 'mund', 'rund', 'bind',
   'find', 'sind', 'vind', 'blind', 'grind', 'kind', 'mind', 'lind', 'tind',
+
+  // Common verbs and their forms - basic verbs
+  'gå', 'går', 'gik', 'gået', 'komme', 'kommer', 'kom', 'kommet', 'se', 'ser', 'så', 'set',
+  'have', 'har', 'havde', 'haft', 'være', 'er', 'var', 'været', 'blive', 'bliver', 'blev', 'blevet',
+  'sige', 'siger', 'sagde', 'sagt', 'tage', 'tager', 'tog', 'taget',
+  
+  // Stretch/string related verbs
+  'strække', 'strækker', 'strakte', 'strakt', 'strukket', 'strukke',
+  'stramme', 'strammer', 'strammede', 'strammet', 'stram',
+  
+  // Send/send related verbs  
+  'sende', 'sender', 'sendte', 'sendt', 'send',
+  'give', 'giver', 'gav', 'givet', 'få', 'får', 'fik', 'fået',
+  
+  // Knit/stitch related words
+  'strikke', 'strikker', 'strikkede', 'strikket', 'strik',
+  
+  // More essential verbs and forms
+  'spise', 'spiser', 'spiste', 'spist', 'drikke', 'drikker', 'drak', 'drukket',
+  'købe', 'køber', 'købte', 'købt', 'sælge', 'sælger', 'solgte', 'solgt',
+  'læse', 'læser', 'læste', 'læst', 'skrive', 'skriver', 'skrev', 'skrevet',
+  'høre', 'hører', 'hørte', 'hørt', 'tale', 'taler', 'talte', 'talt',
+  'lege', 'leger', 'legede', 'leget', 'arbejde', 'arbejder', 'arbejdede', 'arbejdet',
   
   // Common words
   'hus', 'bil', 'bog', 'mad', 'øl', 'vand', 'kaffe', 'te', 'brød', 'kød', 'fisk',
   'frugt', 'have', 'park', 'byen', 'land', 'menneske', 'barn', 'mor', 'far',
-  'ven', 'arbejde', 'penge', 'tid', 'dag', 'nat', 'år', 'måned', 'uge'
+  'ven', 'arbejde', 'penge', 'tid', 'dag', 'nat', 'år', 'måned', 'uge',
+  
+  // Common adjectives and past participles
+  'rød', 'blå', 'grøn', 'gul', 'sort', 'hvid', 'stor', 'lille', 'lang', 'kort',
+  'god', 'dårlig', 'ny', 'gammel', 'ung', 'varm', 'kold', 'let', 'tung', 'høj', 'lav'
 ];
 
 export const ensureBasicWords = async () => {
