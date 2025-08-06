@@ -130,13 +130,13 @@ export const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/10 p-4">
       <div className="max-w-6xl mx-auto pt-12">
         <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-5xl font-bold text-gray-800 mb-4">
+          <h1 className="text-5xl font-bold text-foreground mb-4">
             💣 Ordbomben 💣
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-muted-foreground">
             Multiplayer ordspil på dansk
           </p>
           {!user && (
@@ -150,12 +150,12 @@ export const HomePage = () => {
             </div>
           )}
           {user && isGuest && (
-            <p className="text-sm text-blue-600 mt-4">
+            <p className="text-sm text-primary mt-4">
               Spiller som gæst: {user.user_metadata?.display_name}
             </p>
           )}
           {user && !isGuest && (
-            <p className="text-sm text-green-600 mt-4">
+            <p className="text-sm text-secondary mt-4">
               Logget ind som: {user.email}
             </p>
           )}
@@ -164,7 +164,7 @@ export const HomePage = () => {
         {/* Admin section - visible when logged in as admin */}
         {isAdmin && (
           <div className="mb-8 animate-fade-in">
-            <Card className="bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200">
+            <Card className="bg-card/90 backdrop-blur-sm shadow-xl border border-border">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>🔧 Administrator Panel</span>
@@ -197,9 +197,9 @@ export const HomePage = () => {
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto animate-scale-in">
               {/* Create Room Card */}
-              <Card className="bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200 transform hover:scale-[1.02] transition-all duration-300">
+              <Card className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold text-gray-800">Opret nyt rum</CardTitle>
+                  <CardTitle className="text-xl font-bold text-foreground">Opret nyt rum</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -242,7 +242,7 @@ export const HomePage = () => {
                   <Button 
                     onClick={createRoom} 
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
+                    className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
                   >
                     {loading ? "Opretter..." : "Opret rum"}
                   </Button>
@@ -250,9 +250,9 @@ export const HomePage = () => {
               </Card>
 
               {/* Join Room Card */}
-              <Card className="bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200 transform hover:scale-[1.02] transition-all duration-300">
+              <Card className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold text-gray-800">Tilslut eksisterende rum</CardTitle>
+                  <CardTitle className="text-xl font-bold text-foreground">Tilslut eksisterende rum</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -269,13 +269,12 @@ export const HomePage = () => {
 
                   <Button 
                     onClick={joinRoom}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
-                    variant="outline"
+                    className="w-full bg-gradient-to-r from-secondary to-accent hover:from-secondary/90 hover:to-accent/90 text-secondary-foreground font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
                   >
                     Tilslut rum
                   </Button>
 
-                  <div className="text-sm text-gray-600 space-y-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+                  <div className="text-sm text-muted-foreground space-y-2 bg-gradient-to-r from-secondary/5 to-accent/5 rounded-lg p-4 border border-border">
                     <p><strong>Sådan spiller du:</strong></p>
                     <ul className="list-disc list-inside space-y-1">
                       <li>Skriv et dansk ord der indeholder den viste stavelse</li>
