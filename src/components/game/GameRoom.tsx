@@ -143,7 +143,7 @@ export const GameRoom = () => {
   // Show loading skeleton while data is loading
   if (roomLoading || gameLoading || playersLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 p-4">
+      <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
           <div className="space-y-4">
             <Skeleton className="h-16 w-full" />
@@ -166,11 +166,11 @@ export const GameRoom = () => {
 
   if (!room) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4 animate-fade-in">
           <div className="text-6xl animate-bounce">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800">Rum ikke fundet</h2>
-          <p className="text-gray-600">Dette rum eksisterer ikke eller er blevet slettet.</p>
+          <h2 className="text-2xl font-bold text-foreground">Rum ikke fundet</h2>
+          <p className="text-muted-foreground">Dette rum eksisterer ikke eller er blevet slettet.</p>
         </div>
       </div>
     );
@@ -263,7 +263,7 @@ export const GameRoom = () => {
 
   return (
     <div className={cn(
-      "bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4",
+      "bg-background p-4",
       isMobile ? "mobile-safe-area" : "min-h-screen"
     )}>
       <div className="max-w-4xl mx-auto space-y-8">
