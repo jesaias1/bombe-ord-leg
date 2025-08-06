@@ -41,7 +41,7 @@ export const GameRoom = () => {
     enabled: !!roomId,
   });
 
-  const { data: game, isLoading: gameLoading } = useQuery({
+  const { data: game, isLoading: gameLoading, refetch: refetchGame } = useQuery({
     queryKey: ['game', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -275,6 +275,8 @@ export const GameRoom = () => {
                 console.error('Error details:', error.details);
               } else {
                 console.log('Game started successfully:', data);
+                // Immediately refresh the game data to show the playing state
+                refetchGame();
               }
             } catch (err) {
               console.error('Unexpected error starting game:', err);
