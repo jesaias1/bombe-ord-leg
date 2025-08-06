@@ -7,6 +7,7 @@ import { importAllWords } from '@/utils/importDanishWords';
 import { importEnhancedWords } from '@/utils/improvedWordImport';
 import { ensureBasicWords } from '@/utils/ensureBasicWords';
 import { QuickWordImport } from './QuickWordImport';
+import { UpdateWordDatabase } from './UpdateWordDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -104,6 +105,7 @@ export const WordImporter = () => {
 
   return (
     <div className="space-y-6">
+      <UpdateWordDatabase />
       <QuickWordImport />
       
       <Card>

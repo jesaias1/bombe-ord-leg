@@ -84,7 +84,26 @@ const ESSENTIAL_WORDS = [
   
   // Common endings and inflections
   'drengene', 'pigerne', 'mændene', 'kvinderne', 'forældre', 'forældrene',
-  'venner', 'vennerne', 'lærere', 'lærerne', 'elever', 'eleverne'
+  'venner', 'vennerne', 'lærere', 'lærerne', 'elever', 'eleverne',
+  
+  // Missing words reported by users
+  'handsker', 'handske', 'ketamin', 'smuglende', 'smugle', 'smugler', 'smuglede', 'smuglet',
+  'byld', 'bylde', 'bylden', 'bylder', 'bygder', 'bygd',
+  'sultende', 'sulte', 'sulter', 'sultede', 'sultet', 'sult',
+  'smartere', 'smarte', 'smart', 'smartest', 'smarteste',
+  'sløvet', 'sløve', 'sløver', 'sløvede', 'sløv', 'sløvere', 'sløvest', 'sløveste',
+  'kaldt', 'kald', 'kaldte', 'kalder', 'kaldet',
+  
+  // Additional common Danish words and inflections
+  'gående', 'løbende', 'kørende', 'flyvende', 'svømmende', 'dansende', 'syngende',
+  'tænkende', 'følende', 'elskende', 'hadende', 'ventende', 'håbende',
+  'arbejdende', 'studerende', 'undervisende', 'lærende', 'hjælpende',
+  'kæmpende', 'prøvende', 'forsøgende', 'kiggende', 'lyttende',
+  
+  // Past participles and adjectives
+  'brugt', 'solgt', 'købt', 'fundet', 'mistet', 'vundet', 'tabt',
+  'bygget', 'skabt', 'malet', 'tegnet', 'skrevet', 'læst', 'hørt',
+  'smagt', 'lugtet', 'følt', 'rørt', 'taget', 'givet', 'fået'
 ];
 
 export const ensureBasicWords = async () => {
