@@ -302,4 +302,46 @@
     ring-color: rgb(59 130 246);
     ring-offset: 2px;
   }
+
+  /* Mobile viewport and keyboard handling */
+  @supports (-webkit-appearance: none) {
+    /* iOS Safari viewport fix */
+    body {
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+    }
+  }
+
+  /* Handle mobile keyboard overlay */
+  @media (max-width: 768px) {
+    .mobile-safe-area {
+      min-height: 100vh;
+      min-height: calc(100vh - env(keyboard-inset-height, 0px));
+      padding-bottom: env(keyboard-inset-height, 0px);
+    }
+
+    .mobile-input-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      padding: 1rem;
+      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .mobile-game-content {
+      padding-bottom: 120px; /* Space for fixed input */
+      overflow-y: auto;
+      max-height: calc(100vh - 120px);
+    }
+
+    /* Ensure input is always visible above keyboard */
+    .mobile-input-focus {
+      transform: translateY(-env(keyboard-inset-height, 0px));
+      transition: transform 0.2s ease-in-out;
+    }
+  }
 }

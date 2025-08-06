@@ -38,11 +38,12 @@ export const GamePlaying = ({
   return (
     <div className={cn(
       "gap-8 animate-fade-in",
-      isMobile ? "flex flex-col space-y-8" : "grid grid-cols-1 lg:grid-cols-3"
+      isMobile ? "flex flex-col space-y-4" : "grid grid-cols-1 lg:grid-cols-3"
     )}>
+      {/* Game content area - scrollable on mobile */}
       <div className={cn(
-        "space-y-24",
-        isMobile ? "order-1" : "lg:col-span-2"
+        isMobile ? "mobile-game-content order-1" : "lg:col-span-2",
+        "space-y-8"
       )}>
         <div className="text-center relative mt-12">
           {/* Glowing ring around timer - much slower pulse */}
@@ -66,7 +67,7 @@ export const GamePlaying = ({
           </div>
         </div>
 
-        <div className="text-center space-y-12">
+        <div className="text-center space-y-8">
           {currentPlayer && (
             <div className={cn(
               "rounded-xl p-4 shadow-xl border-2 transition-all duration-500 transform hover:scale-[1.02]",
@@ -86,14 +87,17 @@ export const GamePlaying = ({
             </div>
           )}
           
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200 transform hover:shadow-2xl transition-all duration-300">
-            <WordInput
-              onSubmit={onWordSubmit}
-              disabled={!isCurrentUser || timeLeft <= 0}
-              currentSyllable={game.current_syllable || ''}
-              isSubmitting={isSubmitting}
-            />
-          </div>
+          {/* Word input - fixed at bottom on mobile */}
+          {!isMobile && (
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200 transform hover:shadow-2xl transition-all duration-300">
+              <WordInput
+                onSubmit={onWordSubmit}
+                disabled={!isCurrentUser || timeLeft <= 0}
+                currentSyllable={game.current_syllable || ''}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          )}
 
           {game.used_words && game.used_words.length > 0 && (
             <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 shadow-lg border border-gray-200 animate-fade-in">
@@ -156,6 +160,18 @@ export const GamePlaying = ({
           </div>
         </div>
       </div>
+      
+      {/* Fixed input for mobile */}
+      {isMobile && (
+        <div className="mobile-input-container">
+          <WordInput
+            onSubmit={onWordSubmit}
+            disabled={!isCurrentUser || timeLeft <= 0}
+            currentSyllable={game.current_syllable || ''}
+            isSubmitting={isSubmitting}
+          />
+        </div>
+      )}
     </div>
   );
 };

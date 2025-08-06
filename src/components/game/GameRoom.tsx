@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
 import { Tables } from '@/integrations/supabase/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
@@ -257,7 +258,10 @@ export const GameRoom = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4">
+    <div className={cn(
+      "bg-gradient-to-br from-orange-100 via-red-50 to-purple-100 p-4",
+      isMobile ? "mobile-safe-area" : "min-h-screen"
+    )}>
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="animate-fade-in">
           <GameHeader 
