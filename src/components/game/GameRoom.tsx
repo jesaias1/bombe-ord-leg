@@ -218,6 +218,8 @@ export const GameRoom = () => {
           currentUserId={user?.id}
           canStartGame={canStartGame}
           onStartGame={async () => {
+            console.log('Starting game...');
+            
             // Get a random syllable for the initial game state
             const initialSyllable = await selectRandomSyllable(room!.difficulty);
             
@@ -227,6 +229,12 @@ export const GameRoom = () => {
             }
 
             console.log('Starting game with syllable:', initialSyllable);
+            console.log('Players available:', players);
+            
+            if (players.length === 0) {
+              console.error('No players found to start game');
+              return;
+            }
             
             // Calculate timer end time - exactly 15 seconds from now
             const timerDuration = 15; // Fixed 15 seconds for all players
@@ -235,22 +243,28 @@ export const GameRoom = () => {
             console.log(`Game starting with ${timerDuration} second timer, ending at:`, timerEndTime.toISOString());
 
             // Create a new game for this room
-            const { error } = await supabase
+            const gameData = {
+              room_id: roomId,
+              status: 'playing' as const,
+              current_player_id: players[0]?.id,
+              current_syllable: initialSyllable,
+              timer_duration: timerDuration,
+              timer_end_time: timerEndTime.toISOString(),
+              round_number: 1,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            
+            console.log('Creating game with data:', gameData);
+            
+            const { data, error } = await supabase
               .from('games')
-              .insert({
-                room_id: roomId,
-                status: 'playing',
-                current_player_id: players[0]?.id,
-                current_syllable: initialSyllable,
-                timer_duration: timerDuration,
-                timer_end_time: timerEndTime.toISOString(),
-                round_number: 1,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
+              .insert(gameData);
             
             if (error) {
               console.error('Error starting game:', error);
+            } else {
+              console.log('Game started successfully:', data);
             }
           }}
           isLoading={playersLoading}
