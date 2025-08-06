@@ -74,10 +74,11 @@ export const GameRoom = () => {
   useEffect(() => {
     if (!user || !roomId || !room || playersLoading) return;
     
+    console.log('Checking players for user:', user.id, 'Players:', players);
     const currentUserPlayer = players.find(p => p.user_id === user.id);
     
     if (!currentUserPlayer) {
-      console.log('Adding current user as player to room');
+      console.log('Adding current user as player to room. User ID:', user.id, 'Type:', typeof user.id);
       
       // Get the proper display name for both authenticated and guest users
       let displayName = 'Anonymous';
@@ -90,10 +91,20 @@ export const GameRoom = () => {
         displayName = user.user_metadata.display_name;
       }
       
+      console.log('Display name:', displayName);
+      
       // Add player to room
       const addPlayer = async () => {
         try {
-          const { error } = await supabase
+          console.log('Inserting player with data:', {
+            room_id: roomId,
+            user_id: user.id,
+            name: displayName,
+            lives: 3,
+            is_alive: true
+          });
+          
+          const { data, error } = await supabase
             .from('players')
             .insert({
               room_id: roomId,
@@ -101,12 +112,13 @@ export const GameRoom = () => {
               name: displayName,
               lives: 3,
               is_alive: true
-            });
+            })
+            .select();
             
           if (error) {
             console.error('Error adding player:', error);
           } else {
-            console.log('Player added successfully');
+            console.log('Player added successfully:', data);
           }
         } catch (error) {
           console.error('Error adding player:', error);
@@ -114,6 +126,8 @@ export const GameRoom = () => {
       };
       
       addPlayer();
+    } else {
+      console.log('User already exists as player:', currentUserPlayer);
     }
   }, [user, roomId, room, isGuest]);
 
