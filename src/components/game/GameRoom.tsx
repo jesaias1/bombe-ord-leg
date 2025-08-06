@@ -54,7 +54,6 @@ export const GameRoom = () => {
       return data as Game | null;
     },
     enabled: !!roomId,
-    refetchInterval: 1000,
   });
 
   const { data: players = [], isLoading: playersLoading } = useQuery({
@@ -69,12 +68,11 @@ export const GameRoom = () => {
       return data as Player[];
     },
     enabled: !!roomId,
-    refetchInterval: 1000,
   });
 
   // Ensure current user is added as a player when they enter the room
   useEffect(() => {
-    if (!user || !roomId || !room || playersLoading) return;
+    if (!user || !roomId || !room || playersLoading || players.length === 0) return;
     
     const currentUserPlayer = players.find(p => p.user_id === user.id);
     
@@ -117,7 +115,7 @@ export const GameRoom = () => {
       
       addPlayer();
     }
-  }, [user, roomId, room, players, playersLoading, isGuest]);
+  }, [user, roomId, room, isGuest]);
 
   // Check word count and show import option if low
   const { data: wordCount = 0 } = useQuery({
