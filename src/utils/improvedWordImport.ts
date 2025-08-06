@@ -1,31 +1,35 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Enhanced word sources with better Danish word lists
+// Enhanced word sources with comprehensive Danish word lists
 const ENHANCED_WORD_SOURCES = [
-  // Core Danish dictionaries
-  'https://raw.githubusercontent.com/martinlindhe/wordlists/master/20200419-Danish-words.txt',
-  'https://raw.githubusercontent.com/hingston/danish-words/main/danish-words.txt',
-  
-  // LibreOffice dictionaries (comprehensive)
+  // Original proven sources
   'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/da_DK/da_DK.dic',
   'https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/da/index.dic',
-  
-  // Lemmatization and frequency lists
-  'https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-da.txt',
   'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/da/da_50k.txt',
-  'https://raw.githubusercontent.com/stopwords-iso/stopwords-da/master/raw/stopwords-da.txt',
-  
-  // Additional comprehensive Danish sources
-  'https://raw.githubusercontent.com/danish-language-technology/danish-sentiment-lexicon/master/word-lists/positive-words-da.txt',
-  'https://raw.githubusercontent.com/danish-language-technology/danish-sentiment-lexicon/master/word-lists/negative-words-da.txt',
   'https://raw.githubusercontent.com/fnielsen/afinn/master/afinn/data/AFINN-da-32.txt',
   
-  // Wikipedia Danish word lists
-  'https://raw.githubusercontent.com/attardi/wikiextractor/master/lemmatization-da.txt',
+  // New comprehensive Danish repositories from GitHub search
+  // n0kovo/danish-wordlists - Excellent comprehensive collection
+  'https://raw.githubusercontent.com/n0kovo/danish-wordlists/main/danish_wordlist.txt',
+  'https://raw.githubusercontent.com/n0kovo/danish-wordlists/main/danish_dictionary.txt',
+  'https://raw.githubusercontent.com/n0kovo/danish-wordlists/main/danish_cities.txt',
+  'https://raw.githubusercontent.com/n0kovo/danish-wordlists/main/dk_places.txt',
   
-  // Morphological Danish dictionaries
-  'https://raw.githubusercontent.com/alexandrainst/danish-named-entity-recognition/main/data/danish_words.txt'
+  // fraabye/Danish-wordlists - Multiple quality word lists
+  'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/Danish-wordlist-combined.txt',
+  'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/Danish-simple.txt',
+  'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/Danish-top20k.txt',
+  'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/Danish-top100k.txt',
+  'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/20200409-valid-Danish-first-names.txt',
+  
+  // Danish Sentiment Lexicon - Contains many valid Danish words
+  'https://raw.githubusercontent.com/dsldk/danish-sentiment-lexicon/main/2_headword_headword_polarity.csv',
+  'https://raw.githubusercontent.com/dsldk/danish-sentiment-lexicon/main/1_wordform_wordform_polarity.csv',
+  
+  // Additional Danish language resources
+  'https://raw.githubusercontent.com/stopwords-iso/stopwords-da/master/raw/stopwords-da.txt',
+  'https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-da.txt'
 ];
 
 const fetchWordsFromUrl = async (url: string): Promise<{ words: string[], source: string }> => {
@@ -54,6 +58,12 @@ const fetchWordsFromUrl = async (url: string): Promise<{ words: string[], source
         // Skip empty lines and comments
         if (!word || word.startsWith('#') || word.startsWith('//')) {
           return '';
+        }
+        
+        // Handle CSV format (sentiment lexicon)
+        if (url.includes('.csv')) {
+          const parts = word.split(',');
+          word = parts[0].replace(/['"]/g, '').trim();
         }
         
         // Tab-separated format (lemmatization files)
