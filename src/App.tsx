@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import { GameRoom } from "@/components/game/GameRoom";
 import { Button } from "@/components/ui/button";
+import { ThemeProvider } from "next-themes";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -17,10 +19,11 @@ const AppContent = () => {
 
   return (
     <>
+      <ThemeToggle />
       {user && (
         <div className="fixed top-4 right-4 z-50">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               {isGuest ? `Gæst: ${user.user_metadata?.display_name}` : user.email}
             </span>
             <Button onClick={signOut} variant="outline" size="sm">
@@ -44,15 +47,17 @@ const AppContent = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
