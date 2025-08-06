@@ -96,6 +96,39 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast({
+        title: "Fejl",
+        description: "Indtast din email først",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email sendt!",
+        description: "Tjek din email for at nulstille din adgangskode",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGuestSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestName.trim()) {
@@ -180,6 +213,17 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 {loading ? "Logger ind..." : "Log ind"}
               </Button>
             </form>
+            
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                disabled={loading}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Glemt adgangskode?
+              </button>
+            </div>
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4">
