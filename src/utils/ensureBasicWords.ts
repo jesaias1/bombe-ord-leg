@@ -60,7 +60,27 @@ const ESSENTIAL_WORDS = [
   
   // Common adjectives and past participles
   'rød', 'blå', 'grøn', 'gul', 'sort', 'hvid', 'stor', 'lille', 'lang', 'kort',
-  'god', 'dårlig', 'ny', 'gammel', 'ung', 'varm', 'kold', 'let', 'tung', 'høj', 'lav'
+  'god', 'dårlig', 'ny', 'gammel', 'ung', 'varm', 'kold', 'let', 'tung', 'høj', 'lav',
+  
+  // Missing Danish words reported by users - inflections and compound words
+  'sydende', 'skomageren', 'slummen', 'dokumenterne', 'dokumenter', 'dokument',
+  'skomager', 'skumag', 'slum', 'slummet', 'slummer', 'slumrer',
+  'syden', 'syde', 'syder', 'sydede', 'sydet',
+  
+  // More Danish inflections that might be missing
+  'hendes', 'hans', 'deres', 'vores', 'jeres', 'mit', 'dit', 'sit',
+  'manden', 'kvinden', 'barnet', 'børnene', 'menneskene', 'folkene',
+  'husene', 'bilerne', 'bøgerne', 'ordene', 'tingene', 'stederne',
+  
+  // Verb inflections
+  'løber', 'løb', 'løbet', 'springer', 'sprang', 'sprunget',
+  'kaster', 'kastede', 'kastet', 'fanger', 'fangede', 'fanget',
+  'banker', 'bankede', 'banket', 'kalder', 'kaldte', 'kaldt',
+  'åbner', 'åbnede', 'åbnet', 'lukker', 'lukkede', 'lukket',
+  
+  // Common endings and inflections
+  'drengene', 'pigerne', 'mændene', 'kvinderne', 'forældre', 'forældrene',
+  'venner', 'vennerne', 'lærere', 'lærerne', 'elever', 'eleverne'
 ];
 
 export const ensureBasicWords = async () => {

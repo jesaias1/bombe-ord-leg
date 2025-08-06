@@ -85,6 +85,53 @@ export const GameFinished = ({
             </p>
           </div>
         )}
+        
+        {/* Game Summary */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 shadow-lg border border-green-200">
+          <h3 className="text-2xl font-bold text-green-800 mb-4 text-center">📊 Spil oversigt</h3>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Correct Words */}
+            <div className="bg-white/70 rounded-lg p-4">
+              <h4 className="text-lg font-bold text-green-700 mb-3 flex items-center">
+                ✅ Korrekte ord ({game.correct_words?.length || game.used_words?.length || 0})
+              </h4>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {(game.correct_words?.length ? game.correct_words : game.used_words || []).map((word, index) => (
+                  <span 
+                    key={index} 
+                    className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm font-medium mr-2 mb-1"
+                  >
+                    {word}
+                  </span>
+                ))}
+                {(!game.correct_words?.length && !game.used_words?.length) && (
+                  <p className="text-gray-500 italic">Ingen ord blev accepteret</p>
+                )}
+              </div>
+            </div>
+            
+            {/* Incorrect Words */}
+            <div className="bg-white/70 rounded-lg p-4">
+              <h4 className="text-lg font-bold text-red-700 mb-3 flex items-center">
+                ❌ Forkerte ord ({game.incorrect_words?.length || 0})
+              </h4>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {game.incorrect_words?.map((word, index) => (
+                  <span 
+                    key={index} 
+                    className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm font-medium mr-2 mb-1"
+                  >
+                    {word}
+                  </span>
+                ))}
+                {(!game.incorrect_words?.length) && (
+                  <p className="text-gray-500 italic">Ingen forkerte ord blev forsøgt</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 shadow-lg border border-gray-200">

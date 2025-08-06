@@ -17,6 +17,8 @@ export const BombTimer = ({ timeLeft, totalTime, isActive, syllable }: BombTimer
       setShake(true);
       const timer = setTimeout(() => setShake(false), 200);
       return () => clearTimeout(timer);
+    } else {
+      setShake(false);
     }
   }, [timeLeft, isActive]);
 
@@ -30,7 +32,7 @@ export const BombTimer = ({ timeLeft, totalTime, isActive, syllable }: BombTimer
           "relative w-48 h-48 rounded-full flex items-center justify-center text-white font-bold text-lg",
           "border-4 transition-all duration-300",
           isUrgent ? "bg-red-600 border-red-800" : "bg-orange-500 border-orange-700",
-          shake && "animate-pulse",
+          shake && isActive && "animate-pulse",
           !isActive && "opacity-50"
         )}
         style={{
