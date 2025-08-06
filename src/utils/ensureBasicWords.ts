@@ -19,6 +19,12 @@ const ESSENTIAL_WORDS = [
   'hånd', 'land', 'sand', 'brand', 'strand', 'grund', 'hund', 'mund', 'rund', 'bind',
   'find', 'sind', 'vind', 'blind', 'grind', 'kind', 'mind', 'lind', 'tind',
 
+  // Words with 'eg'
+  'leg', 'beg', 'reg', 'seg', 'slægt', 'slægtgård', 'slægtskab', 'slægtning',
+  'ægget', 'begge', 'regn', 'regne', 'regner', 'regnede', 'regnet', 'regering',
+  'begynde', 'begynder', 'begyndte', 'begyndt', 'begreb', 'begribt', 'begrebe',
+  'vegetar', 'vegetation', 'vegansk', 'veganisme',
+
   // Common verbs and their forms - basic verbs
   'gå', 'går', 'gik', 'gået', 'komme', 'kommer', 'kom', 'kommet', 'se', 'ser', 'så', 'set',
   'have', 'har', 'havde', 'haft', 'være', 'er', 'var', 'været', 'blive', 'bliver', 'blev', 'blevet',
@@ -41,6 +47,11 @@ const ESSENTIAL_WORDS = [
   'læse', 'læser', 'læste', 'læst', 'skrive', 'skriver', 'skrev', 'skrevet',
   'høre', 'hører', 'hørte', 'hørt', 'tale', 'taler', 'talte', 'talt',
   'lege', 'leger', 'legede', 'leget', 'arbejde', 'arbejder', 'arbejdede', 'arbejdet',
+  
+  // Common compound words that might be missing
+  'slægtgård', 'bondegård', 'hovedgård', 'herregård', 'kærlighed', 'ægteskab',
+  'barnebarn', 'oldefar', 'oldemor', 'bedstefar', 'bedstemor',
+  'arbejdsplads', 'arbejdsgiver', 'arbejdstager',
   
   // Common words
   'hus', 'bil', 'bog', 'mad', 'øl', 'vand', 'kaffe', 'te', 'brød', 'kød', 'fisk',
