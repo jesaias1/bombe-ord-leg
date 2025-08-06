@@ -72,7 +72,7 @@ export const GameRoom = () => {
 
   // Ensure current user is added as a player when they enter the room
   useEffect(() => {
-    if (!user || !roomId || !room || playersLoading || players.length === 0) return;
+    if (!user || !roomId || !room || playersLoading) return;
     
     const currentUserPlayer = players.find(p => p.user_id === user.id);
     
