@@ -40,59 +40,35 @@ export const GamePlaying = ({
       "gap-8 animate-fade-in",
       isMobile ? "flex flex-col space-y-4" : "grid grid-cols-1 lg:grid-cols-3"
     )}>
-      {/* Mobile compact layout */}
+      {/* Mobile simplified layout - keyboard friendly */}
       {isMobile ? (
-        <div className="space-y-4">
-          {/* Compact timer and syllable display */}
-          <div className="text-center relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className={cn(
-                "rounded-full border-4 w-48 h-48",
-                timeLeft <= 5 
-                  ? "border-red-400 shadow-lg shadow-red-400/50 animate-[pulse_4s_ease-in-out_infinite]" 
-                  : "border-orange-400 shadow-lg shadow-orange-400/30"
-              )}></div>
+        <div className="h-screen flex flex-col justify-between p-4 max-h-[100dvh]">
+          {/* Top section - syllable and timer */}
+          <div className="text-center space-y-3">
+            {/* Timer - compact */}
+            <div className="text-4xl font-bold">
+              {timeLeft}s
             </div>
             
-            <div className="relative z-20">
-              <BombTimer
-                timeLeft={timeLeft}
-                totalTime={game.timer_duration || 15}
-                isActive={game.status === 'playing'}
-                syllable={game.current_syllable || ''}
-              />
+            {/* Syllable - prominent */}
+            <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-2xl p-6 shadow-lg border-2 border-yellow-300">
+              <p className="text-center text-sm text-orange-700 mb-1">Dit ord skal indeholde:</p>
+              <p className="text-center text-4xl font-black text-orange-900">{game.current_syllable}</p>
             </div>
-          </div>
 
-          {/* Current player indicator */}
-          {currentPlayer && (
-            <div className={cn(
-              "rounded-xl p-3 shadow-lg border-2 transition-all duration-500",
-              isCurrentUser 
-                ? "bg-gradient-to-r from-purple-100 via-pink-50 to-purple-100 border-purple-300" 
-                : "bg-gradient-to-r from-gray-100 to-gray-50 border-gray-200"
-            )}>
-              <p className={cn(
-                "text-lg font-bold transition-all duration-300 text-center",
-                isCurrentUser ? "text-purple-700" : "text-gray-700"
+            {/* Current player indicator - compact */}
+            {currentPlayer && (
+              <div className={cn(
+                "rounded-lg p-2 text-center text-sm font-bold",
+                isCurrentUser ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-700"
               )}>
-                {isCurrentUser ? 
-                  (isSinglePlayer ? "🎯 Din tur!" : "🎉 Din tur!") : 
-                  `🎮 ${currentPlayer.name}s tur`
-                }
-              </p>
-            </div>
-          )}
-
-          {/* Syllable reminder card - always visible */}
-          <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-4 shadow-lg border border-yellow-300">
-            <p className="text-center text-lg font-bold text-orange-800">
-              💡 Dit ord skal indeholde: <span className="text-2xl font-black text-orange-900">{game.current_syllable}</span>
-            </p>
+                {isCurrentUser ? "Din tur!" : `${currentPlayer.name}s tur`}
+              </div>
+            )}
           </div>
           
-          {/* Word input - prominently placed */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl border-2 border-purple-300">
+          {/* Bottom section - input field */}
+          <div className="pb-safe">
             <WordInput
               onSubmit={onWordSubmit}
               disabled={!isCurrentUser || timeLeft <= 0}
@@ -100,55 +76,6 @@ export const GamePlaying = ({
               isSubmitting={isSubmitting}
             />
           </div>
-
-          {/* Compact player list */}
-          <div className="transform transition-all duration-300">
-            <PlayerList 
-              players={players} 
-              currentPlayerId={game.current_player_id || undefined}
-              currentUserId={currentUserId}
-            />
-          </div>
-          
-          {/* Compact game stats */}
-          <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl p-4 shadow-lg border border-indigo-200">
-            <h4 className="font-bold text-indigo-800 mb-3 flex items-center text-sm">
-              <span className="text-lg mr-2">📊</span>
-              Spil statistik
-            </h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex justify-between items-center p-2 bg-white/50 rounded">
-                <span className="text-gray-600">Runde:</span>
-                <span className="font-bold text-indigo-700">{game.round_number || 1}</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-white/50 rounded">
-                <span className="text-gray-600">Ord:</span>
-                <span className="font-bold text-indigo-700">{game.used_words?.length || 0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Used words - collapsible */}
-          {game.used_words && game.used_words.length > 0 && (
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 shadow-lg border border-gray-200">
-              <h3 className="font-bold text-base mb-3 text-gray-800 flex items-center justify-center">
-                📝 Brugte ord ({game.used_words.length})
-              </h3>
-              <div className="flex flex-wrap gap-2 justify-center max-h-24 overflow-y-auto">
-                {game.used_words.slice(-6).map((word, index) => (
-                  <span 
-                    key={index} 
-                    className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium shadow-md border border-blue-200"
-                  >
-                    {word}
-                  </span>
-                ))}
-                {game.used_words.length > 6 && (
-                  <span className="text-gray-500 text-sm px-2">+{game.used_words.length - 6} mere</span>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         /* Desktop layout */
