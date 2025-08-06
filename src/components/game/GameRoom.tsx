@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -128,6 +128,8 @@ export const GameRoom = () => {
     }
   });
 
+  const [currentWord, setCurrentWord] = useState('');
+
   const { submitWord, handleTimerExpired, isSubmitting } = useGameLogic(
     game,
     players,
@@ -135,7 +137,7 @@ export const GameRoom = () => {
     room
   );
 
-  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room);
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, currentWord);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
 
   // Show loading skeleton while data is loading
@@ -237,6 +239,8 @@ export const GameRoom = () => {
           currentUserId={user?.id}
           onWordSubmit={submitWord}
           isSubmitting={isSubmitting}
+          currentWord={currentWord}
+          onWordChange={setCurrentWord}
         />
       );
     }

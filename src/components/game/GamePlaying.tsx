@@ -20,6 +20,7 @@ interface GamePlayingProps {
   onWordSubmit: (word: string) => Promise<boolean>;
   onWordChange?: (word: string) => void;
   isSubmitting?: boolean;
+  currentWord?: string;
 }
 
 export const GamePlaying = ({
@@ -31,7 +32,9 @@ export const GamePlaying = ({
   isSinglePlayer,
   currentUserId,
   onWordSubmit,
-  isSubmitting = false
+  isSubmitting = false,
+  currentWord,
+  onWordChange
 }: GamePlayingProps) => {
   const isMobile = useIsMobile();
 
@@ -74,6 +77,7 @@ export const GamePlaying = ({
               disabled={!isCurrentUser || timeLeft <= 0}
               currentSyllable={game.current_syllable || ''}
               isSubmitting={isSubmitting}
+              onWordChange={onWordChange}
             />
           </div>
         </div>
@@ -128,6 +132,7 @@ export const GamePlaying = ({
                   disabled={!isCurrentUser || timeLeft <= 0}
                   currentSyllable={game.current_syllable || ''}
                   isSubmitting={isSubmitting}
+                  onWordChange={onWordChange}
                 />
               </div>
 

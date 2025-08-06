@@ -12,7 +12,8 @@ type Room = Tables<'rooms'>;
 export const useTimerHandler = (
   game: Game | null,
   players: Player[],
-  room: Room | null
+  room: Room | null,
+  currentWord?: string
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
 
@@ -61,6 +62,12 @@ export const useTimerHandler = (
       if (updatedAlivePlayers.length <= 1) {
         console.log('Game ending - only 1 or fewer players remaining');
         
+        // Add current word to incorrect words if it exists and contains the syllable
+        const incorrectWords = [...(game.incorrect_words || [])];
+        if (currentWord && currentWord.trim() && currentWord.toLowerCase().includes(game.current_syllable?.toLowerCase() || '')) {
+          incorrectWords.push(currentWord.trim().toLowerCase());
+        }
+        
         const { error: gameError } = await supabase
           .from('games')
           .update({
@@ -68,6 +75,7 @@ export const useTimerHandler = (
             current_player_id: null,
             timer_end_time: null,
             current_syllable: null,
+            incorrect_words: incorrectWords,
             updated_at: new Date().toISOString()
           })
           .eq('id', game.id);
@@ -102,6 +110,12 @@ export const useTimerHandler = (
         if (newSyllable) {
           console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
           
+          // Add current word to incorrect words if it exists and contains the syllable
+          const incorrectWords = [...(game.incorrect_words || [])];
+          if (currentWord && currentWord.trim() && currentWord.toLowerCase().includes(game.current_syllable?.toLowerCase() || '')) {
+            incorrectWords.push(currentWord.trim().toLowerCase());
+          }
+          
           const timerDuration = game.timer_duration || 15;
           // Start timer immediately for faster transition
           const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
@@ -112,6 +126,7 @@ export const useTimerHandler = (
               current_player_id: nextPlayer.id,
               current_syllable: newSyllable,
               timer_end_time: newTimerEndTime,
+              incorrect_words: incorrectWords,
               updated_at: new Date().toISOString()
             })
             .eq('id', game.id);
@@ -132,7 +147,7 @@ export const useTimerHandler = (
         duration: 1500
       });
     }
-  }, [game, players, room, alivePlayers]);
+  }, [game, players, room, alivePlayers, currentWord]);
 
   return { handleTimerExpired };
 };
