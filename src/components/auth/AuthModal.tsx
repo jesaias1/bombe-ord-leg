@@ -27,7 +27,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -37,9 +37,24 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
       if (error) throw error;
 
+      // Send welcome email
+      if (data.user) {
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: { 
+              email: data.user.email,
+              name: data.user.email?.split('@')[0] // Use part before @ as name
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't show error to user - just log it
+        }
+      }
+
       toast({
         title: "Konto oprettet!",
-        description: "Tjek din email for at bekræfte din konto",
+        description: "Tjek din email for at bekræfte din konto. Du vil også modtage en velkomstmail.",
       });
       onClose();
     } catch (error: any) {
