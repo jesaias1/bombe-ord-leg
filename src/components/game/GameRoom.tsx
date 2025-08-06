@@ -56,7 +56,7 @@ export const GameRoom = () => {
     enabled: !!roomId,
   });
 
-  const { data: players = [], isLoading: playersLoading } = useQuery({
+  const { data: players = [], isLoading: playersLoading, refetch: refetchPlayers } = useQuery({
     queryKey: ['players', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -72,12 +72,12 @@ export const GameRoom = () => {
 
   // Ensure current user is added as a player when they enter the room
   useEffect(() => {
-    if (!user || !roomId || !room || playersLoading) return;
+    if (!user || !roomId || !room) return;
     
     console.log('Checking players for user:', user.id, 'Players:', players);
     const currentUserPlayer = players.find(p => p.user_id === user.id);
     
-    if (!currentUserPlayer) {
+    if (!currentUserPlayer && !playersLoading) {
       console.log('Adding current user as player to room. User ID:', user.id, 'Type:', typeof user.id);
       
       // Get the proper display name for both authenticated and guest users
@@ -119,6 +119,8 @@ export const GameRoom = () => {
             console.error('Error adding player:', error);
           } else {
             console.log('Player added successfully:', data);
+            // Force refresh of players
+            refetchPlayers();
           }
         } catch (error) {
           console.error('Error adding player:', error);
@@ -129,7 +131,7 @@ export const GameRoom = () => {
     } else {
       console.log('User already exists as player:', currentUserPlayer);
     }
-  }, [user, roomId, room, isGuest]);
+  }, [user, roomId, room, isGuest, players, playersLoading, refetchPlayers]);
 
   // Check word count and show import option if low
   const { data: wordCount = 0 } = useQuery({
