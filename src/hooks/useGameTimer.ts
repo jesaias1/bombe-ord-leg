@@ -36,7 +36,10 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
     const updateTimer = () => {
       const endTime = new Date(game.timer_end_time!).getTime();
       const now = new Date().getTime();
-      const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+      
+      // Add a small buffer to account for network latency
+      const networkBuffer = 500; // 500ms buffer
+      const remaining = Math.max(0, Math.ceil((endTime - now - networkBuffer) / 1000));
       
       setTimeLeft(remaining);
 

@@ -63,16 +63,11 @@ export const GameRoom = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('players')
-        .select(`
-          *,
-          profiles!players_user_id_fkey (
-            display_name
-          )
-        `)
+        .select('*')
         .eq('room_id', roomId)
         .order('joined_at');
       if (error) throw error;
-      return data as (Player & { profiles: { display_name: string } | null })[];
+      return data as Player[];
     },
     enabled: !!roomId,
     refetchInterval: 1000,
@@ -228,7 +223,12 @@ export const GameRoom = () => {
             console.log('Starting game with syllable:', initialSyllable);
             
             const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
-            const timerEndTime = new Date(Date.now() + timerDuration * 1000);
+            // Use server time for better synchronization
+            const serverTimeResponse = await supabase.from('games').select('created_at').limit(1);
+            const serverTime = serverTimeResponse.data?.[0]?.created_at ? 
+              new Date(serverTimeResponse.data[0].created_at).getTime() : 
+              Date.now();
+            const timerEndTime = new Date(serverTime + timerDuration * 1000);
 
             // Create a new game for this room
             const { error } = await supabase
