@@ -115,6 +115,8 @@ export const GamePlaying = ({
     );
   };
 
+  console.log('GamePlaying render - alivePlayers:', alivePlayers, 'currentPlayerPosition:', currentPlayerPosition);
+  
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
       {/* Central Arrow System */}

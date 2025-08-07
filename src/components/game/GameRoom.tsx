@@ -204,6 +204,8 @@ export const GameRoom = () => {
   const canStartGame = isRoomCreator || players.length >= 1; // Allow solo practice
 
   const renderGameContent = () => {
+    console.log('GameRoom renderGameContent - game:', game, 'players:', players);
+    
     if (!game || game.status === 'waiting') {
       return (
         <GameWaiting 
@@ -249,6 +251,7 @@ export const GameRoom = () => {
     }
     
     if (game.status === 'playing') {
+      console.log('Rendering GamePlaying component');
       const currentPlayer = players.find(p => p.id === game.current_player_id);
       const isCurrentUser = currentPlayer?.user_id === user?.id;
       
@@ -309,7 +312,10 @@ export const GameRoom = () => {
         )}
         
         <div className="animate-scale-in">
-          {renderGameContent()}
+          <div style={{ border: '2px solid red', minHeight: '200px', padding: '20px' }}>
+            DEBUG: Game content container
+            {renderGameContent()}
+          </div>
         </div>
       </div>
     </div>
