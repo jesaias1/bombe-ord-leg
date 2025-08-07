@@ -5,13 +5,13 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
   console.log(`Selecting syllable for difficulty: ${difficulty}`);
   
   try {
-    // Query ALL syllables from database with minimal filtering for maximum variety
+    // Query syllables from database with random ordering from database
     const { data: syllables, error } = await supabase
       .from('syllables')
       .select('syllable, word_count')
       .eq('difficulty', difficulty)
-      .gt('word_count', 3) // Very low threshold for maximum variety
-      .order('syllable'); // Order by syllable name for consistent but not predictable results
+      .gte('word_count', 5) // Only syllables with at least 5 words
+      .order('syllable'); // Get consistent ordering first
 
     if (error) {
       console.error('Error fetching syllables:', error);
@@ -25,13 +25,18 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
 
     console.log(`Found ${syllables.length} syllables for difficulty ${difficulty}`);
 
-    // Simple but effective randomization - use current timestamp as additional entropy
-    const timestamp = Date.now();
-    const randomSeed = (timestamp % 1000) + Math.random() * 1000;
-    const randomIndex = Math.floor(randomSeed) % syllables.length;
+    // Use multiple sources of randomness combined for maximum entropy
+    const now = performance.now();
+    const seed1 = Math.random() * 1000000;
+    const seed2 = (now % 10000) / 10000;
+    const seed3 = Math.random();
+    
+    // Combine seeds and use modulo to get index
+    const combinedSeed = (seed1 + seed2 + seed3) % 1;
+    const randomIndex = Math.floor(combinedSeed * syllables.length);
 
     const selectedSyllable = syllables[randomIndex];
-    console.log(`Selected syllable: "${selectedSyllable.syllable}" (${selectedSyllable.word_count} words) - index ${randomIndex}/${syllables.length}`);
+    console.log(`Selected syllable: "${selectedSyllable.syllable}" (${selectedSyllable.word_count} words) - index ${randomIndex}/${syllables.length} with seeds: ${seed1.toFixed(3)}, ${seed2.toFixed(3)}, ${seed3.toFixed(3)}`);
     
     return selectedSyllable.syllable;
   } catch (error) {
