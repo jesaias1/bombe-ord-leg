@@ -147,14 +147,11 @@ export const GamePlaying = ({
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center">
           <div className="w-48 h-48 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-sm border-4 border-primary/30 flex items-center justify-center shadow-2xl">
-            <div className="text-center">
-              <div className="text-6xl font-bold text-primary mb-2">
-                {game.current_syllable?.toUpperCase()}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {timeLeft}s
-              </div>
+          <div className="text-center">
+            <div className="text-6xl font-bold text-primary">
+              {game.current_syllable?.toUpperCase()}
             </div>
+          </div>
           </div>
         </div>
       </div>
