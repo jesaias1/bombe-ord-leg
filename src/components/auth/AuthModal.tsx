@@ -17,6 +17,7 @@ interface AuthModalProps {
 export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [guestName, setGuestName] = useState('');
   const [loading, setLoading] = useState(false);
   const { signInAsGuest } = useAuth();
@@ -31,7 +32,10 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            display_name: displayName.trim() || email.split('@')[0]
+          }
         }
       });
 
@@ -228,6 +232,16 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
           <TabsContent value="signup" className="space-y-4">
             <form onSubmit={handleSignUp} className="space-y-4">
+              <div>
+                <Label htmlFor="displayName">Dit navn (vises til andre spillere)</Label>
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Indtast dit navn"
+                  maxLength={20}
+                />
+              </div>
               <div>
                 <Label htmlFor="signupEmail">Email</Label>
                 <Input

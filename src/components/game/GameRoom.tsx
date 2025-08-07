@@ -63,11 +63,16 @@ export const GameRoom = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('players')
-        .select('*')
+        .select(`
+          *,
+          profiles!players_user_id_fkey (
+            display_name
+          )
+        `)
         .eq('room_id', roomId)
         .order('joined_at');
       if (error) throw error;
-      return data as Player[];
+      return data as (Player & { profiles: { display_name: string } | null })[];
     },
     enabled: !!roomId,
     refetchInterval: 1000,
@@ -83,15 +88,45 @@ export const GameRoom = () => {
       console.log('Adding current user as player to room');
       
       // Get the proper display name for both authenticated and guest users
-      let displayName = 'Anonymous';
-      if (user.user_metadata?.display_name) {
-        displayName = user.user_metadata.display_name;
-      } else if (user.email) {
-        displayName = user.email;
-      }
+      const getDisplayName = async () => {
+        let displayName = 'Anonymous';
+        
+        if ('isGuest' in user && user.isGuest) {
+          // Guest user
+          displayName = user.user_metadata?.display_name || 'Gæst';
+        } else {
+          // Authenticated user - try to get from profile first
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', user.id)
+              .single();
+            
+            if (profile?.display_name) {
+              displayName = profile.display_name;
+            } else if (user.user_metadata?.display_name) {
+              displayName = user.user_metadata.display_name;
+            } else if (user.email) {
+              displayName = user.email.split('@')[0]; // Use part before @ instead of full email
+            }
+          } catch (error) {
+            // Fallback to metadata or email part
+            if (user.user_metadata?.display_name) {
+              displayName = user.user_metadata.display_name;
+            } else if (user.email) {
+              displayName = user.email.split('@')[0];
+            }
+          }
+        }
+        
+        return displayName;
+      };
       
       // Force immediate player addition for mobile
       const addPlayer = async () => {
+        const displayName = await getDisplayName();
+        
         const { error } = await supabase
           .from('players')
           .insert({
