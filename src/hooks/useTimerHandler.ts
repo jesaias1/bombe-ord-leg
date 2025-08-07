@@ -52,13 +52,16 @@ export const useTimerHandler = (
       }
 
       // Calculate remaining alive players after this update
-      const updatedAlivePlayers = alivePlayers.filter(p => 
-        p.id === currentPlayer.id ? !isNowDead : true
-      );
+      const updatedAlivePlayers = players.filter(p => {
+        if (p.id === currentPlayer.id) {
+          return !isNowDead; // Use the updated alive status for current player
+        }
+        return p.is_alive; // Use existing status for other players
+      });
 
       console.log(`Remaining alive players after update: ${updatedAlivePlayers.length}`);
 
-      // Check if game should end
+      // Check if game should end (only when 1 or fewer players remain alive)
       if (updatedAlivePlayers.length <= 1) {
         console.log('Game ending - only 1 or fewer players remaining');
         
@@ -90,21 +93,25 @@ export const useTimerHandler = (
         });
       } else {
         // Continue game with next player - faster transition
-        const currentPlayerIndex = alivePlayers.findIndex(p => p.id === currentPlayer.id);
-        let nextPlayerIndex = (currentPlayerIndex + 1) % alivePlayers.length;
-        
-        // Skip the current player if they're now dead
-        let attempts = 0;
-        while (attempts < alivePlayers.length) {
-          const candidatePlayer = alivePlayers[nextPlayerIndex];
-          if (candidatePlayer.id !== currentPlayer.id || !isNowDead) {
-            break;
+        const stillAlivePlayers = players.filter(p => {
+          if (p.id === currentPlayer.id) {
+            return !isNowDead; // Use updated status for current player
           }
-          nextPlayerIndex = (nextPlayerIndex + 1) % alivePlayers.length;
-          attempts++;
+          return p.is_alive; // Use existing status for other players
+        });
+        
+        const currentPlayerIndexInAlive = stillAlivePlayers.findIndex(p => p.id === currentPlayer.id);
+        let nextPlayerIndex;
+        
+        if (isNowDead) {
+          // If current player is now dead, find next alive player
+          nextPlayerIndex = 0; // Start with first alive player
+        } else {
+          // Current player is still alive, move to next
+          nextPlayerIndex = (currentPlayerIndexInAlive + 1) % stillAlivePlayers.length;
         }
         
-        const nextPlayer = alivePlayers[nextPlayerIndex];
+        const nextPlayer = stillAlivePlayers[nextPlayerIndex];
         const newSyllable = await selectRandomSyllable(room.difficulty);
 
         if (newSyllable) {
