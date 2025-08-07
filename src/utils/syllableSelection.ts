@@ -5,12 +5,13 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
   console.log(`Selecting syllable for difficulty: ${difficulty}`);
   
   try {
-    // Query syllables from database with word count filtering
+    // Query ALL syllables from database with minimal filtering for maximum variety
     const { data: syllables, error } = await supabase
       .from('syllables')
       .select('syllable, word_count')
       .eq('difficulty', difficulty)
-      .gt('word_count', 5); // Only syllables with at least 5 words to ensure playability
+      .gt('word_count', 3) // Very low threshold for maximum variety
+      .order('syllable'); // Order by syllable name for consistent but not predictable results
 
     if (error) {
       console.error('Error fetching syllables:', error);
@@ -22,26 +23,15 @@ export const selectRandomSyllable = async (difficulty: 'let' | 'mellem' | 'svaer
       return null;
     }
 
-    // Fisher-Yates shuffle for truly random order
-    const shuffledSyllables = [...syllables];
-    for (let i = shuffledSyllables.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledSyllables[i], shuffledSyllables[j]] = [shuffledSyllables[j], shuffledSyllables[i]];
-    }
+    console.log(`Found ${syllables.length} syllables for difficulty ${difficulty}`);
 
-    // Add additional randomness with crypto random if available
-    let randomIndex;
-    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-      const array = new Uint32Array(1);
-      crypto.getRandomValues(array);
-      randomIndex = array[0] % shuffledSyllables.length;
-    } else {
-      // Multiple random calls for better entropy
-      randomIndex = Math.floor(Math.random() * Math.random() * shuffledSyllables.length);
-    }
+    // Simple but effective randomization - use current timestamp as additional entropy
+    const timestamp = Date.now();
+    const randomSeed = (timestamp % 1000) + Math.random() * 1000;
+    const randomIndex = Math.floor(randomSeed) % syllables.length;
 
-    const selectedSyllable = shuffledSyllables[randomIndex];
-    console.log(`Selected syllable: "${selectedSyllable.syllable}" (${selectedSyllable.word_count} words) from ${syllables.length} options`);
+    const selectedSyllable = syllables[randomIndex];
+    console.log(`Selected syllable: "${selectedSyllable.syllable}" (${selectedSyllable.word_count} words) - index ${randomIndex}/${syllables.length}`);
     
     return selectedSyllable.syllable;
   } catch (error) {
