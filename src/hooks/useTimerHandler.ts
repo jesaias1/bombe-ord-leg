@@ -128,7 +128,7 @@ export const useTimerHandler = (
           }
           
           const timerDuration = game.timer_duration || 15;
-          // Start timer immediately for faster transition
+          // Use proper timing to prevent instant expiration
           const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
 
           const { error: gameError } = await supabase

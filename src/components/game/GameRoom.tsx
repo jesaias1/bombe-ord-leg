@@ -223,12 +223,8 @@ export const GameRoom = () => {
             console.log('Starting game with syllable:', initialSyllable);
             
             const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
-            // Use server time for better synchronization
-            const serverTimeResponse = await supabase.from('games').select('created_at').limit(1);
-            const serverTime = serverTimeResponse.data?.[0]?.created_at ? 
-              new Date(serverTimeResponse.data[0].created_at).getTime() : 
-              Date.now();
-            const timerEndTime = new Date(serverTime + timerDuration * 1000);
+            // Use current time plus duration for timer end time to avoid instant expiration
+            const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
             // Create a new game for this room
             const { error } = await supabase

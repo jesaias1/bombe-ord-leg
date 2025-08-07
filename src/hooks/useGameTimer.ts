@@ -37,18 +37,22 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
       const endTime = new Date(game.timer_end_time!).getTime();
       const now = new Date().getTime();
       
-      // Add a small buffer to account for network latency
-      const networkBuffer = 500; // 500ms buffer
-      const remaining = Math.max(0, Math.ceil((endTime - now - networkBuffer) / 1000));
+      // Calculate remaining time without buffer that might cause instant expiration
+      const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
       
       setTimeLeft(remaining);
 
-      // Only call onTimerExpired once when timer reaches 0
+      // Only call onTimerExpired once when timer reaches 0 and some time has passed
+      // Add a small delay to prevent instant expiration on game start
       if (remaining === 0 && !hasExpiredRef.current) {
-        hasExpiredRef.current = true;
-        console.log('Timer expired, calling onTimerExpired');
-        clearTimer();
-        onTimerExpired();
+        // Check if timer was actually running (not a brand new timer)
+        const timerAge = now - new Date(game.timer_end_time!).getTime() + (game.timer_duration || 15) * 1000;
+        if (timerAge > 2000) { // Only expire if timer has been running for at least 2 seconds
+          hasExpiredRef.current = true;
+          console.log('Timer expired, calling onTimerExpired');
+          clearTimer();
+          onTimerExpired();
+        }
       }
     };
 
