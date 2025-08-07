@@ -1,8 +1,10 @@
 
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PlayerList } from './PlayerList';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
+import { useGameActions } from '@/hooks/useGameActions';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -14,6 +16,7 @@ interface GameFinishedProps {
   game: Game;
   currentUserId?: string;
   onBackHome: () => void;
+  roomId: string;
 }
 
 export const GameFinished = ({
@@ -22,8 +25,30 @@ export const GameFinished = ({
   players,
   game,
   currentUserId,
-  onBackHome
+  onBackHome,
+  roomId
 }: GameFinishedProps) => {
+  const { trackGameCompletion } = useGameActions(roomId);
+  
+  // Track game completion when component mounts
+  React.useEffect(() => {
+    if (!currentUserId) return; // Only track for signed-in users
+    
+    const currentPlayer = players.find(p => p.user_id === currentUserId);
+    if (!currentPlayer) return;
+    
+    // Calculate if the user won
+    const userWon = isSinglePlayer ? 
+      currentPlayer.is_alive : // In single player, winning means being alive
+      alivePlayers.length === 1 && alivePlayers[0].user_id === currentUserId; // In multiplayer, winning means being the last one standing
+    
+    // Calculate playtime (rough estimate based on game creation to now)
+    const gameStartTime = new Date(game.created_at).getTime();
+    const gameEndTime = Date.now();
+    const playtimeSeconds = Math.floor((gameEndTime - gameStartTime) / 1000);
+    
+    trackGameCompletion(userWon, Math.max(1, playtimeSeconds)); // Minimum 1 second
+  }, [currentUserId, players, alivePlayers, isSinglePlayer, game.created_at, trackGameCompletion]);
   const handleRestartGame = async () => {
     if (!game.room_id) return;
 

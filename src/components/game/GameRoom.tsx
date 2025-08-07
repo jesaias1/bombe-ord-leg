@@ -247,6 +247,7 @@ export const GameRoom = () => {
           game={game}
           currentUserId={user?.id}
           onBackHome={() => window.location.href = '/'}
+          roomId={roomId || ''}
         />
       );
     }
