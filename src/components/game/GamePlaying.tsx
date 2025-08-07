@@ -40,8 +40,12 @@ export const GamePlaying = ({
   
   // Calculate positions for players around the screen
   const getPlayerPosition = (index: number, total: number) => {
+    if (total === 1) {
+      // For single player, position at the top
+      return { x: 0, y: -200, angle: 0 };
+    }
     const angle = (index * 360) / total - 90; // Start from top
-    const radius = Math.min(window.innerHeight * 0.35, window.innerWidth * 0.35); // Responsive radius
+    const radius = Math.min(window.innerHeight * 0.35, window.innerWidth * 0.35);
     const x = Math.cos((angle * Math.PI) / 180) * radius;
     const y = Math.sin((angle * Math.PI) / 180) * radius;
     return { x, y, angle };
@@ -114,7 +118,7 @@ export const GamePlaying = ({
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
       {/* Central Arrow System */}
-      {currentPlayerPosition && alivePlayers.length > 1 && (
+      {currentPlayerPosition && alivePlayers.length >= 1 && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <div 
             className="transition-all duration-700 ease-out"
