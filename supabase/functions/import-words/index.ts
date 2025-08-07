@@ -112,13 +112,141 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type = 'enhanced' } = await req.json();
+    const { type = 'enhanced', stream = false } = await req.json();
     
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // If streaming is requested, use Server-Sent Events
+    if (stream) {
+      const stream = new ReadableStream({
+        start(controller) {
+          const encoder = new TextEncoder();
+          
+          const sendUpdate = (data: any) => {
+            const message = `data: ${JSON.stringify(data)}\n\n`;
+            controller.enqueue(encoder.encode(message));
+          };
+
+          const processImport = async () => {
+            try {
+              console.log(`Starting ${type} word import process...`);
+              sendUpdate({ type: 'start', message: `Starting ${type} import...` });
+              
+              const sources = type === 'enhanced' ? ENHANCED_WORD_SOURCES : STANDARD_WORD_SOURCES;
+              const allWords = new Set<string>();
+              const sourceStats: Record<string, number> = {};
+              
+              // Phase 1: Fetch words from sources
+              sendUpdate({ type: 'phase', phase: 1, total: 2, message: 'Fetching words from sources...' });
+              
+              for (let i = 0; i < sources.length; i++) {
+                const url = sources[i];
+                try {
+                  sendUpdate({ 
+                    type: 'progress', 
+                    phase: 1,
+                    current: i + 1, 
+                    total: sources.length, 
+                    message: `Fetching from source ${i + 1}/${sources.length}...`,
+                    url: new URL(url).hostname
+                  });
+                  
+                  const { words, source } = await fetchWordsFromUrl(url);
+                  sourceStats[source] = words.length;
+                  words.forEach(word => allWords.add(word));
+                  
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                } catch (error) {
+                  console.error(`Failed to process source ${url}:`, error);
+                  sendUpdate({ type: 'error', message: `Failed to fetch from ${new URL(url).hostname}` });
+                }
+              }
+              
+              console.log(`Total unique words collected: ${allWords.size}`);
+              sendUpdate({ type: 'phase', phase: 2, total: 2, message: `Processing ${allWords.size} unique words...` });
+              
+              // Phase 2: Import to database
+              const uniqueWords = Array.from(allWords).sort();
+              const batchSize = 500;
+              let imported = 0;
+              let errors = 0;
+              
+              for (let i = 0; i < uniqueWords.length; i += batchSize) {
+                const batch = uniqueWords.slice(i, i + batchSize);
+                
+                try {
+                  const { error } = await supabase
+                    .from('danish_words')
+                    .upsert(
+                      batch.map((word, index) => ({ 
+                        word: word.toLowerCase().trim(),
+                        frequency_rank: i + index + 1
+                      })),
+                      { 
+                        onConflict: 'word',
+                        ignoreDuplicates: true
+                      }
+                    );
+
+                  if (error) {
+                    console.error('Batch import error:', error);
+                    errors += batch.length;
+                  } else {
+                    imported += batch.length;
+                    const progress = Math.round((i / uniqueWords.length) * 100);
+                    
+                    sendUpdate({ 
+                      type: 'progress', 
+                      phase: 2,
+                      current: imported, 
+                      total: uniqueWords.length, 
+                      percentage: progress,
+                      message: `Imported ${imported.toLocaleString()}/${uniqueWords.length.toLocaleString()} words (${progress}%)`
+                    });
+                  }
+                } catch (err) {
+                  console.error('Unexpected batch error:', err);
+                  errors += batch.length;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+              }
+
+              console.log(`Import complete. Imported: ${imported}, Errors: ${errors}`);
+              
+              sendUpdate({ 
+                type: 'complete', 
+                imported, 
+                errors, 
+                totalSources: sources.length,
+                sourceStats 
+              });
+              
+              controller.close();
+            } catch (error) {
+              sendUpdate({ type: 'error', message: error.message });
+              controller.close();
+            }
+          };
+
+          processImport();
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
+    // Original non-streaming version for compatibility
     console.log(`Starting ${type} word import process...`);
     
     const sources = type === 'enhanced' ? ENHANCED_WORD_SOURCES : STANDARD_WORD_SOURCES;

@@ -14,6 +14,15 @@ import { useQuery } from '@tanstack/react-query';
 export const WordImporter = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; errors: number; sourceStats?: any } | null>(null);
+  const [progressData, setProgressData] = useState<{
+    phase: number;
+    totalPhases: number;
+    current: number;
+    total: number;
+    percentage: number;
+    message: string;
+    url?: string;
+  } | null>(null);
 
   // Check if user is admin
   const { data: isAdmin = false } = useQuery({
@@ -48,22 +57,64 @@ export const WordImporter = () => {
   const handleStandardImport = async () => {
     setIsImporting(true);
     setImportResult(null);
+    setProgressData(null);
     
     try {
-      // Call the edge function for background processing
-      const { data, error } = await supabase.functions.invoke('import-words', {
-        body: { type: 'standard' }
+      // Use streaming version for real-time progress
+      const response = await fetch(`https://oaolwmbknfwpnkrsqrxt.supabase.co/functions/v1/import-words`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hb2x3bWJrbmZ3cG5rcnNxcnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5Nzc5MTMsImV4cCI6MjA2NDU1MzkxM30.rAUSze48pqW4QE4R2ZGLARPGGdY3mQIWsNQArpuH1qM`
+        },
+        body: JSON.stringify({ type: 'standard', stream: true })
       });
 
-      if (error) {
-        throw error;
+      if (!response.body) throw new Error('No response body');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'progress' || data.type === 'phase') {
+                setProgressData({
+                  phase: data.phase || 1,
+                  totalPhases: data.total || 2,
+                  current: data.current || 0,
+                  total: data.total || 0,
+                  percentage: data.percentage || 0,
+                  message: data.message || '',
+                  url: data.url
+                });
+              } else if (data.type === 'complete') {
+                setImportResult(data);
+                setProgressData(null);
+              } else if (data.type === 'error') {
+                throw new Error(data.message);
+              }
+            } catch (e) {
+              // Ignore parsing errors for incomplete data
+            }
+          }
+        }
       }
 
-      setImportResult(data);
       refetchWordCount();
     } catch (error) {
       console.error('Standard import failed:', error);
       setImportResult({ imported: 0, errors: 1 });
+      setProgressData(null);
     } finally {
       setIsImporting(false);
     }
@@ -72,22 +123,64 @@ export const WordImporter = () => {
   const handleEnhancedImport = async () => {
     setIsImporting(true);
     setImportResult(null);
+    setProgressData(null);
     
     try {
-      // Call the edge function for background processing
-      const { data, error } = await supabase.functions.invoke('import-words', {
-        body: { type: 'enhanced' }
+      // Use streaming version for real-time progress
+      const response = await fetch(`https://oaolwmbknfwpnkrsqrxt.supabase.co/functions/v1/import-words`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hb2x3bWJrbmZ3cG5rcnNxcnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5Nzc5MTMsImV4cCI6MjA2NDU1MzkxM30.rAUSze48pqW4QE4R2ZGLARPGGdY3mQIWsNQArpuH1qM`
+        },
+        body: JSON.stringify({ type: 'enhanced', stream: true })
       });
 
-      if (error) {
-        throw error;
+      if (!response.body) throw new Error('No response body');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'progress' || data.type === 'phase') {
+                setProgressData({
+                  phase: data.phase || 1,
+                  totalPhases: data.total || 2,
+                  current: data.current || 0,
+                  total: data.total || 0,
+                  percentage: data.percentage || 0,
+                  message: data.message || '',
+                  url: data.url
+                });
+              } else if (data.type === 'complete') {
+                setImportResult(data);
+                setProgressData(null);
+              } else if (data.type === 'error') {
+                throw new Error(data.message);
+              }
+            } catch (e) {
+              // Ignore parsing errors for incomplete data
+            }
+          }
+        }
       }
 
-      setImportResult(data);
       refetchWordCount();
     } catch (error) {
       console.error('Enhanced import failed:', error);
       setImportResult({ imported: 0, errors: 1 });
+      setProgressData(null);
     } finally {
       setIsImporting(false);
     }
@@ -165,9 +258,32 @@ export const WordImporter = () => {
           </div>
           
           {isImporting && (
-            <div className="space-y-2">
-              <Progress value={undefined} className="w-full" />
-              <p className="text-sm text-gray-600">Importerer ord fra flere kilder...</p>
+            <div className="space-y-3">
+              {progressData ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{progressData.message}</span>
+                    {progressData.percentage > 0 && (
+                      <span>{progressData.percentage}%</span>
+                    )}
+                  </div>
+                  <Progress 
+                    value={progressData.percentage || (progressData.current / progressData.total) * 100} 
+                    className="w-full" 
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Phase {progressData.phase}/{progressData.totalPhases}
+                    {progressData.url && (
+                      <span> • {progressData.url}</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Progress value={undefined} className="w-full" />
+                  <p className="text-sm text-muted-foreground">Forbinder til importfunktion...</p>
+                </div>
+              )}
             </div>
           )}
           
