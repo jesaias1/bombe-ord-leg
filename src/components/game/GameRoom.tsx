@@ -312,10 +312,7 @@ export const GameRoom = () => {
         )}
         
         <div className="animate-scale-in">
-          <div style={{ border: '2px solid red', minHeight: '200px', padding: '20px' }}>
-            DEBUG: Game content container
-            {renderGameContent()}
-          </div>
+          {renderGameContent()}
         </div>
       </div>
     </div>
