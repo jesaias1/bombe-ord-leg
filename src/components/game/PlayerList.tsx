@@ -46,7 +46,7 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerLi
             </div>
             <div className="flex items-center space-x-2">
               <div className="flex space-x-1">
-                {Array.from({ length: 3 }, (_, i) => (
+                {Array.from({ length: Math.max(3, player.lives) }, (_, i) => (
                   <div
                     key={i}
                     className={cn(
