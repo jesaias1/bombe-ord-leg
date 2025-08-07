@@ -1,6 +1,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Tables } from '@/integrations/supabase/types';
+import { useServerTime } from './useServerTime';
 
 type Game = Tables<'games'>;
 
@@ -9,6 +10,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasExpiredRef = useRef(false);
   const lastTimerEndTimeRef = useRef<string | null>(null);
+  const { getServerTime, isCalculated } = useServerTime();
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -35,7 +37,8 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
 
     const updateTimer = () => {
       const endTime = new Date(game.timer_end_time!).getTime();
-      const now = new Date().getTime();
+      // Use server time for better synchronization
+      const now = isCalculated ? getServerTime() : Date.now();
       
       // Calculate remaining time without buffer that might cause instant expiration
       const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));

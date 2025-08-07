@@ -10,20 +10,26 @@ export const useServerTime = () => {
       try {
         const clientTimeBeforeRequest = Date.now();
         
-        // Get server time by querying the database
-        const { data, error } = await supabase.rpc('get_server_time');
+        // Get server time by using a simple query to get current timestamp
+        const { data, error } = await supabase
+          .from('games')
+          .select('created_at')
+          .limit(1)
+          .single();
         
-        if (error) {
+        if (error && error.code !== 'PGRST116') { // Allow "no rows" error
           console.error('Failed to get server time:', error);
           setIsCalculated(true);
           return;
         }
         
+        // Use current time as fallback if no games exist
+        const serverTime = data?.created_at ? new Date(data.created_at).getTime() : Date.now();
         const clientTimeAfterRequest = Date.now();
         const roundTripTime = clientTimeAfterRequest - clientTimeBeforeRequest;
         
         // Estimate server time accounting for round trip
-        const estimatedServerTime = new Date(data).getTime() + (roundTripTime / 2);
+        const estimatedServerTime = serverTime + (roundTripTime / 2);
         const clientTime = clientTimeAfterRequest;
         
         const offset = estimatedServerTime - clientTime;

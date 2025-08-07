@@ -21,7 +21,7 @@ export const useUserStats = () => {
         .from('user_stats')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user stats:', error);
@@ -64,14 +64,20 @@ export const useUserStats = () => {
         .update(updates)
         .eq('user_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating user stats:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-stats', user?.id] });
     },
+    onError: (error) => {
+      console.error('Failed to update user stats:', error);
+    }
   });
 
   // Create stats if user exists but no stats found
@@ -82,12 +88,15 @@ export const useUserStats = () => {
   }, [user, stats, isLoading]);
 
   const updateStats = (updates: Partial<UserStats>) => {
-    updateStatsMutation.mutate(updates);
+    // Only update if stats exist and user is not a guest
+    if (stats && user && !('isGuest' in user && user.isGuest)) {
+      updateStatsMutation.mutate(updates);
+    }
   };
 
   // Helper functions for common stat updates
   const incrementWordsGuessed = () => {
-    if (stats) {
+    if (stats && user && !('isGuest' in user && user.isGuest)) {
       updateStats({
         total_words_guessed: stats.total_words_guessed + 1,
       });
@@ -95,7 +104,7 @@ export const useUserStats = () => {
   };
 
   const updateStreak = (isCorrect: boolean) => {
-    if (stats) {
+    if (stats && user && !('isGuest' in user && user.isGuest)) {
       const newCurrentStreak = isCorrect ? stats.current_streak + 1 : 0;
       const newLongestStreak = Math.max(stats.longest_streak, newCurrentStreak);
       
@@ -107,7 +116,7 @@ export const useUserStats = () => {
   };
 
   const incrementGamesPlayed = () => {
-    if (stats) {
+    if (stats && user && !('isGuest' in user && user.isGuest)) {
       updateStats({
         total_games_played: stats.total_games_played + 1,
       });
@@ -115,7 +124,7 @@ export const useUserStats = () => {
   };
 
   const incrementGamesWon = () => {
-    if (stats) {
+    if (stats && user && !('isGuest' in user && user.isGuest)) {
       updateStats({
         total_games_won: stats.total_games_won + 1,
       });
@@ -123,7 +132,7 @@ export const useUserStats = () => {
   };
 
   const updateFastestWordTime = (timeMs: number) => {
-    if (stats && (!stats.fastest_word_time || timeMs < stats.fastest_word_time)) {
+    if (stats && user && !('isGuest' in user && user.isGuest) && (!stats.fastest_word_time || timeMs < stats.fastest_word_time)) {
       updateStats({
         fastest_word_time: timeMs,
       });
@@ -131,7 +140,7 @@ export const useUserStats = () => {
   };
 
   const addPlaytime = (seconds: number) => {
-    if (stats) {
+    if (stats && user && !('isGuest' in user && user.isGuest)) {
       updateStats({
         total_playtime_seconds: stats.total_playtime_seconds + seconds,
       });
