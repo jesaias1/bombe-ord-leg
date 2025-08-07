@@ -1,7 +1,10 @@
 
+import React from 'react';
 import { BombTimer } from './BombTimer';
 import { PlayerList } from './PlayerList';
 import { WordInput } from './WordInput';
+import { PlayerCircle } from './PlayerCircle';
+import { TurnIndicator } from './TurnIndicator';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,170 +41,158 @@ export const GamePlaying = ({
 }: GamePlayingProps) => {
   const isMobile = useIsMobile();
 
-  return (
-    <div className={cn(
-      "gap-8 animate-fade-in",
-      isMobile ? "flex flex-col space-y-4" : "grid grid-cols-1 lg:grid-cols-3"
-    )}>
-      {/* Mobile keyboard-friendly layout */}
-      {isMobile ? (
-        <div className="fixed inset-0 flex flex-col">
-          {/* Top section - always visible above keyboard */}
-          <div className="flex-none bg-background border-b border-border p-4 space-y-4">
-            {/* Timer - compact at top */}
-            <div className="text-center">
-              <div className="text-lg font-bold text-foreground">
-                {timeLeft}s
-              </div>
-            </div>
-            
-            {/* Syllable - prominent and centered */}
-            <div className="text-center">
-              <div className="bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-6 border-2 border-yellow-300 dark:border-yellow-700">
-                <p className="text-sm text-orange-700 dark:text-orange-300 mb-2">Dit ord skal indeholde:</p>
-                <p className="text-5xl font-black text-orange-900 dark:text-orange-100">{game.current_syllable}</p>
-              </div>
-            </div>
+  if (isMobile) {
+    return (
+      <div className="space-y-6 pb-20">
+        {/* Timer */}
+        <div className="text-center">
+          <BombTimer 
+            timeLeft={timeLeft} 
+            totalTime={game.timer_duration || 15}
+            isActive={game.status === 'playing'}
+            syllable={game.current_syllable || ''}
+          />
+        </div>
 
-            {/* Current player indicator - compact */}
-            {currentPlayer && (
-              <div className={cn(
-                "rounded-lg p-2 text-center text-sm font-bold border",
-                isCurrentUser 
-                  ? "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700" 
-                  : "bg-muted text-muted-foreground border-border"
-              )}>
-                {isCurrentUser ? "Din tur!" : `${currentPlayer.name}s tur`}
-              </div>
-            )}
+        {/* Current syllable - prominent display */}
+        <div className="text-center py-6 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+          <h2 className="text-xs text-muted-foreground mb-2">Find et ord med</h2>
+          <div className="text-4xl font-bold text-primary mb-2">
+            "{game.current_syllable}"
           </div>
+          <p className="text-sm text-muted-foreground">
+            {game.used_words?.length || 0} ord brugt
+          </p>
+        </div>
+
+        {/* Player Circle - dramatic display */}
+        <PlayerCircle 
+          players={players}
+          currentPlayerId={game.current_player_id || undefined}
+          currentUserId={currentUserId}
+          isSinglePlayer={isSinglePlayer}
+        />
+
+        {/* Turn Indicator */}
+        <TurnIndicator 
+          currentPlayer={currentPlayer}
+          isCurrentUser={isCurrentUser}
+          isSinglePlayer={isSinglePlayer}
+        />
+
+        {/* Word Input */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+          <WordInput
+            onSubmit={onWordSubmit}
+            disabled={!isCurrentUser || isSubmitting}
+            currentSyllable={game.current_syllable || ''}
+            isSubmitting={isSubmitting}
+            onWordChange={onWordChange}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main Game Area */}
+      <div className="lg:col-span-2 space-y-8">
+        {/* Timer and Turn Info */}
+        <div className="text-center space-y-4">
+          <BombTimer 
+            timeLeft={timeLeft} 
+            totalTime={game.timer_duration || 15}
+            isActive={game.status === 'playing'}
+            syllable={game.current_syllable || ''}
+          />
           
-          {/* Bottom section - input field positioned above keyboard */}
-          <div className="flex-none p-4 bg-background border-t border-border">
-            <WordInput
-              onSubmit={onWordSubmit}
-              disabled={!isCurrentUser || timeLeft <= 0}
-              currentSyllable={game.current_syllable || ''}
-              isSubmitting={isSubmitting}
-              onWordChange={onWordChange}
-            />
+          {/* Current syllable - prominent display */}
+          <div className="py-8 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+            <h2 className="text-sm text-muted-foreground mb-3">Find et ord med</h2>
+            <div className="text-6xl font-bold text-primary mb-4">
+              "{game.current_syllable}"
+            </div>
+            <p className="text-muted-foreground">
+              {game.used_words?.length || 0} ord brugt i denne runde
+            </p>
           </div>
         </div>
-      ) : (
-        /* Desktop layout */
-        <>
-          <div className="lg:col-span-2 space-y-24">
-            <div className="text-center relative mt-12">
-              {/* Glowing ring around timer */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className={cn(
-                  "rounded-full border-4 w-72 h-72",
-                  timeLeft <= 5 
-                    ? "border-red-400 shadow-lg shadow-red-400/50 animate-[pulse_4s_ease-in-out_infinite]" 
-                    : "border-orange-400 shadow-lg shadow-orange-400/30"
-                )}></div>
-              </div>
-              
-              <div className="relative z-20">
-                <BombTimer
-                  timeLeft={timeLeft}
-                  totalTime={game.timer_duration || 15}
-                  isActive={game.status === 'playing'}
-                  syllable={game.current_syllable || ''}
-                />
-              </div>
+
+        {/* Player Circle - dramatic display */}
+        <div className="py-8">
+          <PlayerCircle 
+            players={players}
+            currentPlayerId={game.current_player_id || undefined}
+            currentUserId={currentUserId}
+            isSinglePlayer={isSinglePlayer}
+          />
+        </div>
+
+        {/* Turn Indicator */}
+        <TurnIndicator 
+          currentPlayer={currentPlayer}
+          isCurrentUser={isCurrentUser}
+          isSinglePlayer={isSinglePlayer}
+        />
+
+        {/* Word Input */}
+        <div className="max-w-md mx-auto">
+          <WordInput
+            onSubmit={onWordSubmit}
+            disabled={!isCurrentUser || isSubmitting}
+            currentSyllable={game.current_syllable || ''}
+            isSubmitting={isSubmitting}
+            onWordChange={onWordChange}
+          />
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <div className="space-y-6">
+        {/* Game Stats */}
+        <div className="bg-muted/50 rounded-lg p-4">
+          <h3 className="font-semibold mb-3">Spil Statistik</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Runde:</span>
+              <span className="font-medium">{game.round_number || 1}</span>
             </div>
-
-            <div className="text-center space-y-12">
-              {currentPlayer && (
-                <div className={cn(
-                  "rounded-xl p-4 shadow-xl border-2 transition-all duration-500 transform hover:scale-[1.02]",
-                  isCurrentUser 
-                    ? "bg-gradient-to-r from-purple-100 via-pink-50 to-purple-100 dark:from-purple-900/20 dark:via-pink-900/10 dark:to-purple-900/20 border-purple-300 dark:border-purple-700" 
-                    : "bg-gradient-to-r from-muted/50 to-muted border-border"
-                )}>
-                  <p className={cn(
-                    "text-xl font-bold transition-all duration-300",
-                    isCurrentUser ? "text-purple-700 dark:text-purple-300" : "text-muted-foreground"
-                  )}>
-                    {isCurrentUser ? 
-                      (isSinglePlayer ? "🎯 Din tur!" : "🎉 Din tur!") : 
-                      `🎮 ${currentPlayer.name}s tur`
-                    }
-                  </p>
-                </div>
-              )}
-              
-              <div className="bg-card/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-border transform hover:shadow-2xl transition-all duration-300">
-                <WordInput
-                  onSubmit={onWordSubmit}
-                  disabled={!isCurrentUser || timeLeft <= 0}
-                  currentSyllable={game.current_syllable || ''}
-                  isSubmitting={isSubmitting}
-                  onWordChange={onWordChange}
-                />
-              </div>
-
-              {game.used_words && game.used_words.length > 0 && (
-                <div className="bg-gradient-to-r from-muted/30 to-blue-50 dark:from-muted/10 dark:to-blue-900/10 rounded-xl p-6 shadow-lg border border-border animate-fade-in">
-                  <h3 className="font-bold text-lg mb-4 text-foreground flex items-center justify-center">
-                    📝 Brugte ord ({game.used_words.length})
-                  </h3>
-                  <div className="flex flex-wrap gap-3 justify-center max-h-32 overflow-y-auto">
-                    {game.used_words.map((word, index) => (
-                      <span 
-                        key={index} 
-                        className="bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-lg text-sm font-medium shadow-md border border-blue-200 dark:border-blue-700 hover:shadow-lg transform hover:scale-105 transition-all duration-200 animate-scale-in"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        {word}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="flex justify-between">
+              <span>Brugte ord:</span>
+              <span className="font-medium">{game.used_words?.length || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Spillere tilbage:</span>
+              <span className="font-medium">{players.filter(p => p.is_alive).length}</span>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-6">
-            <div className="transform hover:scale-[1.02] transition-all duration-300">
-              <PlayerList 
-                players={players} 
-                currentPlayerId={game.current_player_id || undefined}
-                currentUserId={currentUserId}
-              />
-            </div>
-            
-            {/* Enhanced game stats card */}
-            <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 shadow-xl border border-indigo-200 dark:border-indigo-700 transform hover:scale-[1.02] transition-all duration-300">
-              <h4 className="font-bold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
-                <span className="text-2xl mr-2">📊</span>
-                Spil statistik
-              </h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-2 bg-card/50 rounded-lg">
-                  <span className="text-muted-foreground">Runde:</span>
-                  <span className="font-bold text-indigo-700 dark:text-indigo-300 text-lg">{game.round_number || 1}</span>
+        {/* Used Words */}
+        {game.used_words && game.used_words.length > 0 && (
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h3 className="font-semibold mb-3">Brugte Ord</h3>
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {game.used_words.slice(-10).reverse().map((word, index) => (
+                <div key={index} className="text-sm p-2 bg-background rounded border">
+                  {word}
                 </div>
-                <div className="flex justify-between items-center p-2 bg-card/50 rounded-lg">
-                  <span className="text-muted-foreground">Ord brugt:</span>
-                  <span className="font-bold text-indigo-700 dark:text-indigo-300 text-lg">{game.used_words?.length || 0}</span>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-card/50 rounded-lg">
-                  <span className="text-muted-foreground">Aktive spillere:</span>
-                  <span className="font-bold text-green-600 dark:text-green-400 text-lg">{players.filter(p => p.is_alive).length}</span>
-                </div>
-                {isSinglePlayer && (
-                  <div className="flex justify-between items-center p-2 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                    <span className="text-muted-foreground">Træning mode:</span>
-                    <span className="font-bold text-orange-600 dark:text-orange-400">🎯 Aktiv</span>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
           </div>
-        </>
-      )}
+        )}
+
+        {/* Classic Player List for reference */}
+        <div className="bg-muted/50 rounded-lg p-4">
+          <h3 className="font-semibold mb-3">Spillere</h3>
+          <PlayerList 
+            players={players}
+            currentPlayerId={game.current_player_id || undefined}
+            currentUserId={currentUserId}
+          />
+        </div>
+      </div>
     </div>
   );
 };
