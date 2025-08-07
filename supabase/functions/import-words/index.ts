@@ -15,7 +15,11 @@ const ENHANCED_WORD_SOURCES = [
   'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/Danish-wordlist-combined.txt',
   'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/Danish-simple.txt',
   'https://raw.githubusercontent.com/fraabye/Danish-wordlists/master/Danish-top20k.txt',
-  'https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-da.txt'
+  'https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-da.txt',
+  'https://raw.githubusercontent.com/martinlindhe/wordlists/master/20200419-Danish-words.txt',
+  'https://raw.githubusercontent.com/hingston/danish-words/main/danish-words.txt',
+  'https://raw.githubusercontent.com/titoBouzout/Dictionaries/master/Danish.dic',
+  'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/da_DK/da_DK.aff'
 ];
 
 const STANDARD_WORD_SOURCES = [
@@ -23,6 +27,11 @@ const STANDARD_WORD_SOURCES = [
   'https://raw.githubusercontent.com/hingston/danish-words/main/danish-words.txt',
   'https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-da.txt',
   'https://raw.githubusercontent.com/titoBouzout/Dictionaries/master/Danish.dic'
+];
+
+// Additional common Danish words that might be missing from sources
+const ESSENTIAL_DANISH_WORDS = [
+  'kys', 'i', 'og', 'det', 'at', 'en', 'den', 'til', 'er', 'som', 'på', 'de', 'med', 'han', 'af', 'for', 'ikke', 'der', 'var', 'mig', 'sig', 'men', 'et', 'har', 'om', 'vi', 'min', 'havde', 'ham', 'hun', 'nu', 'over', 'da', 'fra', 'du', 'ud', 'sin', 'dem', 'os', 'op', 'man', 'hans', 'hvor', 'eller', 'hvad', 'skal', 'selv', 'her', 'alle', 'vil', 'blev', 'kunne', 'ind', 'når', 'være', 'dog', 'noget', 'ville', 'jo', 'deres', 'efter', 'ned', 'skulle', 'denne', 'end', 'dette', 'mit', 'også', 'under', 'have', 'dig', 'anden', 'hende', 'mine', 'alt', 'meget', 'sit', 'sine', 'vor', 'mod', 'disse', 'hvis', 'din', 'nogle', 'hos', 'blive', 'mange', 'ad', 'bliver', 'hendes', 'været', 'thi', 'jer', 'sådan'
 ];
 
 const fetchWordsFromUrl = async (url: string): Promise<{ words: string[], source: string }> => {
@@ -89,11 +98,12 @@ const fetchWordsFromUrl = async (url: string): Promise<{ words: string[], source
       })
       .filter(word => 
         word.length > 0 && 
-        word.length >= 2 && 
+        word.length >= 1 && // Allow single letter words like "i"
         word.length <= 25 &&
         /^[a-zæøå]+$/.test(word) &&
-        !word.match(/^[aeiouæøå]+$/) &&
-        !word.match(/^[bcdfghjklmnpqrstvwxz]+$/)
+        !(word.length === 1 && /^[bcdfghjklmnpqrstvwxz]$/.test(word)) && // No single consonants except common ones
+        !(word.length > 1 && /^[aeiouæøå]+$/.test(word)) && // No all-vowel words except single letters
+        !(word.length > 1 && /^[bcdfghjklmnpqrstvwxz]+$/.test(word)) // No all-consonant words
       );
     
     const uniqueWords = [...new Set(words)];
@@ -137,6 +147,9 @@ Deno.serve(async (req) => {
               
               const sources = type === 'enhanced' ? ENHANCED_WORD_SOURCES : STANDARD_WORD_SOURCES;
               const allWords = new Set<string>();
+              
+              // Always include essential Danish words first
+              ESSENTIAL_DANISH_WORDS.forEach(word => allWords.add(word));
               const sourceStats: Record<string, number> = {};
               
               // Phase 1: Fetch words from sources
@@ -251,6 +264,9 @@ Deno.serve(async (req) => {
     
     const sources = type === 'enhanced' ? ENHANCED_WORD_SOURCES : STANDARD_WORD_SOURCES;
     const allWords = new Set<string>();
+    
+    // Always include essential Danish words first
+    ESSENTIAL_DANISH_WORDS.forEach(word => allWords.add(word));
     const sourceStats: Record<string, number> = {};
     
     // Fetch words from all sources
