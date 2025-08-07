@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { WordInput } from './WordInput';
+import { BombTimer } from './BombTimer';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Heart, Crown } from 'lucide-react';
@@ -40,14 +41,14 @@ export const GamePlaying = ({
   
   console.log('GamePlaying render - game:', game, 'alivePlayers:', alivePlayers);
 
-  // Calculate player positions in a circle
+  // Calculate player positions in a circle (smaller radius)
   const getPlayerPosition = (index: number, total: number) => {
     if (total === 1) {
-      return { x: 50, y: 25 };
+      return { x: 50, y: 30 };
     }
     
     const angle = (index * 360) / total - 90; // Start from top
-    const radius = 40; // Distance from center
+    const radius = 30; // Smaller radius for compact layout
     const x = 50 + Math.cos((angle * Math.PI) / 180) * radius;
     const y = 50 + Math.sin((angle * Math.PI) / 180) * radius;
     return { x, y };
@@ -58,19 +59,20 @@ export const GamePlaying = ({
 
   return (
     <div className="min-h-screen bg-gray-800 relative overflow-hidden">
-      {/* Game Area */}
+      {/* Game Area - more compact */}
       <div className="absolute inset-0 flex items-center justify-center">
         
-        {/* Central Syllable Circle */}
+        {/* Central Bomb Timer */}
         <div className="relative z-10">
-          <div className="w-32 h-32 bg-gray-900 rounded-full border-4 border-gray-600 flex items-center justify-center shadow-2xl">
-            <span className="text-4xl font-bold text-white tracking-wider">
-              {game.current_syllable?.toUpperCase()}
-            </span>
-          </div>
+          <BombTimer
+            timeLeft={timeLeft}
+            totalTime={game.timer_duration || 15}
+            isActive={game.status === 'playing'}
+            syllable={game.current_syllable || ''}
+          />
         </div>
 
-        {/* Players positioned around the circle */}
+        {/* Players positioned around the bomb (closer) */}
         {alivePlayers.map((player, index) => {
           const position = getPlayerPosition(index, alivePlayers.length);
           const isCurrentPlayer = player.id === game.current_player_id;
@@ -85,34 +87,39 @@ export const GamePlaying = ({
                 top: `${position.y}%`,
               }}
             >
-              <div className="flex flex-col items-center space-y-2">
-                {/* Player Avatar */}
+              <div className="flex flex-col items-center space-y-1">
+                {/* Player Avatar - smaller */}
                 <div className="relative">
-                  <div className="w-16 h-16 bg-gray-700 rounded-lg border-2 border-gray-500 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">
+                  <div className={cn(
+                    "w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all duration-300",
+                    isCurrentPlayer
+                      ? "bg-yellow-500 border-yellow-300 scale-110 animate-pulse shadow-lg shadow-yellow-400/50"
+                      : "bg-gray-700 border-gray-500"
+                  )}>
+                    <span className="text-white font-bold text-sm">
                       {player.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   {/* Crown for current user */}
                   {isCurrentUserPlayer && (
-                    <Crown className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400" />
+                    <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                   )}
                 </div>
                 
-                {/* Player Name */}
+                {/* Player Name - smaller */}
                 <div className={cn(
-                  "px-3 py-1 rounded text-sm font-medium",
+                  "px-2 py-1 rounded text-xs font-medium whitespace-nowrap",
                   isCurrentPlayer 
-                    ? "bg-yellow-600 text-white" 
+                    ? "bg-yellow-600 text-white shadow-md" 
                     : "bg-gray-600 text-gray-200"
                 )}>
                   {player.name}
                 </div>
                 
-                {/* Lives (Hearts) */}
-                <div className="flex space-x-1">
+                {/* Lives (Hearts) - smaller */}
+                <div className="flex space-x-0.5">
                   {Array.from({ length: player.lives }).map((_, i) => (
-                    <Heart key={i} className="w-4 h-4 text-red-500 fill-current" />
+                    <Heart key={i} className="w-3 h-3 text-red-500 fill-current" />
                   ))}
                 </div>
               </div>
@@ -137,8 +144,8 @@ export const GamePlaying = ({
                   }}
                 >
                   <div 
-                    className="w-0 h-0 border-l-[10px] border-r-[10px] border-b-[16px] border-l-transparent border-r-transparent border-b-yellow-400"
-                    style={{ marginTop: '-80px' }}
+                    className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[12px] border-l-transparent border-r-transparent border-b-yellow-400 animate-bounce"
+                    style={{ marginTop: '-65px' }}
                   />
                 </div>
               );
