@@ -8,7 +8,7 @@ import { GameWaiting } from './GameWaiting';
 import { GamePlaying } from './GamePlaying';
 import { GameFinished } from './GameFinished';
 import { QuickWordImport } from '../admin/QuickWordImport';
-import { useGameLogic } from '@/hooks/useGameLogic';
+import { useGameActions } from '@/hooks/useGameActions';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -128,14 +128,7 @@ export const GameRoom = () => {
     }
   });
 
-  const [currentWord, setCurrentWord] = useState('');
-
-  const { submitWord, handleTimerExpired, isSubmitting } = useGameLogic(
-    game,
-    players,
-    user?.id,
-    room
-  );
+  const { submitWord, isSubmitting, currentWord, setCurrentWord } = useGameActions(roomId || '');
 
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, currentWord);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
