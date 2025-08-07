@@ -40,8 +40,17 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
       // Use server time for better synchronization
       const now = isCalculated ? getServerTime() : Date.now();
       
-      // Calculate remaining time without buffer that might cause instant expiration
-      const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+      // Calculate remaining time
+      const timeDiff = endTime - now;
+      const remaining = Math.max(0, Math.ceil(timeDiff / 1000));
+      
+      console.log('Timer calculation:', {
+        endTime: new Date(endTime).toISOString(),
+        now: new Date(now).toISOString(),
+        timeDiff,
+        remaining,
+        isCalculated
+      });
       
       setTimeLeft(remaining);
 
