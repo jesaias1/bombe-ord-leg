@@ -61,9 +61,13 @@ export const useTimerHandler = (
 
       console.log(`Remaining alive players after update: ${updatedAlivePlayers.length}`);
 
-      // Check if game should end (only when 1 or fewer players remain alive)
-      if (updatedAlivePlayers.length <= 1) {
-        console.log('Game ending - only 1 or fewer players remaining');
+      // Check if game should end
+      // For single player: end only when player is dead (0 lives)
+      // For multiplayer: end when 1 or fewer players remain alive
+      const shouldEndGame = players.length === 1 ? isNowDead : updatedAlivePlayers.length <= 1;
+      
+      if (shouldEndGame) {
+        console.log('Game ending - ', players.length === 1 ? 'single player eliminated' : 'only 1 or fewer players remaining');
         
         // Add current word to incorrect words if it exists and contains the syllable
         const incorrectWords = [...(game.incorrect_words || [])];

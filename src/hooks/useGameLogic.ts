@@ -169,7 +169,12 @@ export const useGameLogic = (
       p.id === currentPlayer.id ? isStillAlive : p.is_alive
     );
 
-    if (remainingAlivePlayers.length <= 1) {
+    // Check if game should end
+    // For single player: end only when player is dead (0 lives)  
+    // For multiplayer: end when 1 or fewer players remain alive
+    const shouldEndGame = players.length === 1 ? !isStillAlive : remainingAlivePlayers.length <= 1;
+
+    if (shouldEndGame) {
       // Game over
       await supabase
         .from('games')
