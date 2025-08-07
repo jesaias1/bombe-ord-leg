@@ -50,9 +50,16 @@ export const WordImporter = () => {
     setImportResult(null);
     
     try {
-      await ensureBasicWords();
-      const result = await importAllWords();
-      setImportResult(result);
+      // Call the edge function for background processing
+      const { data, error } = await supabase.functions.invoke('import-words', {
+        body: { type: 'standard' }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setImportResult(data);
       refetchWordCount();
     } catch (error) {
       console.error('Standard import failed:', error);
@@ -67,9 +74,16 @@ export const WordImporter = () => {
     setImportResult(null);
     
     try {
-      await ensureBasicWords();
-      const result = await importEnhancedWords();
-      setImportResult(result);
+      // Call the edge function for background processing
+      const { data, error } = await supabase.functions.invoke('import-words', {
+        body: { type: 'enhanced' }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setImportResult(data);
       refetchWordCount();
     } catch (error) {
       console.error('Enhanced import failed:', error);
