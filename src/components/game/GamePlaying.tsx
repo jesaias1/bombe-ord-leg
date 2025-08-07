@@ -120,92 +120,96 @@ export const GamePlaying = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
-      {/* DEBUG: Simple test element */}
-      <div className="absolute top-4 left-4 bg-red-500 text-white p-2 rounded z-50">
-        GamePlaying component is rendering - Players: {alivePlayers.length}
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0, 
+      backgroundColor: '#1e293b',
+      color: 'white',
+      padding: '20px',
+      zIndex: 10
+    }}>
+      {/* Simple test content */}
+      <div style={{ 
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        backgroundColor: 'red',
+        color: 'white',
+        padding: '10px',
+        borderRadius: '5px',
+        zIndex: 50
+      }}>
+        GAME IS WORKING! Players: {alivePlayers.length}
       </div>
 
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-                           radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.3) 0%, transparent 50%)`
-        }} />
+      {/* Central syllable - simple version */}
+      <div style={{ 
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        fontSize: '60px',
+        fontWeight: 'bold',
+        backgroundColor: '#374151',
+        padding: '40px',
+        borderRadius: '50%',
+        border: '4px solid #6b7280',
+        textAlign: 'center',
+        width: '200px',
+        height: '200px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        {game.current_syllable?.toUpperCase()}
       </div>
 
-      {/* Central Game Area */}
-      <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="relative">
-          {/* Main syllable circle */}
-          <div className="w-48 h-48 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border-4 border-slate-600 shadow-2xl flex items-center justify-center relative overflow-hidden">
-            {/* Inner glow effect */}
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-600/20" />
-            
-            <div className="relative z-10 text-center">
-              <div className="text-5xl font-black text-white mb-2 drop-shadow-lg">
-                {game.current_syllable?.toUpperCase()}
-              </div>
-              <div className="text-sm text-slate-300 font-medium">
-                Find a word containing this syllable
-              </div>
-            </div>
+      {/* Simple player display */}
+      {alivePlayers.map((player, index) => {
+        const isCurrentPlayer = player.id === game.current_player_id;
+        return (
+          <div
+            key={player.id}
+            style={{
+              position: 'absolute',
+              top: '20%',
+              left: `${20 + index * 200}px`,
+              backgroundColor: isCurrentPlayer ? '#fbbf24' : '#6b7280',
+              color: isCurrentPlayer ? '#000' : '#fff',
+              padding: '20px',
+              borderRadius: '10px',
+              fontWeight: 'bold',
+              zIndex: 20
+            }}
+          >
+            <div>{player.name}</div>
+            <div>❤️ {player.lives}</div>
+            {isCurrentPlayer && <div>👑 YOUR TURN</div>}
           </div>
+        );
+      })}
 
-          {/* Arrow pointing to current player */}
-          {currentPlayerPos && alivePlayers.length > 0 && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div 
-                className="absolute w-20 h-20 flex items-center justify-center transition-all duration-700 ease-out"
-                style={{
-                  left: '50%',
-                  top: '50%',
-                  transform: `translate(-50%, -50%) rotate(${
-                    Math.atan2(
-                      currentPlayerPos.y - 50,
-                      currentPlayerPos.x - 50
-                    ) * 180 / Math.PI + 90
-                  }deg)`,
-                }}
-              >
-                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[20px] border-l-transparent border-r-transparent border-b-yellow-400 drop-shadow-lg animate-bounce" 
-                     style={{ marginTop: '-80px' }} />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Players positioned around the center */}
-      {alivePlayers.map((player, index) => renderPlayer(player, index))}
-      
-      {/* Dead players at the bottom */}
-      {deadPlayers.length > 0 && (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-2 z-30">
-          <div className="bg-slate-800/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-600">
-            <div className="text-xs text-slate-400 mb-1">Eliminated</div>
-            <div className="flex gap-2">
-              {deadPlayers.map((player) => (
-                <div key={player.id} className="text-xs text-slate-500 line-through">
-                  {player.name}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Word Input at bottom */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4 z-30">
-        <div className="bg-slate-800/90 backdrop-blur-sm rounded-2xl p-4 border border-slate-600 shadow-2xl">
-          <WordInput
-            onSubmit={onWordSubmit}
-            disabled={!isCurrentUser || isSubmitting}
-            currentSyllable={game.current_syllable || ''}
-            isSubmitting={isSubmitting}
-            onWordChange={onWordChange}
-          />
-        </div>
+      {/* Simple word input */}
+      <div style={{ 
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        backgroundColor: '#374151',
+        padding: '20px',
+        borderRadius: '10px',
+        width: '400px'
+      }}>
+        <WordInput
+          onSubmit={onWordSubmit}
+          disabled={!isCurrentUser || isSubmitting}
+          currentSyllable={game.current_syllable || ''}
+          isSubmitting={isSubmitting}
+          onWordChange={onWordChange}
+        />
       </div>
     </div>
   );
