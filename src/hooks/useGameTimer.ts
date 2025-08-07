@@ -37,34 +37,20 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
 
     const updateTimer = () => {
       const endTime = new Date(game.timer_end_time!).getTime();
-      // Use server time for better synchronization
-      const now = isCalculated ? getServerTime() : Date.now();
+      const now = Date.now(); // Use client time directly
       
       // Calculate remaining time
       const timeDiff = endTime - now;
       const remaining = Math.max(0, Math.ceil(timeDiff / 1000));
       
-      console.log('Timer calculation:', {
-        endTime: new Date(endTime).toISOString(),
-        now: new Date(now).toISOString(),
-        timeDiff,
-        remaining,
-        isCalculated
-      });
-      
       setTimeLeft(remaining);
 
-      // Only call onTimerExpired once when timer reaches 0 and some time has passed
-      // Add a small delay to prevent instant expiration on game start
+      // Only call onTimerExpired once when timer reaches 0
       if (remaining === 0 && !hasExpiredRef.current) {
-        // Check if timer was actually running (not a brand new timer)
-        const timerAge = now - new Date(game.timer_end_time!).getTime() + (game.timer_duration || 15) * 1000;
-        if (timerAge > 2000) { // Only expire if timer has been running for at least 2 seconds
-          hasExpiredRef.current = true;
-          console.log('Timer expired, calling onTimerExpired');
-          clearTimer();
-          onTimerExpired();
-        }
+        hasExpiredRef.current = true;
+        console.log('Timer expired, calling onTimerExpired');
+        clearTimer();
+        onTimerExpired();
       }
     };
 
