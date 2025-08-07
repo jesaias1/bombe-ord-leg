@@ -41,11 +41,11 @@ export const GamePlaying = ({
   // Calculate positions for players around the screen
   const getPlayerPosition = (index: number, total: number) => {
     if (total === 1) {
-      // For single player, position at the top
-      return { x: 0, y: -200, angle: 0 };
+      // For single player, position at the top but closer to center
+      return { x: 0, y: -120, angle: 0 };
     }
     const angle = (index * 360) / total - 90; // Start from top
-    const radius = Math.min(window.innerHeight * 0.35, window.innerWidth * 0.35);
+    const radius = Math.min(window.innerHeight * 0.3, window.innerWidth * 0.3);
     const x = Math.cos((angle * Math.PI) / 180) * radius;
     const y = Math.sin((angle * Math.PI) / 180) * radius;
     return { x, y, angle };
