@@ -38,7 +38,7 @@ export const GamePlaying = ({
   const alivePlayers = players.filter(p => p.is_alive);
   const deadPlayers = players.filter(p => !p.is_alive);
   
-  console.log('GamePlaying render - alivePlayers:', alivePlayers, 'currentPlayerPosition:', 'new layout');
+  console.log('GamePlaying NEW render - game:', game, 'alivePlayers:', alivePlayers, 'players:', players);
 
   // Calculate player positions in a circle
   const getPlayerPosition = (index: number, total: number) => {
@@ -121,6 +121,11 @@ export const GamePlaying = ({
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+      {/* DEBUG: Simple test element */}
+      <div className="absolute top-4 left-4 bg-red-500 text-white p-2 rounded z-50">
+        GamePlaying component is rendering - Players: {alivePlayers.length}
+      </div>
+
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
