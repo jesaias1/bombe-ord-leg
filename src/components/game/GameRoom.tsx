@@ -24,7 +24,7 @@ type Player = Tables<'players'>;
 
 export const GameRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const isMobile = useIsMobile();
 
   const { data: room, isLoading: roomLoading } = useQuery({
@@ -59,15 +59,16 @@ export const GameRoom = () => {
   });
 
   const { data: players = [], isLoading: playersLoading } = useQuery({
-    queryKey: ['players', roomId],
+    queryKey: ['players', roomId, isGuest, user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('room_id', roomId)
-        .order('joined_at');
+      const { data, error } = await supabase.rpc('get_players_public', {
+        p_room_id: roomId,
+        p_guest_id: isGuest ? (user?.id as string) : null,
+      });
       if (error) throw error;
-      return data as Player[];
+      // Ensure stable ordering by joined_at
+      const sorted = (data || []).sort((a: any, b: any) => new Date(a.joined_at).getTime() - new Date(b.joined_at).getTime());
+      return sorted as Player[];
     },
     enabled: !!roomId,
     refetchInterval: 1000,

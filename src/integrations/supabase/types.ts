@@ -318,6 +318,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_players_public: {
+        Args: { p_room_id: string; p_guest_id?: string }
+        Returns: {
+          id: string
+          lives: number
+          is_alive: boolean
+          turn_order: number
+          joined_at: string
+          user_id: string
+          room_id: string
+          name: string
+        }[]
+      }
       get_server_time: {
         Args: Record<PropertyKey, never>
         Returns: string
