@@ -12,7 +12,7 @@ interface GameWaitingProps {
   players: Player[];
   currentUserId?: string;
   canStartGame: boolean;
-  onStartGame: () => void;
+  onStartGame: () => Promise<boolean>;
   isLoading?: boolean;
 }
 

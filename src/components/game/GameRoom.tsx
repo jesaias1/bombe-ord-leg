@@ -254,7 +254,9 @@ export const GameRoom = () => {
                 description: error.message,
                 variant: 'destructive',
               });
+              return false;
             }
+            return true;
           }}
           isLoading={playersLoading}
         />
