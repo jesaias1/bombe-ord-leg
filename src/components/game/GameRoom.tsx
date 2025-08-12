@@ -14,10 +14,11 @@ import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
+import { getRandomDanishSyllable } from '@/utils/danishSyllables';
 import { Tables } from '@/integrations/supabase/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-
+import { useToast } from '@/hooks/use-toast';
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -26,6 +27,7 @@ export const GameRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const { user, isGuest } = useAuth();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', roomId],
@@ -216,17 +218,20 @@ export const GameRoom = () => {
           canStartGame={canStartGame}
           onStartGame={async () => {
             // Get a random syllable for the initial game state
-            const initialSyllable = await selectRandomSyllable(room!.difficulty);
+            let initialSyllable = await selectRandomSyllable(room!.difficulty);
             
             if (!initialSyllable) {
-              console.error('Failed to get initial syllable');
-              return;
+              // Fallback to local list if DB has no syllables yet
+              initialSyllable = getRandomDanishSyllable();
+              toast({
+                title: "Starter med fallback-stavelse",
+                description: `Databasen mangler stavelser – bruger "${initialSyllable}"`,
+              });
             }
 
             console.log('Starting game with syllable:', initialSyllable);
             
             const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
-            // Use current time plus duration for timer end time to avoid instant expiration
             const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
             // Create a new game for this room
@@ -244,6 +249,11 @@ export const GameRoom = () => {
             
             if (error) {
               console.error('Error starting game:', error);
+              toast({
+                title: 'Kunne ikke starte spillet',
+                description: error.message,
+                variant: 'destructive',
+              });
             }
           }}
           isLoading={playersLoading}
