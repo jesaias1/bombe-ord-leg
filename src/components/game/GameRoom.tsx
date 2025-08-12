@@ -235,17 +235,23 @@ export const GameRoom = () => {
             const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
             // Create a new game for this room
-            const { error } = await supabase
+            const payload = {
+              room_id: roomId,
+              status: 'playing' as const,
+              current_player_id: players[0]?.id,
+              current_syllable: initialSyllable,
+              timer_duration: timerDuration,
+              timer_end_time: timerEndTime.toISOString(),
+              round_number: 1
+            };
+
+            console.log('Creating game with payload:', payload);
+
+            const { data, error } = await supabase
               .from('games')
-              .insert({
-                room_id: roomId,
-                status: 'playing',
-                current_player_id: players[0]?.id,
-                current_syllable: initialSyllable,
-                timer_duration: timerDuration,
-                timer_end_time: timerEndTime.toISOString(),
-                round_number: 1
-              });
+              .insert(payload)
+              .select()
+              .single();
             
             if (error) {
               console.error('Error starting game:', error);

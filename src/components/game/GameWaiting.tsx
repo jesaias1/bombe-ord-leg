@@ -27,16 +27,22 @@ export const GameWaiting = ({
   const [isRocketFlying, setIsRocketFlying] = useState(false);
   const [showExplosion, setShowExplosion] = useState(false);
 
-  const handleStartClick = () => {
+  const handleStartClick = async () => {
+    // Prevent double clicks
+    if (isRocketFlying) return;
     setIsRocketFlying(true);
-    // Show explosion at 90% of animation (0.9s out of 1s)
-    setTimeout(() => {
-      setShowExplosion(true);
-    }, 900);
-    // Wait for full animation to complete before starting the game
-    setTimeout(() => {
-      onStartGame();
-    }, 1000);
+
+    // Start immediately, then play animations
+    const ok = await onStartGame();
+    if (!ok) {
+      // Re-enable button if start failed
+      setIsRocketFlying(false);
+      setShowExplosion(false);
+      return;
+    }
+
+    // Success animations
+    setTimeout(() => setShowExplosion(true), 900);
   };
 
   if (isLoading) {
