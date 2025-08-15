@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -319,16 +319,16 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_players_public: {
-        Args: { p_room_id: string; p_guest_id?: string }
+        Args: { p_guest_id?: string; p_room_id: string }
         Returns: {
           id: string
-          lives: number
           is_alive: boolean
-          turn_order: number
           joined_at: string
-          user_id: string
-          room_id: string
+          lives: number
           name: string
+          room_id: string
+          turn_order: number
+          user_id: string
         }[]
       }
       get_server_time: {
@@ -337,8 +337,8 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
