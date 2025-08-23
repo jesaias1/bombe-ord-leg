@@ -8,14 +8,14 @@ import { Tables } from '@/integrations/supabase/types';
 type UserStats = Tables<'user_stats'>;
 
 export const useUserStats = () => {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch user stats
   const { data: stats, isLoading } = useQuery({
     queryKey: ['user-stats', user?.id],
     queryFn: async () => {
-      if (!user) return null;
+      if (!user || isGuest) return null;
       
       const { data, error } = await supabase
         .from('user_stats')
@@ -30,7 +30,7 @@ export const useUserStats = () => {
       
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !isGuest,
   });
 
   // Create stats if they don't exist
@@ -82,10 +82,10 @@ export const useUserStats = () => {
 
   // Create stats if user exists but no stats found
   useEffect(() => {
-    if (user && !isLoading && !stats) {
+    if (user && !isGuest && !isLoading && !stats) {
       createStatsMutation.mutate();
     }
-  }, [user, stats, isLoading]);
+  }, [user, isGuest, stats, isLoading]);
 
   const updateStats = (updates: Partial<UserStats>) => {
     // Only update if stats exist and user is not a guest

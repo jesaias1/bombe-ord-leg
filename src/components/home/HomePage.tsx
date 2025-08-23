@@ -27,6 +27,7 @@ export const HomePage = () => {
   const [loading, setLoading] = useState(false);
   const [showWordImporter, setShowWordImporter] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeCard, setActiveCard] = useState<'create' | 'join' | null>(null);
 
   // Check if user is admin
   const { data: isAdmin = false } = useQuery({
@@ -49,6 +50,14 @@ export const HomePage = () => {
 
   const generateRoomId = () => {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
+  };
+
+  const resetForm = () => {
+    setActiveCard(null);
+    setRoomName('');
+    setDifficulty('mellem');
+    setBonusLetters(false);
+    setJoinRoomId('');
   };
 
   const createRoom = async () => {
@@ -204,98 +213,144 @@ export const HomePage = () => {
               </div>
             )}
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto animate-scale-in">
-              {/* Create Room Card */}
-              <Card className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold text-foreground">Opret nyt rum</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="roomName">Rum navn</Label>
-                    <Input
-                      id="roomName"
-                      value={roomName}
-                      onChange={(e) => setRoomName(e.target.value)}
-                      placeholder="Mit fantastiske rum"
-                      maxLength={50}
-                    />
-                  </div>
+            {!activeCard && (
+              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto animate-scale-in">
+                {/* Create Room Button */}
+                <Card 
+                  className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                  onClick={() => setActiveCard('create')}
+                >
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold text-foreground text-center">Opret nyt rum</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <div className="text-6xl mb-4">🎮</div>
+                    <p className="text-muted-foreground">Start et nyt spil med dine indstillinger</p>
+                  </CardContent>
+                </Card>
 
-                  <div>
-                    <Label htmlFor="difficulty">Vanskelighed</Label>
-                    <Select 
-                      value={difficulty} 
-                      onValueChange={(value: 'let' | 'mellem' | 'svaer') => setDifficulty(value)}
+                {/* Join Room Button */}
+                <Card 
+                  className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                  onClick={() => setActiveCard('join')}
+                >
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold text-foreground text-center">Tilslut eksisterende rum</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <div className="text-6xl mb-4">🚪</div>
+                    <p className="text-muted-foreground">Deltag i et eksisterende spil</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeCard === 'create' && (
+              <div className="max-w-md mx-auto animate-scale-in">
+                <Card className="bg-card/90 backdrop-blur-sm shadow-xl border border-border">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold text-foreground flex items-center justify-between">
+                      Opret nyt rum
+                      <Button variant="outline" size="sm" onClick={resetForm}>
+                        ← Tilbage
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="roomName">Rum navn</Label>
+                      <Input
+                        id="roomName"
+                        value={roomName}
+                        onChange={(e) => setRoomName(e.target.value)}
+                        placeholder="Mit fantastiske rum"
+                        maxLength={50}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="difficulty">Vanskelighed</Label>
+                      <Select 
+                        value={difficulty} 
+                        onValueChange={(value: 'let' | 'mellem' | 'svaer') => setDifficulty(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="let">Let (500+ ord)</SelectItem>
+                          <SelectItem value="mellem">Mellem (300+ ord)</SelectItem>
+                          <SelectItem value="svaer">Svær (100+ ord)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="bonusLetters"
+                        checked={bonusLetters}
+                        onCheckedChange={setBonusLetters}
+                      />
+                      <Label htmlFor="bonusLetters">Bonusbogstaver (Æ, Ø, Å)</Label>
+                    </div>
+
+                    <Button 
+                      onClick={createRoom} 
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="let">Let (500+ ord)</SelectItem>
-                        <SelectItem value="mellem">Mellem (300+ ord)</SelectItem>
-                        <SelectItem value="svaer">Svær (100+ ord)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      {loading ? "Opretter..." : "Opret rum"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="bonusLetters"
-                      checked={bonusLetters}
-                      onCheckedChange={setBonusLetters}
-                    />
-                    <Label htmlFor="bonusLetters">Bonusbogstaver (Æ, Ø, Å)</Label>
-                  </div>
+            {activeCard === 'join' && (
+              <div className="max-w-md mx-auto animate-scale-in">
+                <Card className="bg-card/90 backdrop-blur-sm shadow-xl border border-border">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold text-foreground flex items-center justify-between">
+                      Tilslut eksisterende rum
+                      <Button variant="outline" size="sm" onClick={resetForm}>
+                        ← Tilbage
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="joinRoomId">Rum ID</Label>
+                      <Input
+                        id="joinRoomId"
+                        value={joinRoomId}
+                        onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
+                        placeholder="ABCD"
+                        maxLength={4}
+                        className="uppercase"
+                      />
+                    </div>
 
-                  <Button 
-                    onClick={createRoom} 
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
-                  >
-                    {loading ? "Opretter..." : "Opret rum"}
-                  </Button>
-                </CardContent>
-              </Card>
+                    <Button 
+                      onClick={joinRoom}
+                      className="w-full bg-gradient-to-r from-secondary to-accent hover:from-secondary/90 hover:to-accent/90 text-secondary-foreground font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
+                    >
+                      Tilslut rum
+                    </Button>
 
-              {/* Join Room Card */}
-              <Card className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold text-foreground">Tilslut eksisterende rum</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="joinRoomId">Rum ID</Label>
-                    <Input
-                      id="joinRoomId"
-                      value={joinRoomId}
-                      onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                      placeholder="ABCD"
-                      maxLength={4}
-                      className="uppercase"
-                    />
-                  </div>
-
-                  <Button 
-                    onClick={joinRoom}
-                    className="w-full bg-gradient-to-r from-secondary to-accent hover:from-secondary/90 hover:to-accent/90 text-secondary-foreground font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
-                  >
-                    Tilslut rum
-                  </Button>
-
-                  <div className="text-sm text-muted-foreground space-y-2 bg-gradient-to-r from-secondary/5 to-accent/5 rounded-lg p-4 border border-border">
-                    <p><strong>Sådan spiller du:</strong></p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Skriv et dansk ord der indeholder den viste stavelse</li>
-                      <li>Ord kan ikke genbruges i samme spil</li>
-                      <li>Du har 10-25 sekunder per tur</li>
-                      <li>Mister bomben? Du mister et liv!</li>
-                      <li>Sidste spiller tilbage vinder (eller træn solo!)</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    <div className="text-sm text-muted-foreground space-y-2 bg-gradient-to-r from-secondary/5 to-accent/5 rounded-lg p-4 border border-border">
+                      <p><strong>Sådan spiller du:</strong></p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Skriv et dansk ord der indeholder den viste stavelse</li>
+                        <li>Ord kan ikke genbruges i samme spil</li>
+                        <li>Du har 10-25 sekunder per tur</li>
+                        <li>Mister bomben? Du mister et liv!</li>
+                        <li>Sidste spiller tilbage vinder (eller træn solo!)</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </>
         )}
       </div>
