@@ -235,14 +235,28 @@ export const GameRoom = () => {
             const timerEndTime = new Date(Date.now() + timerDuration * 1000);
 
             // Create a new game for this room
+            // Ensure we have a valid first player
+            if (!players || players.length === 0) {
+              console.error('No players found for game creation');
+              toast({
+                title: 'Kunne ikke starte spillet',
+                description: 'Der er ingen spillere i rummet',
+                variant: 'destructive',
+              });
+              return false;
+            }
+
             const payload = {
               room_id: roomId,
               status: 'playing' as const,
-              current_player_id: players[0]?.id,
+              current_player_id: players[0].id,
               current_syllable: initialSyllable,
               timer_duration: timerDuration,
               timer_end_time: timerEndTime.toISOString(),
-              round_number: 1
+              round_number: 1,
+              used_words: [],
+              correct_words: [],
+              incorrect_words: []
             };
 
             console.log('Creating game with payload:', payload);
