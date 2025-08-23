@@ -346,7 +346,8 @@ export type Database = {
         Args:
           | Record<PropertyKey, never>
           | { p_room_id: string; p_user_id: string; p_word: string }
-        Returns: boolean
+          | { p_room_id: string; p_user_id: string; p_word: string }
+        Returns: Json
       }
     }
     Enums: {
