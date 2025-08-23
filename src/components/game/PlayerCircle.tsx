@@ -61,17 +61,15 @@ export const PlayerCircle = ({
             isCurrentUser && isAlive && "ring-4 ring-blue-500 ring-offset-2"
           )}
         >
-          {/* Player initials or icon */}
-          {isAlive ? (
-            <span className={cn(
-              "text-sm font-bold",
-              isCurrentPlayer ? "text-yellow-700 dark:text-yellow-300" : "text-foreground"
-            )}>
-              {player.name.slice(0, 2).toUpperCase()}
-            </span>
-          ) : (
-            <Skull className="w-6 h-6 text-muted-foreground" />
-          )}
+          {/* Simple dot indicator */}
+          <div className={cn(
+            "w-4 h-4 rounded-full",
+            isAlive
+              ? isCurrentPlayer 
+                ? "bg-yellow-500" 
+                : "bg-primary"
+              : "bg-muted-foreground"
+          )} />
           
           {/* Crown for current user */}
           {isCurrentUser && isAlive && (
