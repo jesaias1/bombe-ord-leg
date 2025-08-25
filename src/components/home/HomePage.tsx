@@ -14,6 +14,7 @@ import { WordImporter } from '@/components/admin/WordImporter';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { UserStats } from '@/components/user/UserStats';
 import { useQuery } from '@tanstack/react-query';
+import { GameInstructions } from '@/components/game/GameInstructions';
 
 export const HomePage = () => {
   const navigate = useNavigate();

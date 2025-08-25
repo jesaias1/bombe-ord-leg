@@ -1,8 +1,8 @@
-
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Send, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface WordInputProps {
   onSubmit: (word: string) => Promise<boolean>;
@@ -13,16 +13,16 @@ interface WordInputProps {
   onWordChange?: (word: string) => void;
 }
 
-export const WordInput = ({ 
-  onSubmit, 
-  disabled, 
-  currentSyllable, 
-  placeholder,
+export const WordInput: React.FC<WordInputProps> = ({
+  onSubmit,
+  disabled,
+  currentSyllable,
+  placeholder = "Skriv dit ord her...",
   isSubmitting = false,
   onWordChange
-}: WordInputProps) => {
+}) => {
   const [word, setWord] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,91 +33,41 @@ export const WordInput = ({
     }
   }, [disabled]);
 
-  // Reset states when syllable changes and ensure focus
+  // Reset state when syllable changes
   useEffect(() => {
-    setError('');
-    setIsLocalSubmitting(false);
     setWord('');
-    
-    // Focus input when syllable changes
-    if (!disabled && inputRef.current) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-    }
-  }, [currentSyllable, disabled]);
+    setError('');
+    onWordChange?.('');
+  }, [currentSyllable, onWordChange]);
 
-  // Reset local submitting when parent isSubmitting changes
+  // Sync with external isSubmitting state
   useEffect(() => {
-    if (!isSubmitting) {
-      setIsLocalSubmitting(false);
-    }
+    setIsLocalSubmitting(isSubmitting);
   }, [isSubmitting]);
 
-  // Memoize the word change callback to prevent unnecessary re-renders
-  const handleWordChangeCallback = useCallback((newWord: string) => {
-    if (onWordChange) {
-      onWordChange(newWord);
-    }
-  }, [onWordChange]);
-
-  // Debounce the word change callback to reduce re-renders
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleWordChangeCallback(word.trim());
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [word, handleWordChangeCallback]);
-
   const handleSubmit = async () => {
-    const trimmedWord = word.trim();
-    console.log('handleSubmit called with word:', trimmedWord);
-    
-    if (!trimmedWord) {
-      setError('Indtast et ord');
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-      return;
-    }
+    if (!word.trim() || isLocalSubmitting || disabled) return;
 
-    if (!trimmedWord.toLowerCase().includes(currentSyllable.toLowerCase())) {
+    // Clear any previous errors
+    setError('');
+
+    // Validate word contains syllable
+    if (!word.toLowerCase().includes(currentSyllable.toLowerCase())) {
       setError(`Ordet skal indeholde "${currentSyllable}"`);
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-      return;
-    }
-
-    if (isLocalSubmitting || isSubmitting || disabled) {
-      console.log('Preventing duplicate submission');
       return;
     }
 
     setIsLocalSubmitting(true);
-    setError('');
     
     try {
-      const success = await onSubmit(trimmedWord.toLowerCase());
+      const success = await onSubmit(word.trim());
       if (success) {
         setWord('');
-        setTimeout(() => {
-          if (inputRef.current && !disabled) {
-            inputRef.current.focus();
-          }
-        }, 50);
-      } else {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
+        onWordChange?.('');
       }
+      // If unsuccessful, keep the word in the input for retry
     } catch (err) {
-      console.error('Error in word submission:', err);
-      setError('Fejl ved indsendelse - prøv igen');
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
+      console.error('Error submitting word:', err);
     } finally {
       setIsLocalSubmitting(false);
     }
@@ -126,52 +76,90 @@ export const WordInput = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newWord = e.target.value;
     setWord(newWord);
-    if (error) setError('');
+    onWordChange?.(newWord);
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    console.log('Key pressed:', e.key, 'Current word:', word, 'Input focused:', document.activeElement === inputRef.current);
     if (e.key === 'Enter') {
       e.preventDefault();
-      console.log('Enter key detected, calling handleSubmit');
       handleSubmit();
     }
   };
 
-  const isDisabled = disabled || isLocalSubmitting || isSubmitting;
-  const showSubmitting = isLocalSubmitting || isSubmitting;
-
   return (
-    <div className="w-full max-w-md space-y-4">
-      <div className="flex space-x-2">
-        <div className="flex-1">
-          <Input
-            ref={inputRef}
-            type="text"
-            value={word}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder || "Indtast dit ord her..."}
-            disabled={isDisabled}
-            className={cn(
-              "text-lg",
-              error && "border-red-500 focus:border-red-500"
-            )}
-            autoFocus
-          />
-          {error && (
-            <p className="text-red-500 text-sm mt-1">{error}</p>
-          )}
-        </div>
-        <Button 
-          type="button"
+    <div className="w-full max-w-md mx-auto space-y-3">
+      {/* Mobile-optimized input with larger touch targets */}
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          type="text"
+          value={word}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled || isLocalSubmitting}
+          className="w-full h-12 text-lg pr-20 text-center font-medium border-2 focus:border-primary transition-all
+                     bg-background/80 backdrop-blur-sm shadow-lg
+                     disabled:bg-muted/50 disabled:text-muted-foreground
+                     placeholder:text-muted-foreground/60"
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+        />
+        
+        {/* Submit button inside input for mobile */}
+        <Button
           onClick={handleSubmit}
-          disabled={isDisabled || !word.trim()}
-          className="px-6"
+          disabled={disabled || isLocalSubmitting || !word.trim()}
+          size="sm"
+          className="absolute right-1 top-1 h-10 w-10 p-0 rounded-md
+                     bg-primary hover:bg-primary/90 text-primary-foreground
+                     disabled:bg-muted/50 disabled:text-muted-foreground
+                     transition-all duration-200"
         >
-          {showSubmitting ? 'Sender...' : 'Send'}
+          <Send className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Help tooltip for mobile users */}
+      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <span>Find ord med "{currentSyllable}"</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-auto p-1">
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <p className="text-sm">
+                Skriv ord der indeholder stavelsen "{currentSyllable}". 
+                Eksempel: Hvis stavelsen er "lu", kan du skrive "hus<strong>lu</strong>k" eller "<strong>lu</strong>fte".
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="text-destructive text-sm text-center font-medium animate-in slide-in-from-top-2 duration-300">
+          {error}
+        </div>
+      )}
+
+      {/* Loading state for mobile */}
+      {isLocalSubmitting && (
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span>Tjekker ord...</span>
+        </div>
+      )}
     </div>
   );
 };
