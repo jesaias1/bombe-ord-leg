@@ -32,13 +32,17 @@ export const GameRoom = () => {
   const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', roomId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('id', roomId)
-        .single();
+      // Use the secure function to get room data (creator_id only visible to creator)
+      const { data, error } = await supabase.rpc('get_room_safe', {
+        room_id: roomId
+      });
+      
       if (error) throw error;
-      return data as Room;
+      if (!data || data.length === 0) {
+        throw new Error('Room not found');
+      }
+      
+      return data[0] as Room;
     },
     enabled: !!roomId,
   });
