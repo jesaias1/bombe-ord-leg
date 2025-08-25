@@ -165,6 +165,20 @@ export const GameRoom = () => {
     }
   });
 
+  // Check if user is room creator using secure function
+  const { data: isRoomCreator = false } = useQuery({
+    queryKey: ['is-room-creator', roomId, user?.id],
+    queryFn: async () => {
+      if (!user || isGuest) return false;
+      const { data, error } = await supabase.rpc('is_room_creator', {
+        room_id: roomId
+      });
+      if (error) return false;
+      return data || false;
+    },
+    enabled: !!roomId && !!user && !isGuest,
+  });
+
   const { submitWord, isSubmitting, currentWord, setCurrentWord } = useGameActions(roomId || '');
 
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, currentWord);
@@ -206,20 +220,6 @@ export const GameRoom = () => {
     );
   }
 
-  // Check if user is room creator using secure function
-  const { data: isRoomCreator = false } = useQuery({
-    queryKey: ['is-room-creator', roomId, user?.id],
-    queryFn: async () => {
-      if (!user || isGuest) return false;
-      const { data, error } = await supabase.rpc('is_room_creator', {
-        room_id: roomId
-      });
-      if (error) return false;
-      return data || false;
-    },
-    enabled: !!roomId && !!user && !isGuest,
-  });
-  
   const canStartGame = isRoomCreator || players.length >= 1; // Allow solo practice
 
   const renderGameContent = () => {
