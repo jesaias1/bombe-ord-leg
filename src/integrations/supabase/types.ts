@@ -355,6 +355,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_room_creator: {
+        Args: { room_id: string }
+        Returns: boolean
+      }
       submit_word: {
         Args:
           | Record<PropertyKey, never>
