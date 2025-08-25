@@ -331,6 +331,19 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_room_safe: {
+        Args: { room_id: string }
+        Returns: {
+          bonus_letters_enabled: boolean
+          created_at: string
+          creator_id: string
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          id: string
+          max_players: number
+          name: string
+          updated_at: string
+        }[]
+      }
       get_server_time: {
         Args: Record<PropertyKey, never>
         Returns: string
