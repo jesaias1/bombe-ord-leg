@@ -364,9 +364,7 @@ export type Database = {
         Returns: boolean
       }
       submit_word: {
-        Args:
-          | Record<PropertyKey, never>
-          | { p_room_id: string; p_user_id: string; p_word: string }
+        Args: { p_room_id: string; p_user_id: string; p_word: string }
         Returns: Json
       }
     }

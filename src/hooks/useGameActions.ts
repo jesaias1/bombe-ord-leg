@@ -32,8 +32,8 @@ export const useGameActions = (roomId: string) => {
 
     try {
       const { data, error } = await supabase.rpc('submit_word', {
-        p_room_id: roomId,
-        p_user_id: user.id,
+        p_room_id: roomId,  // UUID
+        p_user_id: user.id,  // UUID  
         p_word: word.toLowerCase().trim()
       });
 

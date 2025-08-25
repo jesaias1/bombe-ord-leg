@@ -32,10 +32,10 @@ export const useTimerHandler = (
     console.log(`Timer expired for player: ${currentPlayer.name}, current lives: ${currentPlayer.lives}`);
 
     try {
-      // Use server-side timeout handler instead of client-side logic
+      // Use server-side timeout handler with UUID parameters
       const { data, error } = await supabase.rpc('handle_timeout', {
-        p_room_id: room.id,
-        p_user_id: currentPlayer.user_id
+        p_room_id: room.id,  // UUID
+        p_user_id: currentPlayer.user_id  // UUID
       });
 
       if (error) {
