@@ -348,6 +348,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      handle_timeout: {
+        Args: { p_room_id: string; p_user_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -362,7 +366,6 @@ export type Database = {
       submit_word: {
         Args:
           | Record<PropertyKey, never>
-          | { p_room_id: string; p_user_id: string; p_word: string }
           | { p_room_id: string; p_user_id: string; p_word: string }
         Returns: Json
       }

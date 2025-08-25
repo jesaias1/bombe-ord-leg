@@ -39,33 +39,11 @@ export const useGameActions = (roomId: string) => {
 
       if (error) {
         console.error('RPC Error:', error);
-        
-        // Show user-friendly error messages
-        if (error.message.includes('already used')) {
-          toast({
-            title: "Ord allerede brugt",
-            description: "Dette ord er allerede blevet brugt i spillet",
-            variant: "destructive",
-          });
-        } else if (error.message.includes('not contain')) {
-          toast({
-            title: "Ord indeholder ikke stavelsen",
-            description: "Dit ord skal indeholde den viste stavelse",
-            variant: "destructive",
-          });
-        } else if (error.message.includes('not valid')) {
-          toast({
-            title: "Ugyldigt ord",
-            description: "Ordet blev ikke fundet i ordbogen",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Fejl",
-            description: error.message || "Kunne ikke indsende ordet",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Fejl",
+          description: error.message || "Kunne ikke indsende ordet",
+          variant: "destructive",
+        });
         
         // Update streak for wrong answer (only for registered users)
         if (!isGuest) {
@@ -75,25 +53,73 @@ export const useGameActions = (roomId: string) => {
         return false;
       }
 
-      console.log('Word submitted successfully:', data);
-      
-      // Track stats for registered users only
-      if (!isGuest) {
-        const wordTime = Date.now() - wordStartTime;
-        incrementWordsGuessed();
-        updateStreak(true);
-        updateFastestWordTime(wordTime);
+      if (data) {
+        console.log('Word submission response:', data);
+        
+        // Type assertion for the data response
+        const responseData = data as {
+          success: boolean;
+          error?: string;
+          lives_remaining?: number;
+          player_eliminated?: boolean;
+          game_ended?: boolean;
+          next_player?: string;
+          next_syllable?: string;
+          word_accepted?: string;
+        };
+        
+        if (responseData.success) {
+          // Valid word - show success message
+          const wordTime = Date.now() - wordStartTime;
+          
+          // Track stats for registered users only
+          if (!isGuest) {
+            incrementWordsGuessed();
+            updateStreak(true);
+            updateFastestWordTime(wordTime);
+          }
+
+          toast({
+            title: "Godt ord! 🎉",
+            description: `"${responseData.word_accepted}" blev accepteret. Næste spiller: ${responseData.next_player}`,
+          });
+
+          // Clear the current word after successful submission
+          setCurrentWord('');
+          return true;
+        } else {
+          // Invalid word - server handled HP decrement
+          const livesMsg = responseData.lives_remaining ? 
+            (responseData.lives_remaining > 0 ? `${responseData.lives_remaining} liv tilbage` : 'Elimineret!') 
+            : '';
+          
+          let description = responseData.error || 'Ukendt fejl';
+          if (livesMsg) {
+            description += ` - ${livesMsg}`;
+          }
+          
+          if (responseData.game_ended) {
+            description += ' - Spillet er slut!';
+          } else if (responseData.player_eliminated) {
+            description += ' - Du er elimineret!';
+          }
+
+          toast({
+            title: "Ugyldigt ord",
+            description: description,
+            variant: "destructive",
+          });
+          
+          // Update streak for wrong answer (only for registered users)
+          if (!isGuest) {
+            updateStreak(false);
+          }
+          
+          return false;
+        }
       }
 
-      toast({
-        title: "Godt ord! 🎉",
-        description: `"${word}" blev accepteret`,
-      });
-
-      // Clear the current word after successful submission
-      setCurrentWord('');
-
-      return true;
+      return false;
     } catch (err) {
       console.error('Unexpected error submitting word:', err);
       toast({

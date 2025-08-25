@@ -32,125 +32,49 @@ export const useTimerHandler = (
     console.log(`Timer expired for player: ${currentPlayer.name}, current lives: ${currentPlayer.lives}`);
 
     try {
-      // Update player lives and status
-      const newLives = Math.max(0, currentPlayer.lives - 1);
-      const isNowDead = newLives === 0;
+      // Use server-side timeout handler instead of client-side logic
+      const { data, error } = await supabase.rpc('handle_timeout', {
+        p_room_id: room.id,
+        p_user_id: currentPlayer.user_id
+      });
 
-      console.log(`Updating player ${currentPlayer.name}: new lives = ${newLives}, is dead = ${isNowDead}`);
-
-      const { error: playerError } = await supabase
-        .from('players')
-        .update({
-          lives: newLives,
-          is_alive: !isNowDead
-        })
-        .eq('id', currentPlayer.id);
-
-      if (playerError) {
-        console.error('Error updating player:', playerError);
+      if (error) {
+        console.error('Error handling timeout:', error);
+        toast.error('Fejl ved håndtering af timer udløb');
         return;
       }
 
-      // Calculate remaining alive players after this update
-      const updatedAlivePlayers = players.filter(p => {
-        if (p.id === currentPlayer.id) {
-          return !isNowDead; // Use the updated alive status for current player
-        }
-        return p.is_alive; // Use existing status for other players
-      });
-
-      console.log(`Remaining alive players after update: ${updatedAlivePlayers.length}`);
-
-      // Check if game should end
-      // For single player: end only when player is dead (0 lives)
-      // For multiplayer: end when 1 or fewer players remain alive
-      const shouldEndGame = players.length === 1 ? isNowDead : updatedAlivePlayers.length <= 1;
-      
-      if (shouldEndGame) {
-        console.log('Game ending - ', players.length === 1 ? 'single player eliminated' : 'only 1 or fewer players remaining');
+      if (data) {
+        console.log('Timeout handled:', data);
         
-        // Add current word to incorrect words if it exists and contains the syllable
-        const incorrectWords = [...(game.incorrect_words || [])];
-        if (currentWord && currentWord.trim() && currentWord.toLowerCase().includes(game.current_syllable?.toLowerCase() || '')) {
-          incorrectWords.push(currentWord.trim().toLowerCase());
-        }
+        // Type assertion for the data response
+        const responseData = data as {
+          success: boolean;
+          timeout: boolean;
+          lives_remaining: number;
+          player_eliminated: boolean;
+          game_ended?: boolean;
+          next_player?: string;
+          next_syllable?: string;
+        };
         
-        const { error: gameError } = await supabase
-          .from('games')
-          .update({
-            status: 'finished',
-            current_player_id: null,
-            timer_end_time: null,
-            current_syllable: null,
-            incorrect_words: incorrectWords,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', game.id);
-
-        if (gameError) {
-          console.error('Error ending game:', gameError);
-        }
-
-        // Show quick toast and end
-        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`} - Spillet er slut!`, {
-          duration: 2000
-        });
-      } else {
-        // Continue game with next player - faster transition
-        const stillAlivePlayers = players.filter(p => {
-          if (p.id === currentPlayer.id) {
-            return !isNowDead; // Use updated status for current player
-          }
-          return p.is_alive; // Use existing status for other players
-        });
+        const livesMsg = responseData.lives_remaining > 0 
+          ? `${responseData.lives_remaining} liv tilbage` 
+          : 'Elimineret!';
         
-        const currentPlayerIndexInAlive = stillAlivePlayers.findIndex(p => p.id === currentPlayer.id);
-        let nextPlayerIndex;
-        
-        if (isNowDead) {
-          // If current player is now dead, find next alive player
-          nextPlayerIndex = 0; // Start with first alive player
+        if (responseData.game_ended) {
+          toast.error(`${currentPlayer.name} løb tør for tid! ${livesMsg} - Spillet er slut!`, {
+            duration: 2000
+          });
+        } else if (responseData.player_eliminated) {
+          toast.error(`${currentPlayer.name} løb tør for tid! ${livesMsg}`, {
+            duration: 1500
+          });
         } else {
-          // Current player is still alive, move to next
-          nextPlayerIndex = (currentPlayerIndexInAlive + 1) % stillAlivePlayers.length;
+          toast.error(`${currentPlayer.name} løb tør for tid! ${livesMsg}`, {
+            duration: 1500
+          });
         }
-        
-        const nextPlayer = stillAlivePlayers[nextPlayerIndex];
-        const newSyllable = await selectRandomSyllable(room.difficulty);
-
-        if (newSyllable) {
-          console.log(`Moving to next player: ${nextPlayer.name}, new syllable: ${newSyllable}`);
-          
-          // Add current word to incorrect words if it exists and contains the syllable
-          const incorrectWords = [...(game.incorrect_words || [])];
-          if (currentWord && currentWord.trim() && currentWord.toLowerCase().includes(game.current_syllable?.toLowerCase() || '')) {
-            incorrectWords.push(currentWord.trim().toLowerCase());
-          }
-          
-          const timerDuration = game.timer_duration || 15;
-          // Use proper timing to prevent instant expiration
-          const newTimerEndTime = new Date(Date.now() + timerDuration * 1000).toISOString();
-
-          const { error: gameError } = await supabase
-            .from('games')
-            .update({
-              current_player_id: nextPlayer.id,
-              current_syllable: newSyllable,
-              timer_end_time: newTimerEndTime,
-              incorrect_words: incorrectWords,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', game.id);
-
-          if (gameError) {
-            console.error('Error updating game after timeout:', gameError);
-          }
-        }
-
-        // Show quick toast for faster gameplay
-        toast.error(`${currentPlayer.name} løb tør for tid! ${isNowDead ? 'Elimineret!' : `${newLives} liv tilbage`}`, {
-          duration: 1500
-        });
       }
     } catch (err) {
       console.error('Error handling timer expiration:', err);
@@ -158,7 +82,7 @@ export const useTimerHandler = (
         duration: 1500
       });
     }
-  }, [game, players, room, alivePlayers, currentWord]);
+  }, [game, players, room, currentWord]);
 
   return { handleTimerExpired };
 };
