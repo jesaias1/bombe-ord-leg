@@ -69,7 +69,7 @@ export const useGameActions = (roomId: string) => {
         };
         
         if (responseData.success) {
-          // Valid word - show success message
+          // Valid word - clear input, advance turn, show success
           const wordTime = Date.now() - wordStartTime;
           
           // Track stats for registered users only
@@ -88,25 +88,12 @@ export const useGameActions = (roomId: string) => {
           setCurrentWord('');
           return true;
         } else {
-          // Invalid word - server handled HP decrement
-          const livesMsg = responseData.lives_remaining ? 
-            (responseData.lives_remaining > 0 ? `${responseData.lives_remaining} liv tilbage` : 'Elimineret!') 
-            : '';
+          // Invalid word - DON'T clear input, DON'T advance turn, just show error
+          // Player keeps their turn and can try again within remaining time
           
-          let description = responseData.error || 'Ukendt fejl';
-          if (livesMsg) {
-            description += ` - ${livesMsg}`;
-          }
-          
-          if (responseData.game_ended) {
-            description += ' - Spillet er slut!';
-          } else if (responseData.player_eliminated) {
-            description += ' - Du er elimineret!';
-          }
-
           toast({
             title: "Ugyldigt ord",
-            description: description,
+            description: responseData.error || 'Ordet blev ikke accepteret - prøv igen!',
             variant: "destructive",
           });
           
@@ -115,6 +102,7 @@ export const useGameActions = (roomId: string) => {
             updateStreak(false);
           }
           
+          // DON'T clear currentWord - let player try again
           return false;
         }
       }
