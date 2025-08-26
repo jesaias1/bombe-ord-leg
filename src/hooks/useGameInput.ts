@@ -63,6 +63,20 @@ export const useGameInput = ({
     // On failure, keep the word so user can try again
   };
 
+  const handleWordSubmit = async (word: string): Promise<boolean> => {
+    if (!canInput || !word.trim()) return false;
+
+    const success = await onWordSubmit(word.trim());
+    
+    if (success) {
+      // Clear input on successful submission
+      setCurrentWord('');
+      inputRef.current?.focus();
+    }
+    // On failure, keep the word so user can try again
+    return success;
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -78,6 +92,7 @@ export const useGameInput = ({
     currentPlayer,
     inputRef,
     handleSubmit,
+    handleWordSubmit,
     handleKeyDown,
     isGameOver,
   };

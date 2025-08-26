@@ -10,7 +10,10 @@ interface WordInputProps {
   currentSyllable: string;
   placeholder?: string;
   isSubmitting?: boolean;
+  currentWord?: string;
   onWordChange?: (word: string) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  inputRef?: React.RefObject<HTMLInputElement>;
 }
 
 export const WordInput: React.FC<WordInputProps> = ({
@@ -19,19 +22,28 @@ export const WordInput: React.FC<WordInputProps> = ({
   currentSyllable,
   placeholder = "Skriv dit ord her...",
   isSubmitting = false,
-  onWordChange
+  currentWord = '',
+  onWordChange,
+  onKeyDown,
+  inputRef
 }) => {
-  const [word, setWord] = useState('');
+  const [word, setWord] = useState(currentWord);
   const [error, setError] = useState<string>('');
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const internalInputRef = useRef<HTMLInputElement>(null);
+  const finalInputRef = inputRef || internalInputRef;
 
   // Focus input when component mounts or becomes enabled
   useEffect(() => {
-    if (!disabled && inputRef.current) {
-      inputRef.current.focus();
+    if (!disabled && finalInputRef.current) {
+      finalInputRef.current.focus();
     }
   }, [disabled]);
+
+  // Sync with external currentWord prop
+  useEffect(() => {
+    setWord(currentWord);
+  }, [currentWord]);
 
   // Reset state when syllable changes
   useEffect(() => {
@@ -85,6 +97,7 @@ export const WordInput: React.FC<WordInputProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    onKeyDown?.(e);
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSubmit();
@@ -96,7 +109,7 @@ export const WordInput: React.FC<WordInputProps> = ({
       {/* Mobile-optimized input with larger touch targets */}
       <div className="relative">
         <Input
-          ref={inputRef}
+          ref={finalInputRef}
           type="text"
           value={word}
           onChange={handleInputChange}

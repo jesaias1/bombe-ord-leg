@@ -12,6 +12,7 @@ import { useGameActions } from '@/hooks/useGameActions';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useGameSubscriptions } from '@/hooks/useGameSubscriptions';
+import { useGameInput } from '@/hooks/useGameInput';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
@@ -31,8 +32,6 @@ export const GameRoom = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const [currentWord, setCurrentWord] = useState('');
 
   const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', roomCodeFromUrl],
@@ -202,6 +201,15 @@ export const GameRoom = () => {
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
 
+  // Use the game input hook for proper input management
+  const gameInput = useGameInput({
+    game,
+    players,
+    currentUserId: user?.id,
+    onWordSubmit: submitWord,
+    isSubmitting,
+  });
+
   // Show loading skeleton while data is loading
   if (roomLoading || gameLoading || playersLoading) {
     return (
@@ -331,13 +339,10 @@ export const GameRoom = () => {
           players={players}
           timeLeft={timeLeft}
           currentPlayer={currentPlayer}
-          isCurrentUser={isCurrentUser}
+          isCurrentUser={gameInput.isCurrentUser}
           isSinglePlayer={players.length === 1}
           currentUserId={user?.id}
-          onWordSubmit={submitWord}
-          isSubmitting={isSubmitting}
-          currentWord={currentWord}
-          onWordChange={setCurrentWord}
+          gameInput={gameInput}
         />
       );
     }

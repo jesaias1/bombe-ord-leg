@@ -5,6 +5,7 @@ import { BombTimer } from './BombTimer';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Heart, Crown } from 'lucide-react';
+import { useGameInput } from '@/hooks/useGameInput';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -17,10 +18,7 @@ interface GamePlayingProps {
   isCurrentUser: boolean;
   isSinglePlayer: boolean;
   currentUserId?: string;
-  onWordSubmit: (word: string) => Promise<boolean>;
-  onWordChange?: (word: string) => void;
-  isSubmitting?: boolean;
-  currentWord?: string;
+  gameInput: ReturnType<typeof useGameInput>;
 }
 
 export const GamePlaying = ({
@@ -31,10 +29,7 @@ export const GamePlaying = ({
   isCurrentUser,
   isSinglePlayer,
   currentUserId,
-  onWordSubmit,
-  isSubmitting = false,
-  currentWord,
-  onWordChange
+  gameInput
 }: GamePlayingProps) => {
   const alivePlayers = players.filter(p => p.is_alive);
   const deadPlayers = players.filter(p => !p.is_alive);
@@ -164,11 +159,14 @@ export const GamePlaying = ({
         
         <div className="max-w-md mx-auto">
           <WordInput
-            onSubmit={onWordSubmit}
-            disabled={!isCurrentUser || isSubmitting}
+            onSubmit={gameInput.handleWordSubmit}
+            disabled={!gameInput.canInput}
             currentSyllable={game.current_syllable || ''}
-            isSubmitting={isSubmitting}
-            onWordChange={onWordChange}
+            isSubmitting={!gameInput.canInput}
+            currentWord={gameInput.currentWord}
+            onWordChange={gameInput.setCurrentWord}
+            onKeyDown={gameInput.handleKeyDown}
+            inputRef={gameInput.inputRef}
           />
         </div>
       </div>
