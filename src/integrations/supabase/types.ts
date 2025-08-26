@@ -98,6 +98,13 @@ export type Database = {
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "games_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_safe_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       players: {
@@ -137,6 +144,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_safe_view"
             referencedColumns: ["id"]
           },
         ]
@@ -311,7 +325,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      rooms_safe_view: {
+        Row: {
+          bonus_letters_enabled: boolean | null
+          created_at: string | null
+          creator_id: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"] | null
+          id: string | null
+          max_players: number | null
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_letters_enabled?: boolean | null
+          created_at?: string | null
+          creator_id?: never
+          difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          id?: string | null
+          max_players?: number | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_letters_enabled?: boolean | null
+          created_at?: string | null
+          creator_id?: never
+          difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          id?: string | null
+          max_players?: number | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_current_user_role: {
@@ -332,7 +378,7 @@ export type Database = {
         }[]
       }
       get_room_safe: {
-        Args: { room_id: string }
+        Args: { p_room_locator: string }
         Returns: {
           bonus_letters_enabled: boolean
           created_at: string
