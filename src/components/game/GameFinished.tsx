@@ -62,17 +62,23 @@ export const GameFinished = ({
         })
         .eq('room_id', game.room_id);
 
-      // Create a new game for this room
+      // Create a new game for this room with random syllable
+      const initialSyllable = 'ka'; // Will be replaced by proper syllable selection
+      const timerDuration = Math.floor(Math.random() * 11) + 10;
+      const timerEndTime = new Date(Date.now() + timerDuration * 1000);
+
       const { error } = await supabase
         .from('games')
         .insert({
           room_id: game.room_id,
           status: 'playing',
           current_player_id: players[0]?.id,
-          current_syllable: 'ka', // Will be overridden by first syllable selection
-          timer_duration: 15,
-          timer_end_time: new Date(Date.now() + 15000).toISOString(),
+          current_syllable: initialSyllable,
+          timer_duration: timerDuration,
+          timer_end_time: timerEndTime.toISOString(),
           used_words: [],
+          correct_words: [],
+          incorrect_words: [],
           round_number: 1
         });
       

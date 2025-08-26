@@ -1,16 +1,17 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { GameHeader } from './GameHeader';
 import { GameWaiting } from './GameWaiting';
 import { GamePlaying } from './GamePlaying';
 import { GameFinished } from './GameFinished';
 import { QuickWordImport } from '../admin/QuickWordImport';
+import { DebugPanel } from '../debug/DebugPanel';
 import { useGameActions } from '@/hooks/useGameActions';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
+import { useGameSubscriptions } from '@/hooks/useGameSubscriptions';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
@@ -19,6 +20,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -28,13 +30,18 @@ export const GameRoom = () => {
   const { user, isGuest } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [currentWord, setCurrentWord] = useState('');
 
   const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', roomCodeFromUrl],
     queryFn: async () => {
-      // Use the secure function to get room data (creator_id only visible to creator)
+      if (!roomCodeFromUrl) return null;
+      
+      // Use the new unified room lookup that accepts either code or UUID
       const { data, error } = await supabase.rpc('get_room_safe', {
-        room_id: roomCodeFromUrl
+        p_room_locator: roomCodeFromUrl
       });
       
       if (error) throw error;
@@ -42,6 +49,7 @@ export const GameRoom = () => {
         throw new Error('Room not found');
       }
       
+      // The function returns the room with both id (which is the code in this system) and other fields
       return data[0] as Room;
     },
     enabled: !!roomCodeFromUrl,
@@ -181,9 +189,17 @@ export const GameRoom = () => {
     enabled: !!room?.id && !!user && !isGuest,
   });
 
-  const { submitWord, isSubmitting, currentWord, setCurrentWord } = useGameActions(room?.id || '');
+  // Setup game subscriptions
+  const { cleanup: cleanupSubscriptions } = useGameSubscriptions({
+    roomId: room?.id,
+    gameId: game?.id,
+    onGameUpdate: () => queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
+    onPlayersUpdate: () => queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] }),
+  });
 
-  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, currentWord);
+  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room?.id || '');
+
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
 
   // Show loading skeleton while data is loading
@@ -223,6 +239,8 @@ export const GameRoom = () => {
   }
 
   const canStartGame = isRoomCreator || players.length >= 1; // Allow solo practice
+  const currentPlayer = players.find(p => p.id === game?.current_player_id);
+  const isCurrentUser = currentPlayer?.user_id === user?.id;
 
   const renderGameContent = () => {
     console.log('GameRoom renderGameContent - game:', game, 'players:', players);
@@ -294,6 +312,9 @@ export const GameRoom = () => {
               });
               return false;
             }
+
+            // Refresh game query to get the new game
+            queryClient.invalidateQueries({ queryKey: ['game', room.id] });
             return true;
           }}
           isLoading={playersLoading}
@@ -303,8 +324,6 @@ export const GameRoom = () => {
     
     if (game.status === 'playing') {
       console.log('Rendering GamePlaying component');
-      const currentPlayer = players.find(p => p.id === game.current_player_id);
-      const isCurrentUser = currentPlayer?.user_id === user?.id;
       
       return (
         <GamePlaying 
@@ -360,6 +379,11 @@ export const GameRoom = () => {
           <div className="animate-fade-in">
             <QuickWordImport />
           </div>
+        )}
+
+        {/* Debug panel for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <DebugPanel roomId={room.id} />
         )}
         
         <div className="animate-scale-in">
