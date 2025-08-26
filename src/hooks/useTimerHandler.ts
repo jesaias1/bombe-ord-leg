@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
+import { isUuid } from '@/lib/uuid';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -29,12 +30,19 @@ export const useTimerHandler = (
       return;
     }
 
+    // Ensure we have a UUID for room ID
+    if (!isUuid(room.id)) {
+      console.error('Invalid room UUID format:', room.id);
+      toast.error('Ugyldig rum ID format');
+      return;
+    }
+
     console.log(`Timer expired for player: ${currentPlayer.name}, current lives: ${currentPlayer.lives}`);
 
     try {
       // Use server-side timeout handler with UUID parameters
       const { data, error } = await supabase.rpc('handle_timeout', {
-        p_room_id: room.id,  // UUID
+        p_room_id: room.id,        // UUID
         p_user_id: currentPlayer.user_id  // UUID
       });
 

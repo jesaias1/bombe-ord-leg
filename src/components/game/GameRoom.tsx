@@ -24,17 +24,17 @@ type Game = Tables<'games'>;
 type Player = Tables<'players'>;
 
 export const GameRoom = () => {
-  const { roomId } = useParams<{ roomId: string }>();
+  const { roomId: roomCodeFromUrl } = useParams<{ roomId: string }>();
   const { user, isGuest } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
   const { data: room, isLoading: roomLoading } = useQuery({
-    queryKey: ['room', roomId],
+    queryKey: ['room', roomCodeFromUrl],
     queryFn: async () => {
       // Use the secure function to get room data (creator_id only visible to creator)
       const { data, error } = await supabase.rpc('get_room_safe', {
-        room_id: roomId
+        room_id: roomCodeFromUrl
       });
       
       if (error) throw error;
@@ -44,31 +44,33 @@ export const GameRoom = () => {
       
       return data[0] as Room;
     },
-    enabled: !!roomId,
+    enabled: !!roomCodeFromUrl,
   });
 
   const { data: game, isLoading: gameLoading } = useQuery({
-    queryKey: ['game', roomId],
+    queryKey: ['game', room?.id],
     queryFn: async () => {
+      if (!room?.id) return null;
       const { data, error } = await supabase
         .from('games')
         .select('*')
-        .eq('room_id', roomId)
+        .eq('room_id', room.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data as Game | null;
     },
-    enabled: !!roomId,
+    enabled: !!room?.id,
     refetchInterval: 1000,
   });
 
   const { data: players = [], isLoading: playersLoading } = useQuery({
-    queryKey: ['players', roomId, isGuest, user?.id],
+    queryKey: ['players', room?.id, isGuest, user?.id],
     queryFn: async () => {
+      if (!room?.id) return [];
       const { data, error } = await supabase.rpc('get_players_public', {
-        p_room_id: roomId,
+        p_room_id: room.id,
         p_guest_id: isGuest ? (user?.id as string) : null,
       });
       if (error) throw error;
@@ -76,13 +78,13 @@ export const GameRoom = () => {
       const sorted = (data || []).sort((a: any, b: any) => new Date(a.joined_at).getTime() - new Date(b.joined_at).getTime());
       return sorted as Player[];
     },
-    enabled: !!roomId,
+    enabled: !!room?.id,
     refetchInterval: 1000,
   });
 
   // Ensure current user is added as a player when they enter the room
   useEffect(() => {
-    if (!user || !roomId || !room || playersLoading) return;
+    if (!user || !room?.id || playersLoading) return;
     
     const currentUserPlayer = players.find(p => p.user_id === user.id);
     
@@ -132,7 +134,7 @@ export const GameRoom = () => {
         const { error } = await supabase
           .from('players')
           .insert({
-            room_id: roomId,
+            room_id: room.id,
             user_id: user.id,
             name: displayName,
             lives: 3,
@@ -152,7 +154,7 @@ export const GameRoom = () => {
       
       addPlayer();
     }
-  }, [user, roomId, room, players, playersLoading]);
+  }, [user, room?.id, room, players, playersLoading]);
 
   // Check word count and show import option if low
   const { data: wordCount = 0 } = useQuery({
@@ -167,19 +169,19 @@ export const GameRoom = () => {
 
   // Check if user is room creator using secure function
   const { data: isRoomCreator = false } = useQuery({
-    queryKey: ['is-room-creator', roomId, user?.id],
+    queryKey: ['is-room-creator', room?.id, user?.id],
     queryFn: async () => {
-      if (!user || isGuest) return false;
+      if (!user || isGuest || !room?.id) return false;
       const { data, error } = await supabase.rpc('is_room_creator', {
-        room_id: roomId
+        room_id: room.id
       });
       if (error) return false;
       return data || false;
     },
-    enabled: !!roomId && !!user && !isGuest,
+    enabled: !!room?.id && !!user && !isGuest,
   });
 
-  const { submitWord, isSubmitting, currentWord, setCurrentWord } = useGameActions(roomId || '');
+  const { submitWord, isSubmitting, currentWord, setCurrentWord } = useGameActions(room?.id || '');
 
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, currentWord);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
@@ -263,7 +265,7 @@ export const GameRoom = () => {
             }
 
             const payload = {
-              room_id: roomId,
+              room_id: room.id,
               status: 'playing' as const,
               current_player_id: players[0].id,
               current_syllable: initialSyllable,
@@ -330,7 +332,7 @@ export const GameRoom = () => {
           game={game}
           currentUserId={user?.id}
           onBackHome={() => window.location.href = '/'}
-          roomId={roomId || ''}
+          roomId={room?.id || ''}
         />
       );
     }

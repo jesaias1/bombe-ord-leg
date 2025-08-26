@@ -352,6 +352,10 @@ export type Database = {
         Args: { p_room_id: string; p_user_id: string }
         Returns: Json
       }
+      handle_timeout_by_code: {
+        Args: { p_room_code: string; p_user_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -365,6 +369,10 @@ export type Database = {
       }
       submit_word: {
         Args: { p_room_id: string; p_user_id: string; p_word: string }
+        Returns: Json
+      }
+      submit_word_by_code: {
+        Args: { p_room_code: string; p_user_id: string; p_word: string }
         Returns: Json
       }
     }

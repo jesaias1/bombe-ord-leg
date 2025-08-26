@@ -89,7 +89,7 @@ export const HomePage = () => {
       const { error } = await supabase
         .from('rooms')
         .insert({
-          id: roomId,
+          id: roomId,  // This is the room code, not UUID - rooms table uses text for id
           name: roomName.trim(),
           creator_id: user.id,
           difficulty,
