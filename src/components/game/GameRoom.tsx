@@ -387,10 +387,8 @@ export const GameRoom = () => {
           </div>
         )}
 
-        {/* Debug panel for development */}
-        {process.env.NODE_ENV === 'development' && (
-          <DebugPanel roomId={room.id} />
-        )}
+        {/* Debug panel for admins */}
+        <DebugPanel roomId={room.id} />
         
         <div className="animate-scale-in">
           {renderGameContent()}

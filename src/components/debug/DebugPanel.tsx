@@ -1,14 +1,34 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { testRoomLookup, testGameRules, validateGameState } from '@/utils/testUtils';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 
 export const DebugPanel = ({ roomId }: { roomId?: string }) => {
   const { user } = useAuth();
   const [results, setResults] = useState<string>('');
   const [testRoomId, setTestRoomId] = useState(roomId || '');
+
+  // Check if user has admin role
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ['user-role', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+      
+      if (error) return false;
+      return data?.role === 'admin';
+    },
+    enabled: !!user,
+  });
 
   const runTest = async (testFn: () => Promise<any>, testName: string) => {
     setResults(prev => prev + `\n🧪 Running ${testName}...\n`);
@@ -20,7 +40,7 @@ export const DebugPanel = ({ roomId }: { roomId?: string }) => {
     }
   };
 
-  if (!user) return null;
+  if (!user || !isAdmin) return null;
 
   return (
     <Card className="mt-4">
