@@ -4,9 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStats } from '@/hooks/useUserStats';
-import { isUuid } from '@/lib/uuid';
+import { resolveRoomUuid } from '@/lib/roomResolver';
+import { Tables } from '@/integrations/supabase/types';
 
-export const useGameActions = (roomUuid: string) => {
+type Room = Tables<'rooms'>;
+
+export const useGameActions = (room: Room | null, roomLocator?: string) => {
   const { user, isGuest } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,28 +24,20 @@ export const useGameActions = (roomUuid: string) => {
   } = useUserStats();
 
   const submitWord = useCallback(async (word: string): Promise<boolean> => {
-    if (!user || isSubmitting || !roomUuid) {
-      console.error('No user logged in, already submitting, or no room UUID');
+    if (!user || isSubmitting) {
+      console.error('No user logged in or already submitting');
       return false;
     }
-
-    // Ensure we have a UUID for room ID
-    if (!isUuid(roomUuid)) {
-      console.error('Invalid room UUID format:', roomUuid);
-      toast({
-        title: "Fejl",
-        description: "Ugyldig rum ID format",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    console.log('Submitting word:', word, 'for user:', user.id, 'in room:', roomUuid);
-    setIsSubmitting(true);
 
     const wordStartTime = Date.now();
+    setIsSubmitting(true);
 
     try {
+      // Resolve room UUID from room object or locator
+      const roomUuid = await resolveRoomUuid(room, roomLocator);
+      
+      console.log('Submitting word:', word, 'for user:', user.id, 'in room:', roomUuid);
+
       const { data, error } = await supabase.rpc('submit_word', {
         p_room_id: roomUuid,  // UUID
         p_user_id: user.id,   // UUID  
@@ -122,11 +117,21 @@ export const useGameActions = (roomUuid: string) => {
       return false;
     } catch (err) {
       console.error('Unexpected error submitting word:', err);
-      toast({
-        title: "Fejl",
-        description: "Uventet fejl - prøv igen",
-        variant: "destructive",
-      });
+      
+      // Check if it's a room resolution error
+      if (err instanceof Error && err.message === 'Room not found') {
+        toast({
+          title: "Fejl",
+          description: "Kunne ikke finde rummet",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Fejl",
+          description: "Uventet fejl - prøv igen",
+          variant: "destructive",
+        });
+      }
       
       // Update streak for wrong answer (only for registered users)
       if (!isGuest) {
@@ -137,7 +142,7 @@ export const useGameActions = (roomUuid: string) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [user, roomUuid, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime, isSubmitting]);
+  }, [user, room, roomLocator, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime, isSubmitting]);
 
   const startGame = useCallback(async () => {
     if (!user) {
@@ -147,7 +152,7 @@ export const useGameActions = (roomUuid: string) => {
 
     try {
       // For now, we'll handle game starting in the frontend until we create the start_game function
-      console.log('Starting game for room:', roomUuid);
+      console.log('Starting game for room:', room?.id || roomLocator);
       
       // Track game started for registered users
       if (!isGuest) {
@@ -169,7 +174,7 @@ export const useGameActions = (roomUuid: string) => {
       });
       return false;
     }
-  }, [user, roomUuid, toast, isGuest, incrementGamesPlayed]);
+  }, [user, room, roomLocator, toast, isGuest, incrementGamesPlayed]);
 
   const leaveRoom = useCallback(async () => {
     if (!user) {
@@ -179,13 +184,13 @@ export const useGameActions = (roomUuid: string) => {
 
     try {
       // For now, we'll handle room leaving in the frontend until we create the leave_room function
-      console.log('Leaving room:', roomUuid);
+      console.log('Leaving room:', room?.id || roomLocator);
       return true;
     } catch (err) {
       console.error('Unexpected error leaving room:', err);
       return false;
     }
-  }, [user, roomUuid]);
+  }, [user, room, roomLocator]);
 
   // Helper function to track game completion
   const trackGameCompletion = useCallback((won: boolean, playtimeSeconds: number) => {

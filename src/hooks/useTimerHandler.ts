@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
-import { isUuid } from '@/lib/uuid';
+import { resolveRoomUuid } from '@/lib/roomResolver';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -14,6 +14,7 @@ export const useTimerHandler = (
   game: Game | null,
   players: Player[],
   room: Room | null,
+  roomLocator?: string,
   currentWord?: string
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
@@ -30,19 +31,15 @@ export const useTimerHandler = (
       return;
     }
 
-    // Ensure we have a UUID for room ID
-    if (!isUuid(room.id)) {
-      console.error('Invalid room UUID format:', room.id);
-      toast.error('Ugyldig rum ID format');
-      return;
-    }
-
     console.log(`Timer expired for player: ${currentPlayer.name}, current lives: ${currentPlayer.lives}`);
 
     try {
+      // Resolve room UUID to handle both codes and UUIDs
+      const roomUuid = await resolveRoomUuid(room, roomLocator);
+      
       // Use server-side timeout handler with UUID parameters
       const { data, error } = await supabase.rpc('handle_timeout', {
-        p_room_id: room.id,        // UUID
+        p_room_id: roomUuid,        // UUID
         p_user_id: currentPlayer.user_id  // UUID
       });
 
@@ -86,11 +83,19 @@ export const useTimerHandler = (
       }
     } catch (err) {
       console.error('Error handling timer expiration:', err);
-      toast.error('Fejl ved håndtering af timer udløb', {
-        duration: 1500
-      });
+      
+      // Check if it's a room resolution error
+      if (err instanceof Error && err.message === 'Room not found') {
+        toast.error('Kunne ikke finde rummet', {
+          duration: 1500
+        });
+      } else {
+        toast.error('Fejl ved håndtering af timer udløb', {
+          duration: 1500
+        });
+      }
     }
-  }, [game, players, room, currentWord]);
+  }, [game, players, room, roomLocator, currentWord]);
 
   return { handleTimerExpired };
 };

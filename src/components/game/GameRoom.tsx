@@ -196,9 +196,9 @@ export const GameRoom = () => {
     onPlayersUpdate: () => queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] }),
   });
 
-  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room?.id || '');
+  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomCodeFromUrl);
 
-  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room);
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomCodeFromUrl);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
 
   // Use the game input hook for proper input management
@@ -356,7 +356,8 @@ export const GameRoom = () => {
           game={game}
           currentUserId={user?.id}
           onBackHome={() => window.location.href = '/'}
-          roomId={room?.id || ''}
+          room={room}
+          roomLocator={roomCodeFromUrl}
         />
       );
     }

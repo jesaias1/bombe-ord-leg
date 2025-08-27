@@ -8,6 +8,7 @@ import { useGameActions } from '@/hooks/useGameActions';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
+type Room = Tables<'rooms'>;
 
 interface GameFinishedProps {
   isSinglePlayer: boolean;
@@ -16,7 +17,8 @@ interface GameFinishedProps {
   game: Game;
   currentUserId?: string;
   onBackHome: () => void;
-  roomId: string;
+  room: Room;
+  roomLocator?: string;
 }
 
 export const GameFinished = ({
@@ -26,9 +28,10 @@ export const GameFinished = ({
   game,
   currentUserId,
   onBackHome,
-  roomId
+  room,
+  roomLocator
 }: GameFinishedProps) => {
-  const { trackGameCompletion } = useGameActions(roomId);
+  const { trackGameCompletion } = useGameActions(room, roomLocator);
   
   // Track game completion when component mounts
   React.useEffect(() => {
