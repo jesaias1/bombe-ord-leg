@@ -198,7 +198,7 @@ export const GameRoom = () => {
 
   const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomCodeFromUrl, players);
 
-  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomCodeFromUrl);
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomCodeFromUrl, undefined, user);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
 
   // Use the game input hook for proper input management

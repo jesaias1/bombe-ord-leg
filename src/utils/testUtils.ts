@@ -16,18 +16,18 @@ export const testRoomLookup = async () => {
     
     console.log('✅ Empty room lookup:', { data: emptyResult, error: emptyError });
     
-    // Test 2: Test wrapper functions safety
-    const { data: submitSafety } = await supabase.rpc('submit_word_by_user', {
-      p_room_id: '550e8400-e29b-41d4-a716-446655440000', // Use room UUID for wrapper
-      p_user_id: '550e8400-e29b-41d4-a716-446655440000',
+    // Test 2: Test canonical functions safety
+    const { data: submitSafety } = await supabase.rpc('submit_word', {
+      p_room_id: '550e8400-e29b-41d4-a716-446655440000', // Use room UUID
+      p_player_id: '550e8400-e29b-41d4-a716-446655440000', // Use player UUID
       p_word: 'test'
     });
     
     console.log('✅ Submit word safety:', submitSafety);
     
-    const { data: timeoutSafety } = await supabase.rpc('handle_timeout_by_user', {
-      p_room_id: '550e8400-e29b-41d4-a716-446655440000', // Use room UUID for wrapper
-      p_user_id: '550e8400-e29b-41d4-a716-446655440000'
+    const { data: timeoutSafety } = await supabase.rpc('handle_timeout', {
+      p_room_id: '550e8400-e29b-41d4-a716-446655440000', // Use room UUID
+      p_player_id: '550e8400-e29b-41d4-a716-446655440000' // Use player UUID
     });
     
     console.log('✅ Timeout safety:', timeoutSafety);

@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
@@ -15,9 +15,11 @@ export const useTimerHandler = (
   players: Player[],
   room: Room | null,
   roomLocator?: string,
-  currentWord?: string
+  currentWord?: string,
+  user?: { id: string } | null
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
+  const pendingTurnSeqRef = useRef<number | null>(null);
 
   const handleTimerExpired = useCallback(async () => {
     if (!game || !room || game.status !== 'playing') {
@@ -30,6 +32,19 @@ export const useTimerHandler = (
       console.log('No current player found for timer expiration');
       return;
     }
+
+    // Only the current player should call timeout
+    if (user?.id !== currentPlayer.user_id) {
+      console.log('Timer expired but not current user - ignoring');
+      return;
+    }
+
+    // Idempotent guard - prevent multiple timeout calls for same turn
+    if (pendingTurnSeqRef.current === game.round_number) {
+      console.log('Timeout already pending for this turn - ignoring');
+      return;
+    }
+    pendingTurnSeqRef.current = game.round_number;
 
     console.log(`Timer expired for player: ${currentPlayer.name}, current lives: ${currentPlayer.lives}`);
 
@@ -45,7 +60,17 @@ export const useTimerHandler = (
 
       if (error) {
         console.error('Error handling timeout:', error);
+        
+        // Check for "turn already advanced" type errors and ignore them
+        if (error.message?.includes('Turn already advanced') || 
+            error.message?.includes('Not your turn')) {
+          console.log('Turn already advanced - ignoring timeout error');
+          pendingTurnSeqRef.current = null;
+          return;
+        }
+        
         toast.error('Fejl ved håndtering af timer udløb');
+        pendingTurnSeqRef.current = null;
         return;
       }
 
@@ -94,8 +119,11 @@ export const useTimerHandler = (
           duration: 1500
         });
       }
+    } finally {
+      // Clear pending flag after completion
+      pendingTurnSeqRef.current = null;
     }
-  }, [game, players, room, roomLocator, currentWord]);
+  }, [game, players, room, roomLocator, currentWord, user]);
 
   return { handleTimerExpired };
 };

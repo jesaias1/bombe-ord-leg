@@ -19,23 +19,25 @@ export async function resolveRoomUuid(
   // 1) If we already have a valid UUID from room.id, use it
   if (room?.id && isUuid(room.id)) return room.id;
 
-  // 2) If cache has it, return
-  if (locator && cache.has(locator)) return cache.get(locator)!;
+  // 2) Determine the locator to use - prefer explicit locator, then room.code, then room.id
+  const loc = locator ?? room?.code ?? room?.id ?? null;
+  if (!loc) throw new Error('No room locator provided');
 
-  // 3) If the locator itself is a UUID, trust it
-  if (locator && isUuid(locator)) {
-    cache.set(locator, locator);
-    return locator;
+  // 3) If cache has it, return
+  if (cache.has(loc)) return cache.get(loc)!;
+
+  // 4) If the locator itself is a UUID, trust it
+  if (isUuid(loc)) {
+    cache.set(loc, loc);
+    return loc;
   }
 
-  // 4) Otherwise the locator is a CODE; resolve via get_room_safe (accepts code or uuid)
-  const { data, error } = await supabase.rpc('get_room_safe', { p_room_locator: locator });
+  // 5) Otherwise the locator is a CODE; resolve via get_room_safe (accepts code or uuid)
+  const { data, error } = await supabase.rpc('get_room_safe', { p_room_locator: loc });
   if (error || !data || !data[0]?.id) {
     throw new Error('Room not found');
   }
   const uuid = data[0].id as string;
-  if (locator) {
-    cache.set(locator, uuid);
-  }
+  cache.set(loc, uuid);
   return uuid;
 }
