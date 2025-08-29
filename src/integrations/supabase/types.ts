@@ -349,11 +349,15 @@ export type Database = {
         Returns: string
       }
       handle_timeout: {
-        Args: { p_room_id: string; p_user_id: string }
+        Args: { p_player_id: string; p_room_id: string }
         Returns: Json
       }
       handle_timeout_by_code: {
         Args: { p_room_code: string; p_user_id: string }
+        Returns: Json
+      }
+      handle_timeout_by_user: {
+        Args: { p_room_id: string; p_user_id: string }
         Returns: Json
       }
       has_role: {
@@ -368,11 +372,15 @@ export type Database = {
         Returns: boolean
       }
       submit_word: {
-        Args: { p_room_id: string; p_user_id: string; p_word: string }
+        Args: { p_player_id: string; p_room_id: string; p_word: string }
         Returns: Json
       }
       submit_word_by_code: {
         Args: { p_room_code: string; p_user_id: string; p_word: string }
+        Returns: Json
+      }
+      submit_word_by_user: {
+        Args: { p_room_id: string; p_user_id: string; p_word: string }
         Returns: Json
       }
     }

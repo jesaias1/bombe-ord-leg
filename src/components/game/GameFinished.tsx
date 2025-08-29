@@ -31,7 +31,7 @@ export const GameFinished = ({
   room,
   roomLocator
 }: GameFinishedProps) => {
-  const { trackGameCompletion } = useGameActions(room, roomLocator);
+  const { trackGameCompletion } = useGameActions(room, roomLocator, players);
   
   // Track game completion when component mounts
   React.useEffect(() => {

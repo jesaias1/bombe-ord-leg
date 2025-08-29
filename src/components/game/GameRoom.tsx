@@ -196,7 +196,7 @@ export const GameRoom = () => {
     onPlayersUpdate: () => queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] }),
   });
 
-  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomCodeFromUrl);
+  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomCodeFromUrl, players);
 
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomCodeFromUrl);
   const timeLeft = useGameTimer(game, timerHandlerExpired);

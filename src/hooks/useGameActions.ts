@@ -9,7 +9,7 @@ import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
 
-export const useGameActions = (room: Room | null, roomLocator?: string) => {
+export const useGameActions = (room: Room | null, roomLocator?: string, players: any[] = []) => {
   const { user, isGuest } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +29,17 @@ export const useGameActions = (room: Room | null, roomLocator?: string) => {
       return false;
     }
 
+    // Find the current user's player record
+    const me = players.find(p => p.user_id === user.id);
+    if (!me?.id) {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke finde spiller",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     const wordStartTime = Date.now();
     setIsSubmitting(true);
 
@@ -36,11 +47,11 @@ export const useGameActions = (room: Room | null, roomLocator?: string) => {
       // Resolve room UUID from room object or locator
       const roomUuid = await resolveRoomUuid(room, roomLocator);
       
-      console.log('Submitting word:', word, 'for user:', user.id, 'in room:', roomUuid);
+      console.log('Submitting word:', word, 'for player:', me.id, 'in room:', roomUuid);
 
       const { data, error } = await supabase.rpc('submit_word', {
         p_room_id: roomUuid,  // UUID
-        p_user_id: user.id,   // UUID  
+        p_player_id: me.id,   // Player UUID instead of user UUID  
         p_word: word.toLowerCase().trim()
       });
 
@@ -142,7 +153,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [user, room, roomLocator, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime, isSubmitting]);
+  }, [user, room, roomLocator, players, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime, isSubmitting]);
 
   const startGame = useCallback(async () => {
     if (!user) {

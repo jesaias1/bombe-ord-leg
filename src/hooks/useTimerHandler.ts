@@ -40,7 +40,7 @@ export const useTimerHandler = (
       // Use server-side timeout handler with UUID parameters
       const { data, error } = await supabase.rpc('handle_timeout', {
         p_room_id: roomUuid,        // UUID
-        p_user_id: currentPlayer.user_id  // UUID
+        p_player_id: currentPlayer.id  // Player UUID instead of user UUID
       });
 
       if (error) {
