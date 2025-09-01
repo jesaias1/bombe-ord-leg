@@ -1,14 +1,19 @@
-
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useRoomUuid } from '@/hooks/useRoomUuid';
 import { Tables } from '@/integrations/supabase/types';
-import { selectRandomSyllable } from '@/utils/syllableSelection';
-import { resolveRoomUuid } from '@/lib/roomResolver';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
 type Room = Tables<'rooms'>;
+
+// Dev-only UUID assertion helper
+const assertUuid = (s: string, context: string) => {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)) {
+    throw new Error(`❌ NON-UUID in ${context}: "${s}"`);
+  }
+};
 
 export const useTimerHandler = (
   game: Game | null,
@@ -19,63 +24,89 @@ export const useTimerHandler = (
   user?: { id: string } | null
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
+  const getRoomUuid = useRoomUuid(room, roomLocator);
   const pendingTurnSeqRef = useRef<number | null>(null);
 
   const handleTimerExpired = useCallback(async () => {
-    if (!game || !room || game.status !== 'playing') {
-      console.log('Timer expired but game is not in playing state');
+    console.log('🕰️ Timer expired handler called', {
+      gameStatus: game?.status,
+      currentPlayerId: game?.current_player_id,
+      gameId: game?.id,
+      roomId: room?.id,
+      userId: user?.id,
+      pendingTurnSeq: pendingTurnSeqRef.current,
+      gameTurnSeq: game?.round_number
+    });
+
+    // Guard: game must be playing
+    if (!game || game.status !== 'playing') {
+      console.log('⏹️ Game not in playing state, skipping timeout');
       return;
     }
-    
+
+    // Guard: must have user
+    if (!user?.id) {
+      console.log('❌ No user ID, cannot handle timeout');
+      return;
+    }
+
+    // Find the current player
     const currentPlayer = players.find(p => p.id === game.current_player_id);
     if (!currentPlayer) {
-      console.log('No current player found for timer expiration');
+      console.log('❌ No current player found');
       return;
     }
 
-    // Only the current player should call timeout
-    if (user?.id !== currentPlayer.user_id) {
-      console.log('Timer expired but not current user - ignoring');
+    // Guard: Only the current player should trigger timeout
+    if (currentPlayer.user_id !== user.id) {
+      console.log('⏭️ Not current player, skipping timeout', {
+        currentPlayerUserId: currentPlayer.user_id,
+        myUserId: user.id
+      });
       return;
     }
 
-    // Idempotent guard - prevent multiple timeout calls for same turn
+    // Guard: Idempotent - prevent duplicate calls for the same turn
     if (pendingTurnSeqRef.current === game.round_number) {
-      console.log('Timeout already pending for this turn - ignoring');
+      console.log('🔄 Already processing timeout for this turn, skipping');
       return;
     }
+
     pendingTurnSeqRef.current = game.round_number;
 
-    console.log(`Timer expired for player: ${currentPlayer.name}, current lives: ${currentPlayer.lives}`);
-
     try {
-      // Resolve room UUID to handle both codes and UUIDs
-      const roomUuid = await resolveRoomUuid(room, roomLocator);
+      // NEVER use URL string directly - always resolve through getRoomUuid
+      const roomUuid = await getRoomUuid();
+      assertUuid(roomUuid, 'handle_timeout p_room_id');
+      assertUuid(currentPlayer.id, 'handle_timeout p_player_id');
       
-      // Use server-side timeout handler with UUID parameters
-      const { data, error } = await supabase.rpc('handle_timeout', {
-        p_room_id: roomUuid,        // UUID
-        p_player_id: currentPlayer.id  // Player UUID instead of user UUID
-      });
+      const payload = {
+        p_room_id: roomUuid,        // GUARANTEED UUID
+        p_player_id: currentPlayer.id // GUARANTEED Player UUID
+      };
+      
+      console.log('🚀 RPC handle_timeout payload:', payload);
+
+      const { data, error } = await supabase.rpc('handle_timeout', payload);
 
       if (error) {
-        console.error('Error handling timeout:', error);
+        console.error('❌ handle_timeout RPC error:', error);
         
-        // Check for "turn already advanced" type errors and ignore them
+        // Check if it's a "turn already advanced" error - this is expected and OK
         if (error.message?.includes('Turn already advanced') || 
+            error.message?.includes('already been advanced') ||
+            error.message?.includes('current turn') ||
             error.message?.includes('Not your turn')) {
-          console.log('Turn already advanced - ignoring timeout error');
-          pendingTurnSeqRef.current = null;
-          return;
+          console.log('ℹ️ Turn already advanced by another player, ignoring error');
+          return; // Don't show toast for this expected case
         }
         
         toast.error('Fejl ved håndtering af timer udløb');
-        pendingTurnSeqRef.current = null;
         return;
       }
 
       if (data) {
-        console.log('Timeout handled:', data);
+        console.log('✅ handle_timeout success:', data);
         
         // Type assertion for the data response
         const responseData = data as {
@@ -107,7 +138,7 @@ export const useTimerHandler = (
         }
       }
     } catch (err) {
-      console.error('Error handling timer expiration:', err);
+      console.error('💥 Unexpected error in handleTimerExpired:', err);
       
       // Check if it's a room resolution error
       if (err instanceof Error && err.message === 'Room not found') {
@@ -120,10 +151,10 @@ export const useTimerHandler = (
         });
       }
     } finally {
-      // Clear pending flag after completion
+      // Always clear the pending flag
       pendingTurnSeqRef.current = null;
     }
-  }, [game, players, room, roomLocator, currentWord, user]);
+  }, [game, players, room, getRoomUuid, currentWord, user]);
 
   return { handleTimerExpired };
 };

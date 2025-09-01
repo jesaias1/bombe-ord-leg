@@ -4,16 +4,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStats } from '@/hooks/useUserStats';
-import { resolveRoomUuid } from '@/lib/roomResolver';
+import { useRoomUuid } from '@/hooks/useRoomUuid';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
+
+// Dev-only UUID assertion helper
+const assertUuid = (s: string, context: string) => {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)) {
+    throw new Error(`❌ NON-UUID in ${context}: "${s}"`);
+  }
+};
 
 export const useGameActions = (room: Room | null, roomLocator?: string, players: any[] = []) => {
   const { user, isGuest } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
+  const getRoomUuid = useRoomUuid(room, roomLocator);
   const { 
     incrementWordsGuessed, 
     updateStreak, 
@@ -30,7 +38,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
     }
 
     // Find the current user's player record
-    const me = players.find(p => p.user_id === user.id);
+    const me = players.find(p => p.user_id === user.id) ?? players.find(p => p.is_me);
     if (!me?.id) {
       toast({
         title: "Fejl",
@@ -44,16 +52,20 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
     setIsSubmitting(true);
 
     try {
-      // Resolve room UUID from room object or locator
-      const roomUuid = await resolveRoomUuid(room, roomLocator);
+      // NEVER use URL string directly - always resolve through getRoomUuid
+      const roomUuid = await getRoomUuid();
+      assertUuid(roomUuid, 'submit_word p_room_id');
+      assertUuid(me.id, 'submit_word p_player_id');
       
-      console.log('Submitting word:', word, 'for player:', me.id, 'in room:', roomUuid);
-
-      const { data, error } = await supabase.rpc('submit_word', {
-        p_room_id: roomUuid,  // UUID
-        p_player_id: me.id,   // Player UUID instead of user UUID  
+      const payload = {
+        p_room_id: roomUuid,    // GUARANTEED UUID
+        p_player_id: me.id,     // GUARANTEED Player UUID
         p_word: word.toLowerCase().trim()
-      });
+      };
+      
+      console.log('🚀 RPC submit_word payload:', payload);
+
+      const { data, error } = await supabase.rpc('submit_word', payload);
 
       if (error) {
         console.error('RPC Error:', error);

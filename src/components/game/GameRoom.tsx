@@ -27,31 +27,37 @@ type Game = Tables<'games'>;
 type Player = Tables<'players'>;
 
 export const GameRoom = () => {
-  const { roomId: roomCodeFromUrl } = useParams<{ roomId: string }>();
+  const { roomId: roomLocator } = useParams<{ roomId: string }>();
   const { user, isGuest } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch room details using locator (never put URL value into room.id)
   const { data: room, isLoading: roomLoading } = useQuery({
-    queryKey: ['room', roomCodeFromUrl],
+    queryKey: ['room', roomLocator],
     queryFn: async () => {
-      if (!roomCodeFromUrl) return null;
+      if (!roomLocator) return null;
       
-      // Use the new unified room lookup that accepts either code or UUID
-      const { data, error } = await supabase.rpc('get_room_safe', {
-        p_room_locator: roomCodeFromUrl
+      console.log('🔍 Fetching room with locator:', roomLocator);
+      
+      const { data, error } = await supabase.rpc('get_room_safe', { 
+        p_room_locator: roomLocator 
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching room:', error);
+        throw error;
+      }
+      
       if (!data || data.length === 0) {
         throw new Error('Room not found');
       }
       
-      // The function returns the room with both id (which is the code in this system) and other fields
-      return data[0] as Room;
+      console.log('✅ Room fetched:', data[0]);
+      return data[0] as Room; // Contains real UUID in room.id
     },
-    enabled: !!roomCodeFromUrl,
+    enabled: !!roomLocator,
   });
 
   const { data: game, isLoading: gameLoading } = useQuery({
@@ -196,9 +202,11 @@ export const GameRoom = () => {
     onPlayersUpdate: () => queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] }),
   });
 
-  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomCodeFromUrl, players);
+  // Initialize game actions hook with roomLocator from URL
+  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players);
 
-  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomCodeFromUrl, undefined, user);
+  // Initialize timer handler with roomLocator
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomLocator, undefined, user);
   const timeLeft = useGameTimer(game, timerHandlerExpired);
 
   // Use the game input hook for proper input management
@@ -357,7 +365,7 @@ export const GameRoom = () => {
           currentUserId={user?.id}
           onBackHome={() => window.location.href = '/'}
           room={room}
-          roomLocator={roomCodeFromUrl}
+          roomLocator={roomLocator}
         />
       );
     }

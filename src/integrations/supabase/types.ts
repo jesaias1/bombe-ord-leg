@@ -336,7 +336,7 @@ export type Database = {
         Returns: {
           bonus_letters_enabled: boolean
           created_at: string
-          creator_id: string
+          creator_id: string | null
           difficulty: Database["public"]["Enums"]["difficulty_level"]
           id: string
           max_players: number
