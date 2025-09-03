@@ -20,7 +20,8 @@ export const testRoomLookup = async () => {
     const { data: submitSafety } = await supabase.rpc('submit_word', {
       p_room_id: '550e8400-e29b-41d4-a716-446655440000', // Use room UUID
       p_player_id: '550e8400-e29b-41d4-a716-446655440000', // Use player UUID
-      p_word: 'test'
+      p_word: 'test',
+      p_turn_seq: 0
     });
     
     console.log('✅ Submit word safety:', submitSafety);
@@ -47,7 +48,8 @@ export const testGameRules = async (roomId: string, userId: string) => {
     const { data: invalidResult } = await supabase.rpc('submit_word', {
       p_room_id: roomId,
       p_player_id: userId, // Now expects player_id instead of user_id
-      p_word: 'xyz' // Invalid word that won't contain any syllable
+      p_word: 'xyz', // Invalid word that won't contain any syllable
+      p_turn_seq: 0
     });
     
     console.log('✅ Invalid word response:', invalidResult);

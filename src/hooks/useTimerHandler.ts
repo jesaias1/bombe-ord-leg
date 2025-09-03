@@ -26,7 +26,7 @@ export const useTimerHandler = (
       roomId: room?.id,
       userId: user?.id,
       pendingTurnSeq: pendingTurnSeqRef.current,
-      gameTurnSeq: game?.turn_seq
+      gameTurnSeq: (game as any)?.turn_seq
     });
 
     // Guard: game must be playing
@@ -58,12 +58,12 @@ export const useTimerHandler = (
     }
 
     // Guard: Idempotent - prevent duplicate calls for the same turn
-    if (pendingTurnSeqRef.current === game.turn_seq) {
+    if (pendingTurnSeqRef.current === (game as any)?.turn_seq) {
       console.log('🔄 Already processing timeout for this turn, skipping');
       return;
     }
 
-    pendingTurnSeqRef.current = game.turn_seq;
+    pendingTurnSeqRef.current = (game as any)?.turn_seq;
 
     try {
       const payload = {

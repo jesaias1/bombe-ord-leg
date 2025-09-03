@@ -53,6 +53,7 @@ export type Database = {
           syllable_index: number | null
           timer_duration: number | null
           timer_end_time: string | null
+          turn_seq: number | null
           updated_at: string
           used_words: string[] | null
         }
@@ -70,6 +71,7 @@ export type Database = {
           syllable_index?: number | null
           timer_duration?: number | null
           timer_end_time?: string | null
+          turn_seq?: number | null
           updated_at?: string
           used_words?: string[] | null
         }
@@ -87,6 +89,7 @@ export type Database = {
           syllable_index?: number | null
           timer_duration?: number | null
           timer_end_time?: string | null
+          turn_seq?: number | null
           updated_at?: string
           used_words?: string[] | null
         }

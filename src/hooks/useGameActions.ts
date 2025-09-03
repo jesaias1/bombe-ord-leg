@@ -51,7 +51,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
         p_room_id: room?.id || roomLocator,       // TEXT room code
         p_player_id: me.id,                        // Player UUID
         p_word: word.trim().toLowerCase(),
-        p_turn_seq: game?.turn_seq ?? 0           // Send current turn
+        p_turn_seq: (game as any)?.turn_seq ?? 0           // Send current turn
       };
       
       console.log('🚀 RPC submit_word payload:', payload);
