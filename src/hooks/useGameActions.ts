@@ -1,5 +1,5 @@
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -7,12 +7,14 @@ import { useUserStats } from '@/hooks/useUserStats';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
+type Game = Tables<'games'>;
 
-export const useGameActions = (room: Room | null, roomLocator?: string, players: any[] = []) => {
+export const useGameActions = (room: Room | null, roomLocator?: string, players: any[] = [], game: Game | null = null) => {
   const { user, isGuest } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
+  const isSubmittingRef = useRef(false);
   const { 
     incrementWordsGuessed, 
     updateStreak, 
@@ -23,30 +25,33 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
   } = useUserStats();
 
   const submitWord = useCallback(async (word: string): Promise<boolean> => {
-    if (!user || isSubmitting) {
-      console.error('No user logged in or already submitting');
+    if (!user) {
+      console.error('No user logged in');
       return false;
     }
 
-    // Find the current user's player record
+    // Guard: only my turn
     const me = players.find(p => p.user_id === user.id) ?? players.find(p => p.is_me);
-    if (!me?.id) {
-      toast({
-        title: "Fejl",
-        description: "Kunne ikke finde spiller",
-        variant: "destructive",
-      });
+    if (!me?.id || game?.current_player_id !== me.id) {
       return false;
     }
+
+    // Guard: no double submit in the same render-frame
+    if (isSubmittingRef.current) {
+      return false;
+    }
+    
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     const wordStartTime = Date.now();
-    setIsSubmitting(true);
 
     try {
       const payload = {
-        p_room_id: room?.id || roomLocator,  // TEXT room code
-        p_player_id: me.id,                  // UUID player id  
-        p_word: word.toLowerCase().trim()
+        p_room_id: room?.id || roomLocator,       // TEXT room code
+        p_player_id: me.id,                        // Player UUID
+        p_word: word.trim().toLowerCase(),
+        p_turn_seq: game?.turn_seq ?? 0           // Send current turn
       };
       
       console.log('🚀 RPC submit_word payload:', payload);
@@ -55,8 +60,15 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
 
       if (error) {
         console.error('RPC Error:', error);
+        
+        // Ignore expected idempotency/stale cases (no scary toast)
+        if (error.message?.toLowerCase().includes('stale') ||
+            error.message?.toLowerCase().includes('turn already advanced')) {
+          return false;
+        }
+        
         toast({
-          title: "Fejl",
+          title: "Ugyldigt ord",
           description: error.message || "Kunne ikke indsende ordet",
           variant: "destructive",
         });
@@ -75,14 +87,17 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
         // Type assertion for the data response
         const responseData = data as {
           success: boolean;
+          ignored?: boolean;
           error?: string;
-          lives_remaining?: number;
-          player_eliminated?: boolean;
-          game_ended?: boolean;
+          word_accepted?: string;
           next_player?: string;
           next_syllable?: string;
-          word_accepted?: string;
         };
+        
+        // Handle ignored/stale submissions
+        if (responseData.ignored) {
+          return false;
+        }
         
         if (responseData.success) {
           // Valid word - clear input, advance turn, show success
@@ -104,9 +119,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
           setCurrentWord('');
           return true;
         } else {
-          // Invalid word - DON'T clear input, DON'T advance turn, just show error
-          // Player keeps their turn and can try again within remaining time
-          
+          // Invalid word - show error but don't clear input
           toast({
             title: "Ugyldigt ord",
             description: responseData.error || 'Ordet blev ikke accepteret - prøv igen!',
@@ -118,7 +131,6 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
             updateStreak(false);
           }
           
-          // DON'T clear currentWord - let player try again
           return false;
         }
       }
@@ -129,7 +141,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
       
       toast({
         title: "Fejl",
-        description: "Uventet fejl - prøv igen",
+        description: "Uventet fejl – prøv igen",
         variant: "destructive",
       });
       
@@ -140,9 +152,10 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
       
       return false;
     } finally {
-      setIsSubmitting(false);
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);          // Always unlocks input
     }
-  }, [user, room, roomLocator, players, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime, isSubmitting]);
+  }, [user, room, roomLocator, players, game, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime]);
 
   const startGame = useCallback(async () => {
     if (!user) {

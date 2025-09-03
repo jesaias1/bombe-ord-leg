@@ -364,7 +364,12 @@ export type Database = {
         Returns: boolean
       }
       submit_word: {
-        Args: { p_player_id: string; p_room_id: string; p_word: string }
+        Args: {
+          p_player_id: string
+          p_room_id: string
+          p_turn_seq: number
+          p_word: string
+        }
         Returns: Json
       }
     }
