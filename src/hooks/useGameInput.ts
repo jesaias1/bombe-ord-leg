@@ -95,5 +95,6 @@ export const useGameInput = ({
     handleWordSubmit,
     handleKeyDown,
     isGameOver,
+    isSubmitting,
   };
 };
