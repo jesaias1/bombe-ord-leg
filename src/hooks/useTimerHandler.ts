@@ -1,19 +1,11 @@
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useRoomUuid } from '@/hooks/useRoomUuid';
 import { Tables } from '@/integrations/supabase/types';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
 type Room = Tables<'rooms'>;
-
-// Dev-only UUID assertion helper
-const assertUuid = (s: string, context: string) => {
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)) {
-    throw new Error(`❌ NON-UUID in ${context}: "${s}"`);
-  }
-};
 
 export const useTimerHandler = (
   game: Game | null,
@@ -24,7 +16,6 @@ export const useTimerHandler = (
   user?: { id: string } | null
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
-  const getRoomUuid = useRoomUuid(room, roomLocator);
   const pendingTurnSeqRef = useRef<number | null>(null);
 
   const handleTimerExpired = useCallback(async () => {
@@ -75,14 +66,9 @@ export const useTimerHandler = (
     pendingTurnSeqRef.current = game.round_number;
 
     try {
-      // NEVER use URL string directly - always resolve through getRoomUuid
-      const roomUuid = await getRoomUuid();
-      assertUuid(roomUuid, 'handle_timeout p_room_id');
-      assertUuid(currentPlayer.id, 'handle_timeout p_player_id');
-      
       const payload = {
-        p_room_id: roomUuid,        // GUARANTEED UUID
-        p_player_id: currentPlayer.id // GUARANTEED Player UUID
+        p_room_id: room?.id || roomLocator,  // TEXT room code
+        p_player_id: currentPlayer.id        // UUID player id
       };
       
       console.log('🚀 RPC handle_timeout payload:', payload);
@@ -140,21 +126,14 @@ export const useTimerHandler = (
     } catch (err) {
       console.error('💥 Unexpected error in handleTimerExpired:', err);
       
-      // Check if it's a room resolution error
-      if (err instanceof Error && err.message === 'Room not found') {
-        toast.error('Kunne ikke finde rummet', {
-          duration: 1500
-        });
-      } else {
-        toast.error('Fejl ved håndtering af timer udløb', {
-          duration: 1500
-        });
-      }
+      toast.error('Fejl ved håndtering af timer udløb', {
+        duration: 1500
+      });
     } finally {
       // Always clear the pending flag
       pendingTurnSeqRef.current = null;
     }
-  }, [game, players, room, getRoomUuid, currentWord, user]);
+  }, [game, players, room, roomLocator, currentWord, user]);
 
   return { handleTimerExpired };
 };

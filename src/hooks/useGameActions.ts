@@ -4,24 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStats } from '@/hooks/useUserStats';
-import { useRoomUuid } from '@/hooks/useRoomUuid';
 import { Tables } from '@/integrations/supabase/types';
 
 type Room = Tables<'rooms'>;
-
-// Dev-only UUID assertion helper
-const assertUuid = (s: string, context: string) => {
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)) {
-    throw new Error(`❌ NON-UUID in ${context}: "${s}"`);
-  }
-};
 
 export const useGameActions = (room: Room | null, roomLocator?: string, players: any[] = []) => {
   const { user, isGuest } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
-  const getRoomUuid = useRoomUuid(room, roomLocator);
   const { 
     incrementWordsGuessed, 
     updateStreak, 
@@ -52,14 +43,9 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
     setIsSubmitting(true);
 
     try {
-      // NEVER use URL string directly - always resolve through getRoomUuid
-      const roomUuid = await getRoomUuid();
-      assertUuid(roomUuid, 'submit_word p_room_id');
-      assertUuid(me.id, 'submit_word p_player_id');
-      
       const payload = {
-        p_room_id: roomUuid,    // GUARANTEED UUID
-        p_player_id: me.id,     // GUARANTEED Player UUID
+        p_room_id: room?.id || roomLocator,  // TEXT room code
+        p_player_id: me.id,                  // UUID player id  
         p_word: word.toLowerCase().trim()
       };
       
@@ -141,20 +127,11 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
     } catch (err) {
       console.error('Unexpected error submitting word:', err);
       
-      // Check if it's a room resolution error
-      if (err instanceof Error && err.message === 'Room not found') {
-        toast({
-          title: "Fejl",
-          description: "Kunne ikke finde rummet",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Fejl",
-          description: "Uventet fejl - prøv igen",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Fejl",
+        description: "Uventet fejl - prøv igen",
+        variant: "destructive",
+      });
       
       // Update streak for wrong answer (only for registered users)
       if (!isGuest) {
