@@ -58,7 +58,7 @@ export const WordInput: React.FC<WordInputProps> = ({
   }, [isSubmitting]);
 
   const handleSubmit = async () => {
-    if (!word.trim() || isLocalSubmitting || disabled) return;
+    if (!word.trim() || disabled) return;
 
     // Clear any previous errors
     setError('');
@@ -115,7 +115,7 @@ export const WordInput: React.FC<WordInputProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          disabled={disabled || isLocalSubmitting}
+          disabled={disabled}
           className="w-full h-12 text-lg pr-20 text-center font-medium border-2 focus:border-primary transition-all
                      bg-background/80 backdrop-blur-sm shadow-lg
                      disabled:bg-muted/50 disabled:text-muted-foreground
@@ -128,7 +128,7 @@ export const WordInput: React.FC<WordInputProps> = ({
         {/* Submit button inside input for mobile */}
         <Button
           onClick={handleSubmit}
-          disabled={disabled || isLocalSubmitting || !word.trim()}
+          disabled={disabled || !word.trim()}
           size="sm"
           className="absolute right-1 top-1 h-10 w-10 p-0 rounded-md
                      bg-primary hover:bg-primary/90 text-primary-foreground
@@ -159,15 +159,27 @@ export const WordInput: React.FC<WordInputProps> = ({
         </TooltipProvider>
       </div>
 
-      {/* Error message */}
+      {/* Error message with retry option */}
       {error && (
-        <div className="text-destructive text-sm text-center font-medium animate-in slide-in-from-top-2 duration-300">
-          {error}
+        <div className="text-destructive text-sm text-center font-medium animate-in slide-in-from-top-2 duration-300 space-y-2">
+          <div>{error}</div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setError('');
+              setIsLocalSubmitting(false);
+              finalInputRef.current?.focus();
+            }}
+            className="text-xs h-8"
+          >
+            Prøv igen
+          </Button>
         </div>
       )}
 
       {/* Loading state for mobile */}
-      {isLocalSubmitting && (
+      {isSubmitting && (
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <span>Tjekker ord...</span>

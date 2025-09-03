@@ -366,6 +366,14 @@ export type Database = {
         Args: { room_id: string }
         Returns: boolean
       }
+      join_room_with_lives: {
+        Args: { p_name: string; p_room_id: string; p_user_id: string }
+        Returns: string
+      }
+      start_game_reset_lives: {
+        Args: { p_room_id: string }
+        Returns: undefined
+      }
       submit_word: {
         Args: {
           p_player_id: string

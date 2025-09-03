@@ -164,7 +164,21 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
     }
 
     try {
-      // For now, we'll handle game starting in the frontend until we create the start_game function
+      // Reset all players to 3 lives when starting a new game
+      const { error: resetError } = await supabase.rpc('start_game_reset_lives', {
+        p_room_id: room?.id || roomLocator
+      });
+      
+      if (resetError) {
+        console.error('Error resetting player lives:', resetError);
+        toast({
+          title: "Fejl",
+          description: "Kunne ikke starte spillet - prøv igen",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
       console.log('Starting game for room:', room?.id || roomLocator);
       
       // Track game started for registered users
@@ -174,7 +188,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
 
       toast({
         title: "Spil startet! 🚀",
-        description: "Spillet er nu i gang",
+        description: "Alle spillere har nu 3 liv",
       });
 
       return true;

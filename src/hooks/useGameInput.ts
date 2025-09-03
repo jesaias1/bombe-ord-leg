@@ -23,10 +23,13 @@ export const useGameInput = ({
   const [isGameOver, setIsGameOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Determine if current user can input
+  // Who is up now?
   const currentPlayer = players.find(p => p.id === game?.current_player_id);
+  const isMyTurn = !!currentPlayer && currentPlayer.user_id === currentUserId && game?.status === 'playing';
   const isCurrentUser = currentPlayer?.user_id === currentUserId;
-  const canInput = game?.status === 'playing' && isCurrentUser && !isSubmitting && !isGameOver;
+  
+  // Only submission state disables input - NOT helper/suggestion loading
+  const canInput = isMyTurn && !isSubmitting && !isGameOver;
 
   // Focus input when it becomes the user's turn
   useEffect(() => {
@@ -96,5 +99,6 @@ export const useGameInput = ({
     handleKeyDown,
     isGameOver,
     isSubmitting,
+    focusInput: () => inputRef.current?.focus?.(),
   };
 };
