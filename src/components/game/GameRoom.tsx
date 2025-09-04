@@ -140,28 +140,27 @@ export const GameRoom = () => {
         return displayName;
       };
       
-      // Force immediate player addition for mobile
+      // Use the improved join function to ensure proper lives initialization
       const addPlayer = async () => {
         const displayName = await getDisplayName();
         
-        const { error } = await supabase
-          .from('players')
-          .insert({
-            room_id: room.id,
-            user_id: user.id,
-            name: displayName,
-            lives: 3,
-            is_alive: true
-          });
+        const { data: playerId, error } = await supabase.rpc('join_room_with_lives', {
+          p_room_id: room.id,
+          p_user_id: user.id,
+          p_name: displayName
+        });
           
         if (error) {
           console.error('Error adding player:', error);
+          toast({
+            title: "Fejl",
+            description: "Kunne ikke tilslutte til rummet",
+            variant: "destructive",
+          });
         } else {
-          console.log('Player added successfully');
-          // Force refresh of players query
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
+          console.log('Player added/updated successfully with ID:', playerId);
+          // Refresh player data
+          queryClient.invalidateQueries({ queryKey: ['players', room.id, isGuest, user.id] });
         }
       };
       
@@ -269,6 +268,21 @@ export const GameRoom = () => {
           currentUserId={user?.id}
           canStartGame={canStartGame}
           onStartGame={async () => {
+            // First, reset all player lives to 3 using our improved function
+            const { error: resetError } = await supabase.rpc('start_game_reset_lives', {
+              p_room_id: room.id
+            });
+            
+            if (resetError) {
+              console.error('Error resetting player lives:', resetError);
+              toast({
+                title: "Fejl ved start",
+                description: "Kunne ikke nulstille spillerliv - prøv igen",
+                variant: "destructive",
+              });
+              return false;
+            }
+
             // Get a random syllable for the initial game state
             let initialSyllable = await selectRandomSyllable(room!.difficulty);
             
@@ -329,8 +343,15 @@ export const GameRoom = () => {
               return false;
             }
 
-            // Refresh game query to get the new game
+            // Refresh both game and player queries to ensure proper state
             queryClient.invalidateQueries({ queryKey: ['game', room.id] });
+            queryClient.invalidateQueries({ queryKey: ['players', room.id, isGuest, user.id] });
+            
+            toast({
+              title: "Spil startet! 🚀",
+              description: "Alle spillere har nu 3 liv",
+            });
+            
             return true;
           }}
           isLoading={playersLoading}
