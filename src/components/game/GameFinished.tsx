@@ -31,7 +31,7 @@ export const GameFinished = ({
   room,
   roomLocator
 }: GameFinishedProps) => {
-  const { trackGameCompletion } = useGameActions(room, roomLocator, players);
+  const { trackGameCompletion, startNewGame } = useGameActions(room, roomLocator, players, game);
   
   // Track game completion when component mounts
   React.useEffect(() => {
@@ -53,44 +53,7 @@ export const GameFinished = ({
     trackGameCompletion(userWon, Math.max(1, playtimeSeconds)); // Minimum 1 second
   }, [currentUserId, players, alivePlayers, isSinglePlayer, game.created_at, trackGameCompletion]);
   const handleRestartGame = async () => {
-    if (!game.room_id) return;
-
-    try {
-      // Reset all players to alive with 3 lives
-      await supabase
-        .from('players')
-        .update({
-          lives: 3,
-          is_alive: true
-        })
-        .eq('room_id', game.room_id);
-
-      // Create a new game for this room with random syllable
-      const initialSyllable = 'ka'; // Will be replaced by proper syllable selection
-      const timerDuration = Math.floor(Math.random() * 11) + 10;
-      const timerEndTime = new Date(Date.now() + timerDuration * 1000);
-
-      const { error } = await supabase
-        .from('games')
-        .insert({
-          room_id: game.room_id,
-          status: 'playing',
-          current_player_id: players[0]?.id,
-          current_syllable: initialSyllable,
-          timer_duration: timerDuration,
-          timer_end_time: timerEndTime.toISOString(),
-          used_words: [],
-          correct_words: [],
-          incorrect_words: [],
-          round_number: 1
-        });
-      
-      if (error) {
-        console.error('Error restarting game:', error);
-      }
-    } catch (error) {
-      console.error('Error restarting game:', error);
-    }
+    await startNewGame();
   };
 
   return (

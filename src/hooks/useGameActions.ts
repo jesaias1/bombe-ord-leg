@@ -214,9 +214,71 @@ export const useGameActions = (
     }
   }, [isGuest, incrementGamesWon, addPlaytime]);
 
+  const startNewGame = useCallback(async (): Promise<boolean> => {
+    if (!user) {
+      console.error('No user logged in');
+      return false;
+    }
+
+    try {
+      console.log('Starting new game for room:', room?.id || roomLocator);
+      
+      const { data, error } = await supabase.rpc('start_new_game', {
+        p_room_id: room?.id || roomLocator
+      });
+      
+      if (error) {
+        console.error('Error starting new game:', error);
+        toast({
+          title: "Fejl",
+          description: "Kunne ikke starte nyt spil - prøv igen",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      if (data) {
+        // Type assertion for the data response
+        const responseData = data as {
+          success: boolean;
+          next_player?: string;
+          next_syllable?: string;
+          game_id?: string;
+          error?: string;
+        };
+        
+        if (responseData.success) {
+          toast({
+            title: "Nyt spil startet! 🚀",
+            description: `${responseData.next_player} starter med stavelsen "${responseData.next_syllable}"`,
+          });
+          
+          // Invalidate queries to refresh game state
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
+            queryClient.invalidateQueries({ queryKey: ['players', room?.id] }),
+          ]);
+          
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (err) {
+      console.error('Unexpected error starting new game:', err);
+      toast({
+        title: "Fejl",
+        description: "Uventet fejl ved start af nyt spil",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [user, room, roomLocator, toast, queryClient]);
+
   return {
     submitWord,
     startGame,
+    startNewGame,
     leaveRoom,
     trackGameCompletion,
     isSubmitting,
