@@ -97,6 +97,12 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
           });
 
           setCurrentWord('');
+          
+          // Force refresh after successful word to ensure game state syncs
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+          
           return true;
         } else {
           toast({
