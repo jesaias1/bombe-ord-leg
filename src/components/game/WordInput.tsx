@@ -100,7 +100,7 @@ export const WordInput: React.FC<WordInputProps> = ({
     onKeyDown?.(e);
     if (e.key === 'Enter') {
       e.preventDefault();
-      onSubmit(word.trim()); // call the provided submit function
+      handleSubmit(); // use internal handleSubmit for validation
     }
   };
 
