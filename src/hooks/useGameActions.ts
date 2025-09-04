@@ -25,65 +25,37 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
   } = useUserStats();
 
   const submitWord = useCallback(async (word: string): Promise<boolean> => {
-    if (!user) {
-      console.error('No user logged in');
-      return false;
-    }
+    if (!user) return false;
 
-    // Guard: only my turn
+    // only my turn
     const me = players.find(p => p.user_id === user.id) ?? players.find(p => p.is_me);
-    if (!me?.id || game?.current_player_id !== me.id) {
-      return false;
-    }
+    if (!me?.id || game?.current_player_id !== me.id) return false;
 
-    // Guard: no double submit in the same render-frame
-    if (isSubmittingRef.current) {
-      return false;
-    }
-    
+    // prevent double-submit
+    if (isSubmittingRef.current) return false;
     isSubmittingRef.current = true;
     setIsSubmitting(true);
 
-    const wordStartTime = Date.now();
-
     try {
       const payload = {
-        p_room_id: room?.id || roomLocator,       // TEXT room code
-        p_player_id: me.id,                        // Player UUID
+        p_room_id: room?.id || roomLocator,   // TEXT room code or UUID string
+        p_player_id: me.id,                   // Player UUID
         p_word: word.trim().toLowerCase(),
-        p_turn_seq: (game as any)?.turn_seq ?? 0           // Send current turn
+        p_turn_seq: (game as any)?.turn_seq ?? 0       // atomic per-turn submit
       };
-      
-      console.log('🚀 RPC submit_word payload:', payload);
 
       const { data, error } = await supabase.rpc('submit_word', payload);
 
       if (error) {
-        console.error('RPC Error:', error);
-        
-        // Ignore expected idempotency/stale cases (no scary toast)
-        if (error.message?.toLowerCase().includes('stale') ||
-            error.message?.toLowerCase().includes('turn already advanced')) {
-          return false;
-        }
-        
         toast({
           title: "Ugyldigt ord",
           description: error.message || "Kunne ikke indsende ordet",
           variant: "destructive",
         });
-        
-        // Update streak for wrong answer (only for registered users)
-        if (!isGuest) {
-          updateStreak(false);
-        }
-        
-        return false;
+        return false; // stays same turn; NO HP change
       }
 
       if (data) {
-        console.log('Word submission response:', data);
-        
         // Type assertion for the data response
         const responseData = data as {
           success: boolean;
@@ -100,14 +72,10 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
         }
         
         if (responseData.success) {
-          // Valid word - clear input, advance turn, show success
-          const wordTime = Date.now() - wordStartTime;
-          
           // Track stats for registered users only
           if (!isGuest) {
             incrementWordsGuessed();
             updateStreak(true);
-            updateFastestWordTime(wordTime);
           }
 
           toast({
@@ -115,11 +83,9 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
             description: `"${responseData.word_accepted}" blev accepteret. Næste spiller: ${responseData.next_player}`,
           });
 
-          // Clear the current word after successful submission
           setCurrentWord('');
           return true;
         } else {
-          // Invalid word - show error but don't clear input
           toast({
             title: "Ugyldigt ord",
             description: responseData.error || 'Ordet blev ikke accepteret - prøv igen!',
@@ -136,26 +102,18 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
       }
 
       return false;
-    } catch (err) {
-      console.error('Unexpected error submitting word:', err);
-      
+    } catch {
       toast({
         title: "Fejl",
         description: "Uventet fejl – prøv igen",
         variant: "destructive",
       });
-      
-      // Update streak for wrong answer (only for registered users)
-      if (!isGuest) {
-        updateStreak(false);
-      }
-      
       return false;
     } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);          // Always unlocks input
+      isSubmittingRef.current = false; // ALWAYS unlock
+      setIsSubmitting(false);
     }
-  }, [user, room, roomLocator, players, game, toast, isGuest, incrementWordsGuessed, updateStreak, updateFastestWordTime]);
+  }, [user, players, game?.current_player_id, game?.turn_seq, room?.id, roomLocator, setCurrentWord, toast, isGuest, incrementWordsGuessed, updateStreak]);
 
   const startGame = useCallback(async () => {
     if (!user) {
