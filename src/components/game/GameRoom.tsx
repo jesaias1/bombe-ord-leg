@@ -202,7 +202,7 @@ export const GameRoom = () => {
   });
 
   // Initialize game actions hook with roomLocator from URL
-  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players);
+  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game);
 
   // Initialize timer handler with roomLocator
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomLocator, undefined, user);
