@@ -165,7 +165,6 @@ export const GamePlaying = ({
             isSubmitting={gameInput.isSubmitting}
             currentWord={gameInput.currentWord}
             onWordChange={gameInput.setCurrentWord}
-            onKeyDown={gameInput.handleKeyDown}
             inputRef={gameInput.inputRef}
           />
         </div>
