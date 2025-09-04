@@ -197,16 +197,36 @@ export const GameRoom = () => {
   const { cleanup: cleanupSubscriptions } = useGameSubscriptions({
     roomId: room?.id,
     gameId: game?.id,
-    onGameUpdate: () => queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
-    onPlayersUpdate: () => queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] }),
+    onGameUpdate: () => {
+      console.log('🔄 Game updated via realtime, invalidating queries...');
+      queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
+    },
+    onPlayersUpdate: () => {
+      console.log('🔄 Players updated via realtime, invalidating queries...');
+      queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] });
+    },
   });
 
   // Initialize game actions hook with roomLocator from URL
   const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game);
 
-  // Initialize timer handler with roomLocator
+  // Initialize timer handler with roomLocator and force refresh on timeout
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomLocator, undefined, user);
-  const timeLeft = useGameTimer(game, timerHandlerExpired);
+  
+  // Wrap timer handler to force state refresh after timeout
+  const handleTimerExpiredWithRefresh = async () => {
+    console.log('⏰ Timer expired, calling handler...');
+    await timerHandlerExpired();
+    
+    // Force immediate refresh of game state after timeout
+    setTimeout(() => {
+      console.log('🔄 Forcing game state refresh after timeout...');
+      queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
+      queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] });
+    }, 500); // Small delay to allow server processing
+  };
+  
+  const timeLeft = useGameTimer(game, handleTimerExpiredWithRefresh);
 
   // Use the game input hook for proper input management
   const gameInput = useGameInput({
