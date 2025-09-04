@@ -167,6 +167,10 @@ export const GamePlaying = ({
             onWordChange={gameInput.setCurrentWord}
             inputRef={gameInput.inputRef}
           />
+          {/* Debug info */}
+          <div className="mt-2 text-xs text-gray-400 text-center">
+            Debug: canInput={gameInput.canInput ? 'YES' : 'NO'}, disabled={!gameInput.canInput ? 'YES' : 'NO'}, syllable="{game.current_syllable}"
+          </div>
         </div>
       </div>
 

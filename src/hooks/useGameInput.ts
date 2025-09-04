@@ -70,10 +70,17 @@ export const useGameInput = ({
   };
 
   const handleWordSubmit = async (word: string): Promise<boolean> => {
-    if (!canInput || !word.trim()) return false;
+    console.log('useGameInput: handleWordSubmit called with word:', word);
+    console.log('useGameInput: canInput=', canInput, 'word.trim()=', word.trim());
+    if (!canInput || !word.trim()) {
+      console.log('useGameInput: Submission blocked - canInput:', canInput, 'word empty:', !word.trim());
+      return false;
+    }
 
+    console.log('useGameInput: Calling onWordSubmit from useGameActions');
     const success = await onWordSubmit(word.trim());
     
+    console.log('useGameInput: onWordSubmit returned:', success);
     if (success) {
       // Clear input on successful submission
       setCurrentWord('');
