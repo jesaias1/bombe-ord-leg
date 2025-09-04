@@ -374,6 +374,10 @@ export type Database = {
         Args: { p_room_id: string }
         Returns: undefined
       }
+      start_new_game: {
+        Args: { p_room_id: string }
+        Returns: Json
+      }
       submit_word: {
         Args: {
           p_player_id: string
