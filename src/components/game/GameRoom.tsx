@@ -75,7 +75,7 @@ export const GameRoom = () => {
       return data as Game | null;
     },
     enabled: !!room?.id,
-    refetchInterval: 1000,
+    // Remove aggressive polling - rely on real-time subscriptions instead
   });
 
   const { data: players = [], isLoading: playersLoading } = useQuery({
@@ -92,7 +92,7 @@ export const GameRoom = () => {
       return sorted as Player[];
     },
     enabled: !!room?.id,
-    refetchInterval: 1000,
+    // Remove aggressive polling - rely on real-time subscriptions instead
   });
 
   // Ensure current user is added as a player when they enter the room

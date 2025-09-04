@@ -25,16 +25,28 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
   } = useUserStats();
 
   const submitWord = useCallback(async (word: string): Promise<boolean> => {
-    if (!user) return false;
+    console.log('useGameActions: submitWord called with word:', word);
+    if (!user) {
+      console.log('useGameActions: No user found, submission blocked');
+      return false;
+    }
 
     // only my turn
     const me = players.find(p => p.user_id === user.id) ?? players.find(p => p.is_me);
-    if (!me?.id || game?.current_player_id !== me.id) return false;
+    if (!me?.id || game?.current_player_id !== me.id) {
+      console.log('useGameActions: Not my turn, submission blocked. Current player:', game?.current_player_id, 'My player ID:', me?.id);
+      return false;
+    }
 
     // prevent double-submit
-    if (isSubmittingRef.current) return false;
+    if (isSubmittingRef.current) {
+      console.log('useGameActions: Already submitting, blocked');
+      return false;
+    }
     isSubmittingRef.current = true;
     setIsSubmitting(true);
+
+    console.log('useGameActions: Proceeding with word submission to backend');
 
     try {
       const payload = {
@@ -44,6 +56,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
         p_turn_seq: (game as any)?.turn_seq ?? 0       // atomic per-turn submit
       };
 
+      console.log('useGameActions: Submitting to backend with payload:', payload);
       const { data, error } = await supabase.rpc('submit_word', payload);
 
       if (error) {

@@ -61,21 +61,28 @@ export const WordInput: React.FC<WordInputProps> = ({
   }, [isSubmitting]);
 
   const handleSubmit = async () => {
-    if (!word.trim() || disabled) return;
+    console.log('WordInput: handleSubmit called with word:', word, 'disabled:', disabled);
+    if (!word.trim() || disabled) {
+      console.log('WordInput: Submit blocked - word empty or disabled');
+      return;
+    }
 
     // Clear any previous errors
     setError('');
 
     // Validate word contains syllable
     if (!word.toLowerCase().includes(currentSyllable.toLowerCase())) {
+      console.log('WordInput: Word validation failed - does not contain syllable');
       setError(`Ordet skal indeholde "${currentSyllable}"`);
       return;
     }
 
+    console.log('WordInput: Submitting word to parent handler');
     setIsLocalSubmitting(true);
     
     try {
       const success = await onSubmit(word.trim());
+      console.log('WordInput: Submission result:', success);
       if (success) {
         setWord('');
         onWordChange?.('');
@@ -100,8 +107,10 @@ export const WordInput: React.FC<WordInputProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    console.log('WordInput: Key pressed:', e.key, 'canSubmit:', !disabled && word.trim());
     if (e.key === 'Enter') {
       e.preventDefault();
+      console.log('WordInput: Enter key pressed, attempting submission');
       handleSubmit(); // use internal handleSubmit for validation
       return;
     }

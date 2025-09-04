@@ -29,6 +29,8 @@ export const useGameInput = ({
 
   // Only actual submission disables typing (no helper/spinner states)
   const canInput = isMyTurn && !isSubmitting;
+  
+  console.log('useGameInput: canInput=', canInput, 'isMyTurn=', isMyTurn, 'isSubmitting=', isSubmitting, 'currentPlayer=', currentPlayer?.name);
 
   // Focus input when it becomes the user's turn (only on turn change, not every render)
   useEffect(() => {
