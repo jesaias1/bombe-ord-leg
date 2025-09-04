@@ -33,10 +33,13 @@ export const WordInput: React.FC<WordInputProps> = ({
   const internalInputRef = useRef<HTMLInputElement>(null);
   const finalInputRef = inputRef || internalInputRef;
 
-  // Focus input when component mounts or becomes enabled
+  // Focus input when component mounts or becomes enabled (prevent constant focus during re-renders)
   useEffect(() => {
-    if (!disabled && finalInputRef.current) {
-      finalInputRef.current.focus();
+    if (!disabled && finalInputRef.current && !finalInputRef.current.matches(':focus')) {
+      const timer = setTimeout(() => {
+        finalInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [disabled]);
 

@@ -30,16 +30,18 @@ export const useGameInput = ({
   // Only actual submission disables typing (no helper/spinner states)
   const canInput = isMyTurn && !isSubmitting;
 
-  // Focus input when it becomes the user's turn
+  // Focus input when it becomes the user's turn (only on turn change, not every render)
   useEffect(() => {
-    if (canInput && inputRef.current) {
-      // Small delay to ensure DOM is ready
+    if (canInput && inputRef.current && !inputRef.current.matches(':focus')) {
+      // Small delay to ensure DOM is ready and avoid focus conflicts
       const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
+        if (inputRef.current && !inputRef.current.matches(':focus')) {
+          inputRef.current.focus();
+        }
+      }, 200);
       return () => clearTimeout(timer);
     }
-  }, [canInput, game?.current_player_id]);
+  }, [game?.current_player_id]); // Only focus on turn changes, not on canInput changes
 
   // Reset game state when game changes
   useEffect(() => {
