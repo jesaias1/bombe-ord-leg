@@ -97,11 +97,12 @@ export const WordInput: React.FC<WordInputProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    onKeyDown?.(e);
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSubmit(); // use internal handleSubmit for validation
+      return;
     }
+    onKeyDown?.(e);
   };
 
   return (
