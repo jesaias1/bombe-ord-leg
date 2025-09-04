@@ -198,12 +198,12 @@ export const GameRoom = () => {
     roomId: room?.id,
     gameId: game?.id,
     onGameUpdate: () => {
-      console.log('🔄 Game updated via realtime, invalidating queries...');
+      console.log('🔄 Realtime: game update -> invalidate');
       queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
     },
     onPlayersUpdate: () => {
-      console.log('🔄 Players updated via realtime, invalidating queries...');
-      queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] });
+      console.log('🔄 Realtime: players update -> invalidate');
+      queryClient.invalidateQueries({ queryKey: ['players', room?.id] });
     },
   });
 
@@ -215,15 +215,12 @@ export const GameRoom = () => {
   
   // Wrap timer handler to force state refresh after timeout
   const handleTimerExpiredWithRefresh = async () => {
-    console.log('⏰ Timer expired, calling handler...');
     await timerHandlerExpired();
-    
-    // Force immediate refresh of game state after timeout
-    setTimeout(() => {
-      console.log('🔄 Forcing game state refresh after timeout...');
-      queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
-      queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] });
-    }, 500); // Small delay to allow server processing
+    // Ensure client sees the new current_player/timer/syllable
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['players', room?.id] }),
+    ]);
   };
   
   const timeLeft = useGameTimer(game, handleTimerExpiredWithRefresh);

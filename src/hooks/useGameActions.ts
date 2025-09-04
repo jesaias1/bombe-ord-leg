@@ -1,5 +1,6 @@
 
 import { useCallback, useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +10,13 @@ import { Tables } from '@/integrations/supabase/types';
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
 
-export const useGameActions = (room: Room | null, roomLocator?: string, players: any[] = [], game: Game | null = null) => {
+export const useGameActions = (
+  room: Room | null,
+  roomLocator?: string,
+  players: any[] = [],
+  game?: Tables<'games'>
+) => {
+  const queryClient = useQueryClient();
   const { user, isGuest } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,10 +105,11 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
 
           setCurrentWord('');
           
-          // Force refresh after successful word to ensure game state syncs
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
+          // Refresh game + players immediately so next turn/syllable render without reload
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
+            queryClient.invalidateQueries({ queryKey: ['players', room?.id] }),
+          ]);
           
           return true;
         } else {
@@ -132,7 +140,7 @@ export const useGameActions = (room: Room | null, roomLocator?: string, players:
       isSubmittingRef.current = false; // ALWAYS unlock
       setIsSubmitting(false);
     }
-  }, [user, players, game?.current_player_id, game?.turn_seq, room?.id, roomLocator, setCurrentWord, toast, isGuest, incrementWordsGuessed, updateStreak]);
+  }, [user, players, game?.current_player_id, game?.turn_seq, room?.id, roomLocator, setCurrentWord, toast, isGuest, incrementWordsGuessed, updateStreak, queryClient]);
 
   const startGame = useCallback(async () => {
     if (!user) {
