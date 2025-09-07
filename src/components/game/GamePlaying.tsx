@@ -54,17 +54,25 @@ export const GamePlaying = ({
 
   return (
     <div className="min-h-screen bg-gray-800 relative overflow-hidden">
-      {/* Game Area - more compact */}
+      {/* Game Area - responsive layout to prevent overlap */}
       <div className="absolute inset-0 flex items-center justify-center">
         
-        {/* Central Bomb Timer */}
-        <div className="relative z-10">
-          <BombTimer
-            timeLeft={timeLeft}
-            totalTime={game.timer_duration || 15}
-            isActive={game.status === 'playing'}
-            syllable={game.current_syllable || ''}
-          />
+        {/* Responsive wrapper for timer - prevents overlap with player hearts */}
+        <div className="relative flex w-full flex-col items-center justify-center">
+          {/* Timer wrapper with size constraints */}
+          <div className="relative z-10">
+            <div className="mx-auto flex items-center justify-center">
+              {/* Size clamps prevent the circle from growing into player hearts */}
+              <div className="relative w-[clamp(120px,28vw,200px)] h-[clamp(120px,28vw,200px)]">
+                <BombTimer
+                  timeLeft={timeLeft}
+                  totalTime={game.timer_duration || 15}
+                  isActive={game.status === 'playing'}
+                  syllable={game.current_syllable || ''}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Players positioned around the bomb (closer) */}

@@ -185,7 +185,7 @@ export const GameRoom = () => {
     queryFn: async () => {
       if (!user || isGuest || !room?.id) return false;
       const { data, error } = await supabase.rpc('is_room_creator', {
-        room_id: room.id
+        p_room_id: room.id
       });
       if (error) return false;
       return data || false;
