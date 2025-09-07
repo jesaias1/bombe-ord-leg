@@ -1,17 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"; 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
 
-export function ReadyToggle({ 
-  roomId, 
-  playerId, 
-  ready 
-}: { 
-  roomId: string; 
-  playerId: string; 
-  ready: boolean; 
-}) {
+interface ReadyToggleProps {
+  roomId: string;
+  userId: string;
+  ready: boolean;
+}
+
+export function ReadyToggle({ roomId, userId, ready }: ReadyToggleProps) {
   const [isToggling, setIsToggling] = useState(false);
   const { toast } = useToast();
 
@@ -20,14 +19,14 @@ export function ReadyToggle({
     
     setIsToggling(true);
     try {
-      const { error } = await supabase.rpc('set_player_ready', { 
+      const { data, error } = await supabase.rpc('set_player_ready', { 
         p_room_id: roomId, 
-        p_player_id: playerId, 
+        p_user_id: userId, 
         p_ready: !ready 
       });
       
-      if (error) {
-        console.error('Error toggling ready state:', error);
+      if (error || !(data as any)?.success) {
+        console.error('Error toggling ready state:', error || data);
         toast({
           title: "Fejl",
           description: "Kunne ikke ændre klar-status",
@@ -36,6 +35,11 @@ export function ReadyToggle({
       }
     } catch (error) {
       console.error('Error in toggle:', error);
+      toast({
+        title: "Fejl", 
+        description: "Kunne ikke ændre klar-status",
+        variant: "destructive",
+      });
     } finally {
       setIsToggling(false);
     }

@@ -121,6 +121,7 @@ export type Database = {
           lives: number
           name: string
           ready: boolean
+          ready_at: string | null
           room_id: string | null
           turn_order: number | null
           user_id: string | null
@@ -132,6 +133,7 @@ export type Database = {
           lives?: number
           name: string
           ready?: boolean
+          ready_at?: string | null
           room_id?: string | null
           turn_order?: number | null
           user_id?: string | null
@@ -143,6 +145,7 @@ export type Database = {
           lives?: number
           name?: string
           ready?: boolean
+          ready_at?: string | null
           room_id?: string | null
           turn_order?: number | null
           user_id?: string | null
@@ -330,6 +333,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_start_game: {
+        Args: { p_room_id: string }
+        Returns: boolean
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -387,9 +394,13 @@ export type Database = {
         Args: { p_name: string; p_room_id: string; p_user_id: string }
         Returns: string
       }
-      set_player_ready: {
-        Args: { p_player_id: string; p_ready: boolean; p_room_id: string }
+      reset_players_ready: {
+        Args: { p_room_id: string }
         Returns: undefined
+      }
+      set_player_ready: {
+        Args: { p_ready: boolean; p_room_id: string; p_user_id: string }
+        Returns: Json
       }
       start_game_reset_lives: {
         Args: { p_room_id: string }

@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tables } from '@/integrations/supabase/types';
 import { ReadyToggle } from './ReadyToggle';
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 type Player = Tables<'players'>;
 type Room = Tables<'rooms'>;
@@ -35,8 +36,11 @@ export const GameWaiting = ({
   
   const currentPlayer = players.find(p => p.user_id === currentUserId);
   const isMultiplayer = !isSinglePlayer;
-  const allReady = players.every(p => p.ready);
-  const canHostStart = isRoomCreator && (isSinglePlayer || (players.length >= 2 && allReady));
+  
+  // For multiplayer, only non-host players need to be ready
+  const nonHostPlayers = players.filter(p => p.user_id !== room.creator_id);
+  const allNonHostReady = nonHostPlayers.length === 0 || nonHostPlayers.every(p => p.ready);
+  const canHostStart = isRoomCreator && (isSinglePlayer || (players.length >= 2 && allNonHostReady));
 
   const handleStartClick = async () => {
     // Prevent double clicks
@@ -50,6 +54,15 @@ export const GameWaiting = ({
       setIsRocketFlying(false);
       setShowExplosion(false);
       return;
+    }
+
+    // Reset all players' ready state after successful start (multiplayer only)
+    if (isMultiplayer) {
+      try {
+        await supabase.rpc('reset_players_ready', { p_room_id: room.id });
+      } catch (error) {
+        console.error('Error resetting ready states:', error);
+      }
     }
 
     // Success animations
@@ -114,7 +127,7 @@ export const GameWaiting = ({
           <div className="mt-4 text-center">
             <ReadyToggle 
               roomId={room.id} 
-              playerId={currentPlayer.id} 
+              userId={currentPlayer.user_id} 
               ready={currentPlayer.ready || false} 
             />
           </div>
@@ -124,11 +137,11 @@ export const GameWaiting = ({
         {isMultiplayer && isRoomCreator && (
           <div className="mt-4 text-center">
             <div className="text-sm text-gray-600">
-              {allReady ? (
+              {allNonHostReady ? (
                 <span className="text-green-700 font-medium">✅ Alle spillere er klar!</span>
               ) : (
                 <span className="text-yellow-700 font-medium">
-                  ⏳ Venter på at {players.filter(p => !p.ready).length} spiller(e) bliver klar
+                  ⏳ Venter på at {nonHostPlayers.filter(p => !p.ready).length} spiller(e) bliver klar
                 </span>
               )}
             </div>
@@ -163,7 +176,7 @@ export const GameWaiting = ({
       )}
       
       {/* Show ready requirements for host if not all ready */}
-      {isMultiplayer && isRoomCreator && !allReady && (
+      {isMultiplayer && isRoomCreator && !allNonHostReady && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 animate-fade-in mt-6">
           <p className="text-yellow-800 font-medium">
             ⚠️ Alle spillere skal være klar før spillet kan startes
