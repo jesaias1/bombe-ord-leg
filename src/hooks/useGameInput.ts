@@ -25,7 +25,13 @@ export const useGameInput = ({
 
   // Who is up now?
   const currentPlayer = players.find(p => p.id === game?.current_player_id);
-  const isMyTurn = !!currentPlayer && currentPlayer.user_id === currentUserId && game?.status === 'playing';
+  const currentUserPlayer = players.find(p => p.user_id === currentUserId);
+  
+  // Check if it's my turn AND I'm alive (spectator mode for eliminated players)
+  const isMyTurn = !!currentPlayer && 
+                   currentPlayer.user_id === currentUserId && 
+                   game?.status === 'playing' &&
+                   !!currentUserPlayer?.is_alive;
 
   // Only actual submission disables typing (no helper/spinner states)
   const canInput = isMyTurn && !isSubmitting;

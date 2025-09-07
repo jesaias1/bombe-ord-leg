@@ -159,24 +159,40 @@ export const GamePlaying = ({
 
       {/* Bottom Status and Input */}
       <div className="absolute bottom-0 left-0 right-0 bg-gray-900 p-4">
-        {/* Spectator mode indicator */}
+        {/* Game status and spectator mode indicator */}
         {(() => {
           const currentUserPlayer = players.find(p => p.user_id === currentUserId);
           const isSpectating = currentUserPlayer && !currentUserPlayer.is_alive;
+          const isCurrentUserTurn = isCurrentUser && currentUserPlayer?.is_alive;
           
-          return isSpectating ? (
-            <div className="text-center mb-4">
-              <div className="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block">
-                👀 Du er ude - du ser med som tilskuer
+          if (isSpectating) {
+            return (
+              <div className="text-center mb-4">
+                <div className="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
+                  👀 Du er ude - du ser med som tilskuer
+                </div>
+                <div className="mt-2 text-gray-400 text-sm">
+                  {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center mb-4">
-              <span className="text-gray-300">
-                {currentPlayer ? `${currentPlayer.name} is up.` : 'Waiting...'}
-              </span>
-            </div>
-          );
+            );
+          } else if (isCurrentUserTurn) {
+            return (
+              <div className="text-center mb-4">
+                <div className="bg-yellow-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
+                  🎯 Din tur! Skriv et ord med "{game.current_syllable}"
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <div className="text-center mb-4">
+                <div className="text-gray-300">
+                  {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+                </div>
+              </div>
+            );
+          }
         })()}
         
         <div className="max-w-md mx-auto">

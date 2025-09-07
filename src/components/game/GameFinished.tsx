@@ -64,16 +64,23 @@ export const GameFinished = ({
         </div>
         
         <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          {isSinglePlayer ? "Træning afsluttet!" : "Spillet er slut!"}
+          {(() => {
+            if (isSinglePlayer) return "Træning afsluttet!";
+            if (game.winner_player_id) return "Spillet er slut!";
+            return "Spillet er slut!";
+          })()}
         </h2>
         
-{/* Winner display - use winner_player_id from database */}
+        {/* Winner display - use winner_player_id from database */}
         {game.winner_player_id && !isSinglePlayer && (() => {
           const winner = players.find(p => p.id === game.winner_player_id);
           return winner ? (
             <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-6 shadow-lg border border-yellow-300">
-              <p className="text-2xl font-bold text-orange-800">
-                🎉 {winner.name} vandt! 🏆 
+              <p className="text-3xl font-bold text-orange-800">
+                🎉 Vinder: {winner.name} 🏆 
+              </p>
+              <p className="text-lg text-orange-600 mt-2">
+                Tillykke! Du var den sidste overlevende!
               </p>
             </div>
           ) : null;
