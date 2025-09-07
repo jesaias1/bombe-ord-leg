@@ -56,6 +56,7 @@ export type Database = {
           turn_seq: number | null
           updated_at: string
           used_words: string[] | null
+          winner_player_id: string | null
         }
         Insert: {
           correct_words?: string[] | null
@@ -74,6 +75,7 @@ export type Database = {
           turn_seq?: number | null
           updated_at?: string
           used_words?: string[] | null
+          winner_player_id?: string | null
         }
         Update: {
           correct_words?: string[] | null
@@ -92,6 +94,7 @@ export type Database = {
           turn_seq?: number | null
           updated_at?: string
           used_words?: string[] | null
+          winner_player_id?: string | null
         }
         Relationships: [
           {
@@ -99,6 +102,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_winner_player_id_fkey"
+            columns: ["winner_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]

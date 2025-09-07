@@ -159,11 +159,25 @@ export const GamePlaying = ({
 
       {/* Bottom Status and Input */}
       <div className="absolute bottom-0 left-0 right-0 bg-gray-900 p-4">
-        <div className="text-center mb-4">
-          <span className="text-gray-300">
-            {currentPlayer ? `${currentPlayer.name} is up.` : 'Waiting...'}
-          </span>
-        </div>
+        {/* Spectator mode indicator */}
+        {(() => {
+          const currentUserPlayer = players.find(p => p.user_id === currentUserId);
+          const isSpectating = currentUserPlayer && !currentUserPlayer.is_alive;
+          
+          return isSpectating ? (
+            <div className="text-center mb-4">
+              <div className="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block">
+                👀 Du er ude - du ser med som tilskuer
+              </div>
+            </div>
+          ) : (
+            <div className="text-center mb-4">
+              <span className="text-gray-300">
+                {currentPlayer ? `${currentPlayer.name} is up.` : 'Waiting...'}
+              </span>
+            </div>
+          );
+        })()}
         
         <div className="max-w-md mx-auto">
           <WordInput

@@ -40,10 +40,10 @@ export const GameFinished = ({
     const currentPlayer = players.find(p => p.user_id === currentUserId);
     if (!currentPlayer) return;
     
-    // Calculate if the user won
+    // Calculate if the user won using winner_player_id for accurate detection
     const userWon = isSinglePlayer ? 
       currentPlayer.is_alive : // In single player, winning means being alive
-      alivePlayers.length === 1 && alivePlayers[0].user_id === currentUserId; // In multiplayer, winning means being the last one standing
+      game.winner_player_id === currentPlayer.id; // In multiplayer, check if user is the winner
     
     // Calculate playtime (rough estimate based on game creation to now)
     const gameStartTime = new Date(game.created_at).getTime();
@@ -51,7 +51,7 @@ export const GameFinished = ({
     const playtimeSeconds = Math.floor((gameEndTime - gameStartTime) / 1000);
     
     trackGameCompletion(userWon, Math.max(1, playtimeSeconds)); // Minimum 1 second
-  }, [currentUserId, players, alivePlayers, isSinglePlayer, game.created_at, trackGameCompletion]);
+  }, [currentUserId, players, game.winner_player_id, isSinglePlayer, game.created_at, trackGameCompletion]);
   const handleRestartGame = async () => {
     await startNewGame();
   };
@@ -67,13 +67,17 @@ export const GameFinished = ({
           {isSinglePlayer ? "Træning afsluttet!" : "Spillet er slut!"}
         </h2>
         
-        {alivePlayers.length === 1 && !isSinglePlayer && (
-          <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-6 shadow-lg border border-yellow-300">
-            <p className="text-2xl font-bold text-orange-800">
-              🎉 {alivePlayers[0].name} vandt! 🎉
-            </p>
-          </div>
-        )}
+{/* Winner display - use winner_player_id from database */}
+        {game.winner_player_id && !isSinglePlayer && (() => {
+          const winner = players.find(p => p.id === game.winner_player_id);
+          return winner ? (
+            <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-6 shadow-lg border border-yellow-300">
+              <p className="text-2xl font-bold text-orange-800">
+                🎉 {winner.name} vandt! 🏆 
+              </p>
+            </div>
+          ) : null;
+        })()}
         
         {isSinglePlayer && (
           <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-6 shadow-lg border border-blue-300">
