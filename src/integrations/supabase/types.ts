@@ -120,6 +120,7 @@ export type Database = {
           joined_at: string
           lives: number
           name: string
+          ready: boolean
           room_id: string | null
           turn_order: number | null
           user_id: string | null
@@ -130,6 +131,7 @@ export type Database = {
           joined_at?: string
           lives?: number
           name: string
+          ready?: boolean
           room_id?: string | null
           turn_order?: number | null
           user_id?: string | null
@@ -140,6 +142,7 @@ export type Database = {
           joined_at?: string
           lives?: number
           name?: string
+          ready?: boolean
           room_id?: string | null
           turn_order?: number | null
           user_id?: string | null
@@ -383,6 +386,10 @@ export type Database = {
       join_room_with_lives: {
         Args: { p_name: string; p_room_id: string; p_user_id: string }
         Returns: string
+      }
+      set_player_ready: {
+        Args: { p_player_id: string; p_ready: boolean; p_room_id: string }
+        Returns: undefined
       }
       start_game_reset_lives: {
         Args: { p_room_id: string }

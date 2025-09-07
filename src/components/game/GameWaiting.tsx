@@ -3,15 +3,19 @@ import { Button } from '@/components/ui/button';
 import { PlayerList } from './PlayerList';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tables } from '@/integrations/supabase/types';
+import { ReadyToggle } from './ReadyToggle';
 import { useState } from 'react';
 
 type Player = Tables<'players'>;
+type Room = Tables<'rooms'>;
 
 interface GameWaitingProps {
   isSinglePlayer: boolean;
   players: Player[];
   currentUserId?: string;
   canStartGame: boolean;
+  isRoomCreator: boolean;
+  room: Room;
   onStartGame: () => Promise<boolean>;
   isLoading?: boolean;
 }
@@ -21,11 +25,18 @@ export const GameWaiting = ({
   players, 
   currentUserId, 
   canStartGame, 
+  isRoomCreator,
+  room,
   onStartGame,
   isLoading = false
 }: GameWaitingProps) => {
   const [isRocketFlying, setIsRocketFlying] = useState(false);
   const [showExplosion, setShowExplosion] = useState(false);
+  
+  const currentPlayer = players.find(p => p.user_id === currentUserId);
+  const isMultiplayer = !isSinglePlayer;
+  const allReady = players.every(p => p.ready);
+  const canHostStart = isRoomCreator && (isSinglePlayer || (players.length >= 2 && allReady));
 
   const handleStartClick = async () => {
     // Prevent double clicks
@@ -96,10 +107,37 @@ export const GameWaiting = ({
       </div>
       
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-lg border border-blue-200 transform hover:scale-[1.02] transition-all duration-300">
-        <PlayerList players={players} currentUserId={currentUserId} />
+        <PlayerList players={players} currentUserId={currentUserId} showReady={isMultiplayer} />
+        
+        {/* Ready Toggle for non-host players in multiplayer */}
+        {isMultiplayer && currentPlayer && !isRoomCreator && (
+          <div className="mt-4 text-center">
+            <ReadyToggle 
+              roomId={room.id} 
+              playerId={currentPlayer.id} 
+              ready={currentPlayer.ready || false} 
+            />
+          </div>
+        )}
+        
+        {/* Ready Status Summary for Host */}
+        {isMultiplayer && isRoomCreator && (
+          <div className="mt-4 text-center">
+            <div className="text-sm text-gray-600">
+              {allReady ? (
+                <span className="text-green-700 font-medium">✅ Alle spillere er klar!</span>
+              ) : (
+                <span className="text-yellow-700 font-medium">
+                  ⏳ Venter på at {players.filter(p => !p.ready).length} spiller(e) bliver klar
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       
-      {canStartGame && (
+      {/* Host-only start button */}
+      {canHostStart && (
         <div className="space-y-4 pt-4">
           <Button 
             onClick={handleStartClick} 
@@ -115,10 +153,20 @@ export const GameWaiting = ({
         </div>
       )}
       
-      {!isSinglePlayer && !canStartGame && players.length > 0 && (
+      {/* Show waiting message for non-hosts */}
+      {isMultiplayer && !isRoomCreator && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 animate-fade-in mt-6">
+          <p className="text-blue-800 font-medium">
+            👑 Venter på at værten starter spillet...
+          </p>
+        </div>
+      )}
+      
+      {/* Show ready requirements for host if not all ready */}
+      {isMultiplayer && isRoomCreator && !allReady && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 animate-fade-in mt-6">
           <p className="text-yellow-800 font-medium">
-            Venter på flere spillere eller at værtsejeren starter spillet...
+            ⚠️ Alle spillere skal være klar før spillet kan startes
           </p>
         </div>
       )}

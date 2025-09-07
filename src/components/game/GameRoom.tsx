@@ -14,6 +14,7 @@ import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useGameSubscriptions } from '@/hooks/useGameSubscriptions';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useRoomRealtime } from '@/hooks/useRoomRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
 import { getRandomDanishSyllable } from '@/utils/danishSyllables';
@@ -193,6 +194,12 @@ export const GameRoom = () => {
     enabled: !!room?.id && !!user && !isGuest,
   });
 
+  // Setup realtime listeners for instant updates
+  useRoomRealtime(room?.id, () => {
+    queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
+    queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] });
+  });
+
   // Setup game subscriptions
   const { cleanup: cleanupSubscriptions } = useGameSubscriptions({
     roomId: room?.id,
@@ -284,78 +291,32 @@ export const GameRoom = () => {
           players={players}
           currentUserId={user?.id}
           canStartGame={canStartGame}
+          isRoomCreator={isRoomCreator}
+          room={room}
           onStartGame={async () => {
-            // First, reset all player lives to 3 using our improved function
-            const { error: resetError } = await supabase.rpc('start_game_reset_lives', {
+            // Use the improved start_new_game RPC that handles host validation and ready checks
+            const { data, error } = await supabase.rpc('start_new_game', {
               p_room_id: room.id
             });
             
-            if (resetError) {
-              console.error('Error resetting player lives:', resetError);
+            if (error) {
+              console.error('Error starting game:', error);
               toast({
                 title: "Fejl ved start",
-                description: "Kunne ikke nulstille spillerliv - prøv igen",
+                description: error.message,
                 variant: "destructive",
               });
               return false;
             }
 
-            // Get a random syllable for the initial game state
-            let initialSyllable = await selectRandomSyllable(room!.difficulty);
+            // Cast to expected response type
+            const response = data as { success?: boolean; error?: string; next_player?: string; next_syllable?: string } | null;
             
-            if (!initialSyllable) {
-              // Fallback to local list if DB has no syllables yet
-              initialSyllable = getRandomDanishSyllable();
+            if (!response?.success) {
               toast({
-                title: "Starter med fallback-stavelse",
-                description: `Databasen mangler stavelser – bruger "${initialSyllable}"`,
-              });
-            }
-
-            console.log('Starting game with syllable:', initialSyllable);
-            
-            const timerDuration = Math.floor(Math.random() * 11) + 10; // 10-20 seconds
-            const timerEndTime = new Date(Date.now() + timerDuration * 1000);
-
-            // Create a new game for this room
-            // Ensure we have a valid first player
-            if (!players || players.length === 0) {
-              console.error('No players found for game creation');
-              toast({
-                title: 'Kunne ikke starte spillet',
-                description: 'Der er ingen spillere i rummet',
-                variant: 'destructive',
-              });
-              return false;
-            }
-
-            const payload = {
-              room_id: room.id,
-              status: 'playing' as const,
-              current_player_id: players[0].id,
-              current_syllable: initialSyllable,
-              timer_duration: timerDuration,
-              timer_end_time: timerEndTime.toISOString(),
-              round_number: 1,
-              used_words: [],
-              correct_words: [],
-              incorrect_words: []
-            };
-
-            console.log('Creating game with payload:', payload);
-
-            const { data, error } = await supabase
-              .from('games')
-              .insert(payload)
-              .select()
-              .single();
-            
-            if (error) {
-              console.error('Error starting game:', error);
-              toast({
-                title: 'Kunne ikke starte spillet',
-                description: error.message,
-                variant: 'destructive',
+                title: "Kunne ikke starte spillet",
+                description: response?.error || "Ukendt fejl",
+                variant: "destructive",
               });
               return false;
             }
@@ -366,7 +327,7 @@ export const GameRoom = () => {
             
             toast({
               title: "Spil startet! 🚀",
-              description: "Alle spillere har nu 3 liv",
+              description: `${response.next_player} starter med "${response.next_syllable}"`,
             });
             
             return true;

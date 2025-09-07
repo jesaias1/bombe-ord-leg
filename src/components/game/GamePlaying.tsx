@@ -157,8 +157,11 @@ export const GamePlaying = ({
         )}
       </div>
 
-      {/* Bottom Status and Input */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-900 p-4">
+      {/* Bottom spacer to prevent avatars from being hidden by input on small screens */}
+      <div className="h-24 md:h-0" />
+
+      {/* Bottom Status and Input - sticky positioned */}
+      <div className="sticky bottom-0 left-0 right-0 z-40 pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4">
         {/* Game status and spectator mode indicator */}
         {(() => {
           const currentUserPlayer = players.find(p => p.user_id === currentUserId);
