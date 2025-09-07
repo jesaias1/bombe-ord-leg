@@ -363,7 +363,11 @@ export type Database = {
         Returns: boolean
       }
       is_room_creator: {
-        Args: { room_id: string }
+        Args: { p_room_id: string }
+        Returns: boolean
+      }
+      is_room_member: {
+        Args: { p_room_id: string; p_user_id?: string }
         Returns: boolean
       }
       join_room_with_lives: {
