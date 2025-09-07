@@ -20,7 +20,8 @@ export function useRoomRealtime(roomId?: string, onPing?: () => void) {
       'postgres_changes', 
       { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` }, 
       () => {
-        // Match the existing query key format
+        // Invalidate all player queries for this room
+        queryClient.invalidateQueries({ queryKey: ['players', roomId] });
         queryClient.invalidateQueries({ queryKey: ['players', roomId, isGuest, user?.id] });
         onPing?.();
       }
