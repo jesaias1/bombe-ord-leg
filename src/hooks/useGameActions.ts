@@ -214,66 +214,65 @@ export const useGameActions = (
     }
   }, [isGuest, incrementGamesWon, addPlaytime]);
 
+  // startNewGame: works for both solo and multiplayer
   const startNewGame = useCallback(async (): Promise<boolean> => {
-    if (!user) {
-      console.error('No user logged in');
-      return false;
-    }
+    if (!room?.id) return false;
+
+    const roomId = room.id;
+    const playerCount = Array.isArray(players) ? players.length : 0;
+    const isSolo = playerCount <= 1;
 
     try {
-      console.log('Starting new game for room:', room?.id || roomLocator);
-      
-      const { data, error } = await supabase.rpc('start_new_game', {
-        p_room_id: room?.id || roomLocator
-      });
-      
-      if (error) {
-        console.error('Error starting new game:', error);
-        toast({
-          title: "Fejl",
-          description: "Kunne ikke starte nyt spil - prøv igen",
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      if (data) {
-        // Type assertion for the data response
-        const responseData = data as {
-          success: boolean;
-          next_player?: string;
-          next_syllable?: string;
-          game_id?: string;
-          error?: string;
-        };
-        
-        if (responseData.success) {
+      // Multiplayer: require ready checks
+      if (!isSolo) {
+        const { data: ok, error: chkErr } = await supabase.rpc('can_start_game', { p_room_id: roomId });
+        if (chkErr || !ok) {
           toast({
-            title: "Nyt spil startet! 🚀",
-            description: `${responseData.next_player} starter med stavelsen "${responseData.next_syllable}"`,
+            title: 'Kan ikke starte endnu',
+            description: 'Alle spillere (undtagen værten) skal være klar',
+            variant: 'destructive',
           });
-          
-          // Invalidate queries to refresh game state
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
-            queryClient.invalidateQueries({ queryKey: ['players', room?.id] }),
-          ]);
-          
-          return true;
+          return false;
         }
       }
-      
-      return false;
+
+      // Start a fresh game (same RPC for both modes)  
+      const { data, error } = await supabase.rpc('start_new_game', { p_room_id: roomId });
+      if (error) {
+        console.error('start_new_game error:', error);
+        toast({ title: 'Fejl', description: 'Kunne ikke starte spillet', variant: 'destructive' });
+        return false;
+      }
+
+      const responseData = data as any;
+      if (!responseData?.success) {
+        console.error('start_new_game failed:', responseData);
+        toast({ title: 'Fejl', description: 'Kunne ikke starte spillet', variant: 'destructive' });
+        return false;
+      }
+
+      // Reset ready flags only in multiplayer lobbies (keeps solo untouched)
+      if (!isSolo) {
+        try {
+          await supabase.rpc('reset_players_ready', { p_room_id: roomId });
+        } catch (error) {
+          console.error('Error resetting ready states:', error);
+        }
+      }
+
+      // Refresh local state
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['game', roomId] }),
+        queryClient.invalidateQueries({ queryKey: ['players', roomId] }),
+      ]);
+
+      return true;
     } catch (err) {
-      console.error('Unexpected error starting new game:', err);
-      toast({
-        title: "Fejl",
-        description: "Uventet fejl ved start af nyt spil",
-        variant: "destructive",
-      });
+      console.error('startNewGame unexpected error:', err);
+      toast({ title: 'Fejl', description: 'Uventet fejl ved start', variant: 'destructive' });
       return false;
     }
-  }, [user, room, roomLocator, toast, queryClient]);
+  }, [room?.id, players, queryClient, toast]);
 
   return {
     submitWord,
