@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -17,6 +18,7 @@ export const useTimerHandler = (
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
   const pendingTurnSeqRef = useRef<number | null>(null);
+  const queryClient = useQueryClient();
 
   const handleTimerExpired = useCallback(async () => {
     if (!game || game.status !== 'playing') return;
@@ -35,6 +37,52 @@ export const useTimerHandler = (
 
       if (error && !/turn already advanced|current turn/i.test(error.message)) {
         toast.error(error.message);
+      }
+
+      // Handle successful timeout with optimistic updates
+      if (!error && data && typeof data === 'object' && (data as any)?.success && !(data as any)?.game_ended) {
+        const responseData = data as {
+          success: boolean;
+          timeout: boolean;
+          lives_remaining: number;
+          player_eliminated: boolean;
+          game_ended: boolean;
+          current_player_id?: string;
+          current_player_name?: string;
+          current_syllable?: string;
+          timer_end_time?: string;
+          timer_duration?: number;
+          turn_seq?: number;
+        };
+
+        // Write to cache now for instant UI update
+        queryClient.setQueryData(['game', room?.id || roomLocator], (prev: any) => ({
+          ...(prev || {}),
+          room_id: room?.id || roomLocator,
+          current_player_id: responseData.current_player_id ?? prev?.current_player_id,
+          current_syllable: responseData.current_syllable ?? prev?.current_syllable,
+          timer_end_time: responseData.timer_end_time ?? prev?.timer_end_time,
+          timer_duration: responseData.timer_duration ?? prev?.timer_duration,
+          turn_seq: responseData.turn_seq ?? (prev?.turn_seq ?? 0) + 1,
+          status: 'playing',
+          updated_at: new Date().toISOString(),
+        }));
+
+        // Ping everyone with the turn change
+        if (room?.id && responseData.current_player_id) {
+          supabase.channel(`room-${room.id}`).send({
+            type: 'broadcast',
+            event: 'turn_advanced',
+            payload: {
+              room_id: room.id,
+              current_player_id: responseData.current_player_id,
+              current_syllable: responseData.current_syllable,
+              timer_end_time: responseData.timer_end_time,
+              timer_duration: responseData.timer_duration,
+              turn_seq: responseData.turn_seq,
+            },
+          });
+        }
       }
     } finally {
       pendingTurnSeqRef.current = null;

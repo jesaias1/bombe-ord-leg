@@ -13,7 +13,7 @@ import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useGameSubscriptions } from '@/hooks/useGameSubscriptions';
 import { useGameInput } from '@/hooks/useGameInput';
-import { useGameRealtime } from '@/hooks/useGameRealtime';
+import { useGameRealtime, useGameRealtimeFast } from '@/hooks/useGameRealtime';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRoomRealtime } from '@/hooks/useRoomRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -227,6 +227,9 @@ export const GameRoom = () => {
       console.log('🚀 Turn advanced instantly via realtime:', serverTurn);
     },
   });
+
+  // Use fast broadcast channel for instant multiplayer turn sync
+  useGameRealtimeFast(room?.id);
 
   // Initialize game actions hook with roomLocator from URL
   const { submitWord, startNewGame, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game);

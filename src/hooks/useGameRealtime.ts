@@ -9,6 +9,15 @@ type UseGameRealtimeOpts = {
   onTurnAdvance?: (turnSeq: number) => void;
 };
 
+type TurnPayload = {
+  room_id: string;
+  current_player_id: string;
+  current_syllable: string;
+  timer_end_time: string; // ISO
+  timer_duration: number;
+  turn_seq: number;
+};
+
 export function useGameRealtime({ roomId, gameId, onTurnAdvance }: UseGameRealtimeOpts) {
   const qc = useQueryClient();
 
@@ -59,4 +68,36 @@ export function useGameRealtime({ roomId, gameId, onTurnAdvance }: UseGameRealti
 
     return () => { supabase.removeChannel(channel); };
   }, [roomId, gameId, qc, onTurnAdvance]);
+}
+
+export function useGameRealtimeFast(roomId?: string | null) {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!roomId) return;
+
+    const channel = supabase
+      .channel(`room-${roomId}`, { config: { broadcast: { ack: true } } })
+      // ultra-fast path: host/player broadcasts the next turn
+      .on('broadcast', { event: 'turn_advanced' }, (msg) => {
+        const p = msg?.payload as TurnPayload | undefined;
+        if (!p || p.room_id !== roomId) return;
+
+        // update the game cache immediately
+        qc.setQueryData(['game', roomId], (prev: any) => ({
+          ...(prev || {}),
+          room_id: roomId,
+          current_player_id: p.current_player_id,
+          current_syllable: p.current_syllable,
+          timer_end_time: p.timer_end_time,
+          timer_duration: p.timer_duration,
+          turn_seq: p.turn_seq,
+          status: 'playing',
+          updated_at: new Date().toISOString(),
+        }));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [roomId, qc]);
 }
