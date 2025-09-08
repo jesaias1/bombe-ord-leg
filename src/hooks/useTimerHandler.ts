@@ -15,7 +15,8 @@ export const useTimerHandler = (
   room: Room | null,
   roomLocator?: string,
   currentWord?: string,
-  user?: { id: string } | null
+  user?: { id: string } | null,
+  shadowGame?: { apply: (snapshot: any) => void }
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
   const pendingTurnSeqRef = useRef<number | null>(null);
@@ -57,18 +58,18 @@ export const useTimerHandler = (
           turn_seq?: number;
         };
 
-        // Write to cache now for instant UI update
-        queryClient.setQueryData(['game', room?.id || roomLocator], (prev: any) => ({
-          ...(prev || {}),
-          room_id: room?.id || roomLocator,
-          current_player_id: responseData.current_player_id ?? prev?.current_player_id,
-          current_syllable: responseData.current_syllable ?? prev?.current_syllable,
-          timer_end_time: responseData.timer_end_time ?? prev?.timer_end_time,
-          timer_duration: responseData.timer_duration ?? prev?.timer_duration,
-          turn_seq: responseData.turn_seq ?? (prev?.turn_seq ?? 0) + 1,
-          status: 'playing',
-          updated_at: new Date().toISOString(),
-        }));
+        // Apply shadow state immediately for instant UI update
+        if (shadowGame && responseData.turn_seq && responseData.current_player_id && 
+            responseData.current_syllable && responseData.timer_end_time && 
+            responseData.timer_duration) {
+          shadowGame.apply({
+            turn_seq: responseData.turn_seq,
+            current_player_id: responseData.current_player_id,
+            current_syllable: responseData.current_syllable,
+            timer_duration: responseData.timer_duration,
+            timer_end_time: responseData.timer_end_time,
+          });
+        }
 
         // Ping everyone with the turn change
         if (room?.id && responseData.current_player_id) {
@@ -89,7 +90,7 @@ export const useTimerHandler = (
     } finally {
       pendingTurnSeqRef.current = null;
     }
-  }, [game, players, user?.id, room?.id, roomLocator, queryClient, offsetMs]);
+  }, [game, players, user?.id, room?.id, roomLocator, queryClient, offsetMs, shadowGame]);
 
   return { handleTimerExpired };
 };

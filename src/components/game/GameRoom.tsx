@@ -14,6 +14,7 @@ import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useGameSubscriptions } from '@/hooks/useGameSubscriptions';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useGameRealtime, useGameRealtimeFast } from '@/hooks/useGameRealtime';
+import { useShadowGame } from '@/hooks/useShadowGame';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRoomRealtime } from '@/hooks/useRoomRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +36,9 @@ export const GameRoom = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Shadow game state for instant turn updates
+  const shadowGame = useShadowGame();
 
   // Fetch room details using locator (never put URL value into room.id)
   const { data: room, isLoading: roomLoading } = useQuery({
@@ -231,11 +235,14 @@ export const GameRoom = () => {
   // Use fast broadcast channel for instant multiplayer turn sync
   useGameRealtimeFast(room?.id);
 
+  // Clear shadow state when server game updates  
+  useEffect(() => shadowGame.clearIfNewer(game), [game?.id, (game as any)?.turn_seq]);
+
   // Initialize game actions hook with roomLocator from URL
-  const { submitWord, startNewGame, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game);
+  const { submitWord, startNewGame, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game, shadowGame);
 
   // Initialize timer handler with roomLocator and force refresh on timeout
-  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomLocator, undefined, user);
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomLocator, undefined, user, shadowGame);
   
   // Wrap timer handler to force state refresh after timeout
   const handleTimerExpiredWithRefresh = async () => {
@@ -256,6 +263,7 @@ export const GameRoom = () => {
     currentUserId: user?.id,
     onWordSubmit: submitWord,
     isSubmitting,
+    shadowGame,
   });
 
   // Show loading skeleton while data is loading

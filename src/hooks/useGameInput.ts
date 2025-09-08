@@ -13,26 +13,49 @@ interface UseGameInputProps {
   isSubmitting: boolean;
 }
 
+interface ShadowGame {
+  get: () => {
+    turn_seq: number;
+    current_player_id: string;
+    current_syllable: string;
+    timer_duration: number;
+    timer_end_time: string;
+  } | null;
+}
+
+interface UseGameInputPropsWithShadow extends UseGameInputProps {
+  shadowGame?: ShadowGame;
+}
+
 export const useGameInput = ({
   game,
   players,
   currentUserId,
   onWordSubmit,
   isSubmitting,
-}: UseGameInputProps) => {
+  shadowGame,
+}: UseGameInputPropsWithShadow) => {
   const [currentWord, setCurrentWord] = useState('');
   const [isGameOver, setIsGameOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { offsetMs } = useServerClock();
 
+  // Use shadow state if available, fallback to server game state
+  const snap = shadowGame?.get();
+  
+  const currentPlayerId = snap?.current_player_id ?? game?.current_player_id;
+  const currentSyllable = snap?.current_syllable ?? game?.current_syllable;
+  const timerEndTime = snap?.timer_end_time ?? game?.timer_end_time;
+  const timerDuration = snap?.timer_duration ?? game?.timer_duration;
+  
   // Who is up now?
-  const currentPlayer = players.find(p => p.id === game?.current_player_id);
+  const currentPlayer = players.find(p => p.id === currentPlayerId);
   const currentUserPlayer = players.find(p => p.user_id === currentUserId);
   
   // Server-synced timing calculation
   const serverNow = () => Date.now() + offsetMs;
-  const endTs = game?.timer_end_time ? new Date(game.timer_end_time).getTime() : 0;
-  const durationMs = (game?.timer_duration ?? 0) * 1000;
+  const endTs = timerEndTime ? new Date(timerEndTime).getTime() : 0;
+  const durationMs = (timerDuration ?? 0) * 1000;
   const startTs = endTs ? endTs - durationMs : 0;
   const GRACE_MS = 200; // tiny grace to smooth "just expired" submissions
   
@@ -63,7 +86,7 @@ export const useGameInput = ({
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [game?.current_player_id]); // Only focus on turn changes, not on canInput changes
+  }, [currentPlayerId]); // Only focus on turn changes, not on canInput changes
 
   // Reset game state when game changes
   useEffect(() => {
@@ -128,6 +151,7 @@ export const useGameInput = ({
     handleKeyDown,
     isCurrentUser: currentPlayer?.user_id === currentUserId,
     currentPlayer,
+    currentSyllable,
     focusInput: () => inputRef.current?.focus?.(),
   };
 };

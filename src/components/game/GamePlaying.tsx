@@ -217,7 +217,7 @@ export const GamePlaying = ({
           <WordInput
             onSubmit={gameInput.handleWordSubmit}
             disabled={!gameInput.canInput}
-            currentSyllable={game.current_syllable || ''}
+            currentSyllable={gameInput.currentSyllable || game.current_syllable || ''}
             isSubmitting={gameInput.isSubmitting}
             currentWord={gameInput.currentWord}
             onWordChange={gameInput.setCurrentWord}

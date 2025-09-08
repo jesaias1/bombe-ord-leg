@@ -15,7 +15,8 @@ export const useGameActions = (
   room: Room | null,
   roomLocator?: string,
   players: any[] = [],
-  game?: Tables<'games'>
+  game?: Tables<'games'>,
+  shadowGame?: { apply: (snapshot: any) => void }
 ) => {
   const queryClient = useQueryClient();
   const { user, isGuest } = useAuth();
@@ -116,20 +117,20 @@ export const useGameActions = (
             updateStreak(true);
           }
 
-          // 1) Optimistically write the next turn into cache
-          queryClient.setQueryData(['game', room?.id || roomLocator], (prev: any) => ({
-            ...(prev || {}),
-            room_id: room?.id || roomLocator,
-            current_player_id: responseData.current_player_id ?? prev?.current_player_id,
-            current_syllable: responseData.current_syllable ?? prev?.current_syllable,
-            timer_end_time: responseData.timer_end_time ?? prev?.timer_end_time,
-            timer_duration: responseData.timer_duration ?? prev?.timer_duration,
-            turn_seq: responseData.turn_seq ?? (prev?.turn_seq ?? 0) + 1,
-            status: 'playing',
-            updated_at: new Date().toISOString(),
-          }));
+          // Apply shadow state immediately for instant UI update
+          if (shadowGame && responseData.turn_seq && responseData.current_player_id && 
+              responseData.current_syllable && responseData.timer_end_time && 
+              responseData.timer_duration) {
+            shadowGame.apply({
+              turn_seq: responseData.turn_seq,
+              current_player_id: responseData.current_player_id,
+              current_syllable: responseData.current_syllable,
+              timer_duration: responseData.timer_duration,
+              timer_end_time: responseData.timer_end_time,
+            });
+          }
 
-          // 2) Broadcast the turn for all peers (fast)
+          // Broadcast the turn for all peers (fast)
           if (room?.id && responseData.current_player_id) {
             supabase.channel(`game-fast-${room.id}`).send({
               type: 'broadcast',
@@ -181,7 +182,7 @@ export const useGameActions = (
       isSubmittingRef.current = false; // ALWAYS unlock
       setIsSubmitting(false);
     }
-  }, [user, players, game?.current_player_id, game?.turn_seq, room?.id, roomLocator, setCurrentWord, toast, isGuest, incrementWordsGuessed, updateStreak, queryClient, offsetMs]);
+  }, [user, players, game?.current_player_id, game?.turn_seq, room?.id, roomLocator, setCurrentWord, toast, isGuest, incrementWordsGuessed, updateStreak, queryClient, offsetMs, shadowGame]);
 
   const startGame = useCallback(async () => {
     if (!user) {
