@@ -217,62 +217,39 @@ export const useGameActions = (
   // startNewGame: works for both solo and multiplayer
   const startNewGame = useCallback(async (): Promise<boolean> => {
     if (!room?.id) return false;
-
-    const roomId = room.id;
-    const playerCount = Array.isArray(players) ? players.length : 0;
-    const isSolo = playerCount <= 1;
-
+    
     try {
-      // Multiplayer: require ready checks
-      if (!isSolo) {
-        const { data: ok, error: chkErr } = await supabase.rpc('can_start_game', { p_room_id: roomId });
-        if (chkErr || !ok) {
-          toast({
-            title: 'Kan ikke starte endnu',
-            description: 'Alle spillere (undtagen værten) skal være klar',
-            variant: 'destructive',
-          });
-          return false;
-        }
-      }
-
-      // Start a fresh game (same RPC for both modes)  
-      const { data, error } = await supabase.rpc('start_new_game', { p_room_id: roomId });
-      if (error) {
-        console.error('start_new_game error:', error);
-        toast({ title: 'Fejl', description: 'Kunne ikke starte spillet', variant: 'destructive' });
+      const { data, error } = await supabase.rpc('start_new_game', {
+        p_room_id: room.id,
+        p_user_id: user?.id ?? 'guest'
+      });
+      
+      if (error || !(data as any)?.success) {
+        console.error('start_new_game error:', error || data);
+        toast({ 
+          title: 'Fejl', 
+          description: (data as any)?.error ?? 'Kunne ikke starte spillet', 
+          variant: 'destructive' 
+        });
         return false;
       }
-
-      const responseData = data as any;
-      if (!responseData?.success) {
-        console.error('start_new_game failed:', responseData);
-        toast({ title: 'Fejl', description: 'Kunne ikke starte spillet', variant: 'destructive' });
-        return false;
-      }
-
-      // Reset ready flags only in multiplayer lobbies (keeps solo untouched)
-      if (!isSolo) {
-        try {
-          await supabase.rpc('reset_players_ready', { p_room_id: roomId });
-        } catch (error) {
-          console.error('Error resetting ready states:', error);
-        }
-      }
-
-      // Refresh local state
+      
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['game', roomId] }),
-        queryClient.invalidateQueries({ queryKey: ['players', roomId] }),
+        queryClient.invalidateQueries({ queryKey: ['game', room.id] }),
+        queryClient.invalidateQueries({ queryKey: ['players', room.id] }),
       ]);
-
+      
       return true;
-    } catch (err) {
-      console.error('startNewGame unexpected error:', err);
-      toast({ title: 'Fejl', description: 'Uventet fejl ved start', variant: 'destructive' });
+    } catch (e) {
+      console.error(e);
+      toast({ 
+        title: 'Fejl', 
+        description: 'Uventet fejl ved start', 
+        variant: 'destructive' 
+      });
       return false;
     }
-  }, [room?.id, players, queryClient, toast]);
+  }, [room?.id, user?.id, queryClient, toast]);
 
   return {
     submitWord,
