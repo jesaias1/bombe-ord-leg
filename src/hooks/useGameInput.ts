@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Tables } from '@/integrations/supabase/types';
+import { useServerClock } from './useServerClock';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -22,19 +23,32 @@ export const useGameInput = ({
   const [currentWord, setCurrentWord] = useState('');
   const [isGameOver, setIsGameOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { offsetMs } = useServerClock();
 
   // Who is up now?
   const currentPlayer = players.find(p => p.id === game?.current_player_id);
   const currentUserPlayer = players.find(p => p.user_id === currentUserId);
   
-  // Fully server-driven: only check server state
+  // Server-synced timing calculation
+  const serverNow = () => Date.now() + offsetMs;
+  const endTs = game?.timer_end_time ? new Date(game.timer_end_time).getTime() : 0;
+  const durationMs = (game?.timer_duration ?? 0) * 1000;
+  const startTs = endTs ? endTs - durationMs : 0;
+  const GRACE_MS = 200; // tiny grace to smooth "just expired" submissions
+  
+  // Check if it's my turn
   const isMyTurn = !!currentPlayer && 
                    currentPlayer.user_id === currentUserId && 
                    game?.status === 'playing' &&
                    !!currentUserPlayer?.is_alive;
 
-  // Only actual submission disables me locally; never block because of helper/loaders
-  const canInput = isMyTurn && !isSubmitting;
+  // Use authoritative timing - only enable input from computed start moment
+  const canInput = game?.status === 'playing' &&
+                   isMyTurn &&
+                   startTs > 0 &&
+                   serverNow() >= startTs &&
+                   serverNow() <= endTs + GRACE_MS &&
+                   !isSubmitting;
   
   console.log('useGameInput: canInput=', canInput, 'isMyTurn=', isMyTurn, 'isSubmitting=', isSubmitting, 'currentPlayer=', currentPlayer?.name);
 
