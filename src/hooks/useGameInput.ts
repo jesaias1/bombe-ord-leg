@@ -27,13 +27,13 @@ export const useGameInput = ({
   const currentPlayer = players.find(p => p.id === game?.current_player_id);
   const currentUserPlayer = players.find(p => p.user_id === currentUserId);
   
-  // Check if it's my turn AND I'm alive (spectator mode for eliminated players)
+  // Fully server-driven: only check server state
   const isMyTurn = !!currentPlayer && 
                    currentPlayer.user_id === currentUserId && 
                    game?.status === 'playing' &&
                    !!currentUserPlayer?.is_alive;
 
-  // Only actual submission disables typing (no helper/spinner states)
+  // Only actual submission disables me locally; never block because of helper/loaders
   const canInput = isMyTurn && !isSubmitting;
   
   console.log('useGameInput: canInput=', canInput, 'isMyTurn=', isMyTurn, 'isSubmitting=', isSubmitting, 'currentPlayer=', currentPlayer?.name);

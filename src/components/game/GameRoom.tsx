@@ -13,6 +13,7 @@ import { useGameTimer } from '@/hooks/useGameTimer';
 import { useTimerHandler } from '@/hooks/useTimerHandler';
 import { useGameSubscriptions } from '@/hooks/useGameSubscriptions';
 import { useGameInput } from '@/hooks/useGameInput';
+import { useGameRealtime } from '@/hooks/useGameRealtime';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRoomRealtime } from '@/hooks/useRoomRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,6 +23,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useRef } from 'react';
 
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
@@ -211,6 +213,18 @@ export const GameRoom = () => {
     onPlayersUpdate: () => {
       console.log('🔄 Realtime: players update -> invalidate');
       queryClient.invalidateQueries({ queryKey: ['players', room?.id] });
+    },
+  });
+
+  // Zero-lag realtime for active game turns
+  const turnAdvancedRef = useRef<number | null>(null);
+  useGameRealtime({
+    roomId: room?.id,
+    gameId: game?.id,
+    onTurnAdvance: (serverTurn) => {
+      // whenever the server bumps the turn, clear any local submitting locks
+      turnAdvancedRef.current = serverTurn;
+      console.log('🚀 Turn advanced instantly via realtime:', serverTurn);
     },
   });
 

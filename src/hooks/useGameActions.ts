@@ -105,11 +105,7 @@ export const useGameActions = (
 
           setCurrentWord('');
           
-          // Refresh game + players immediately so next turn/syllable render without reload
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
-            queryClient.invalidateQueries({ queryKey: ['players', room?.id] }),
-          ]);
+          // Don't wait for refetch - realtime updates will handle this instantly
           
           return true;
         } else {
@@ -234,11 +230,7 @@ export const useGameActions = (
         return false;
       }
 
-      // refresh game + players
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['game', room.id] }),
-        queryClient.invalidateQueries({ queryKey: ['players', room.id] }),
-      ]);
+      // Don't wait for refetch - realtime updates will handle this instantly
       return true;
     } catch (e) {
       console.error(e);
