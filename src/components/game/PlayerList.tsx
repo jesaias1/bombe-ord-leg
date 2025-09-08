@@ -9,10 +9,9 @@ interface PlayerListProps {
   players: Player[];
   currentPlayerId?: string;
   currentUserId?: string;
-  showReady?: boolean;
 }
 
-export const PlayerList = ({ players, currentPlayerId, currentUserId, showReady = false }: PlayerListProps) => {
+export const PlayerList = ({ players, currentPlayerId, currentUserId }: PlayerListProps) => {
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-200">
       <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center">
@@ -44,11 +43,6 @@ export const PlayerList = ({ players, currentPlayerId, currentUserId, showReady 
                 {player.name}
                 {player.user_id === currentUserId && " (dig)"}
               </span>
-              {showReady && (
-                <Badge variant={player.ready ? "default" : "outline"} className="text-xs ml-2">
-                  {player.ready ? "Klar" : "Venter"}
-                </Badge>
-              )}
             </div>
             <div className="flex items-center space-x-2">
               <div className="flex space-x-1">

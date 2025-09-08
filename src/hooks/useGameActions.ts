@@ -217,36 +217,32 @@ export const useGameActions = (
   // startNewGame: works for both solo and multiplayer
   const startNewGame = useCallback(async (): Promise<boolean> => {
     if (!room?.id) return false;
-    
+
     try {
       const { data, error } = await supabase.rpc('start_new_game', {
         p_room_id: room.id,
         p_user_id: user?.id ?? 'guest'
       });
-      
+
       if (error || !(data as any)?.success) {
         console.error('start_new_game error:', error || data);
-        toast({ 
-          title: 'Fejl', 
-          description: (data as any)?.error ?? 'Kunne ikke starte spillet', 
-          variant: 'destructive' 
+        toast({
+          title: 'Fejl',
+          description: (data as any)?.error ?? 'Kunne ikke starte spillet',
+          variant: 'destructive',
         });
         return false;
       }
-      
+
+      // refresh game + players
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['game', room.id] }),
         queryClient.invalidateQueries({ queryKey: ['players', room.id] }),
       ]);
-      
       return true;
     } catch (e) {
       console.error(e);
-      toast({ 
-        title: 'Fejl', 
-        description: 'Uventet fejl ved start', 
-        variant: 'destructive' 
-      });
+      toast({ title: 'Fejl', description: 'Uventet fejl ved start', variant: 'destructive' });
       return false;
     }
   }, [room?.id, user?.id, queryClient, toast]);

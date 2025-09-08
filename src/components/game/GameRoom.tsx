@@ -215,7 +215,7 @@ export const GameRoom = () => {
   });
 
   // Initialize game actions hook with roomLocator from URL
-  const { submitWord, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game);
+  const { submitWord, startNewGame, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game);
 
   // Initialize timer handler with roomLocator and force refresh on timeout
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomLocator, undefined, user);
@@ -277,7 +277,6 @@ export const GameRoom = () => {
     );
   }
 
-  const canStartGame = isRoomCreator || players.length >= 1; // Allow solo practice
   const currentPlayer = players.find(p => p.id === game?.current_player_id);
   const isCurrentUser = currentPlayer?.user_id === user?.id;
 
@@ -290,48 +289,8 @@ export const GameRoom = () => {
           isSinglePlayer={players.length === 1}
           players={players}
           currentUserId={user?.id}
-          canStartGame={canStartGame}
-          isRoomCreator={isRoomCreator}
           room={room}
-          onStartGame={async () => {
-            // Use the improved start_new_game RPC that handles host validation and ready checks
-            const { data, error } = await supabase.rpc('start_new_game', {
-              p_room_id: room.id
-            });
-            
-            if (error) {
-              console.error('Error starting game:', error);
-              toast({
-                title: "Fejl ved start",
-                description: error.message,
-                variant: "destructive",
-              });
-              return false;
-            }
-
-            // Cast to expected response type
-            const response = data as { success?: boolean; error?: string; next_player?: string; next_syllable?: string } | null;
-            
-            if (!response?.success) {
-              toast({
-                title: "Kunne ikke starte spillet",
-                description: response?.error || "Ukendt fejl",
-                variant: "destructive",
-              });
-              return false;
-            }
-
-            // Refresh both game and player queries to ensure proper state
-            queryClient.invalidateQueries({ queryKey: ['game', room.id] });
-            queryClient.invalidateQueries({ queryKey: ['players', room.id, isGuest, user.id] });
-            
-            toast({
-              title: "Spil startet! 🚀",
-              description: `${response.next_player} starter med "${response.next_syllable}"`,
-            });
-            
-            return true;
-          }}
+          onStartGame={startNewGame}
           isLoading={playersLoading}
         />
       );

@@ -13,8 +13,6 @@ interface GameWaitingProps {
   isSinglePlayer: boolean;
   players: Player[];
   currentUserId?: string;
-  canStartGame: boolean;
-  isRoomCreator: boolean;
   room: Room;
   onStartGame: () => Promise<boolean>;
   isLoading?: boolean;
@@ -24,8 +22,6 @@ export const GameWaiting = ({
   isSinglePlayer, 
   players, 
   currentUserId, 
-  canStartGame, 
-  isRoomCreator,
   room,
   onStartGame,
   isLoading = false
@@ -108,7 +104,7 @@ export const GameWaiting = ({
       </div>
       
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-lg border border-blue-200 transform hover:scale-[1.02] transition-all duration-300">
-        <PlayerList players={players} currentUserId={currentUserId} showReady={false} />
+        <PlayerList players={players} currentUserId={currentUserId} />
       </div>
       
       {/* Start button logic: solo unchanged, multiplayer host-only */}
