@@ -77,7 +77,7 @@ export function useGameRealtimeFast(roomId?: string | null) {
     if (!roomId) return;
 
     const channel = supabase
-      .channel(`room-${roomId}`, { config: { broadcast: { ack: true } } })
+      .channel(`game-fast-${roomId}`, { config: { broadcast: { ack: true } } })
       // ultra-fast path: host/player broadcasts the next turn
       .on('broadcast', { event: 'turn_advanced' }, (msg) => {
         const p = msg?.payload as TurnPayload | undefined;
