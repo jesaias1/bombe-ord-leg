@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
+import { useServerClock } from './useServerClock';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -19,6 +20,7 @@ export const useTimerHandler = (
   const alivePlayers = players.filter(player => player.is_alive);
   const pendingTurnSeqRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
+  const { offsetMs } = useServerClock();
 
   const handleTimerExpired = useCallback(async () => {
     if (!game || game.status !== 'playing') return;
@@ -70,7 +72,7 @@ export const useTimerHandler = (
 
         // Ping everyone with the turn change
         if (room?.id && responseData.current_player_id) {
-          supabase.channel(`room-${room.id}`).send({
+          supabase.channel(`game-fast-${room.id}`).send({
             type: 'broadcast',
             event: 'turn_advanced',
             payload: {
@@ -87,7 +89,7 @@ export const useTimerHandler = (
     } finally {
       pendingTurnSeqRef.current = null;
     }
-  }, [game, players, user?.id, room?.id, roomLocator]);
+  }, [game, players, user?.id, room?.id, roomLocator, queryClient, offsetMs]);
 
   return { handleTimerExpired };
 };

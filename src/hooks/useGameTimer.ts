@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Tables } from '@/integrations/supabase/types';
-import { useServerTime } from './useServerTime';
+import { useServerClock } from './useServerClock';
 
 type Game = Tables<'games'>;
 
@@ -10,7 +10,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasExpiredRef = useRef(false);
   const lastTimerEndTimeRef = useRef<string | null>(null);
-  const { getServerTime, isCalculated } = useServerTime();
+  const { offsetMs } = useServerClock();
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -37,10 +37,10 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
 
     const updateTimer = () => {
       const endTime = new Date(game.timer_end_time!).getTime();
-      const now = Date.now(); // Use client time directly
+      const serverNow = Date.now() + offsetMs; // Use server-synced time
       
       // Calculate remaining time
-      const timeDiff = endTime - now;
+      const timeDiff = endTime - serverNow;
       const remaining = Math.max(0, Math.ceil(timeDiff / 1000));
       
       setTimeLeft(remaining);
@@ -63,7 +63,7 @@ export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
     }
 
     return clearTimer;
-  }, [game?.timer_end_time, game?.status, onTimerExpired, clearTimer]);
+  }, [game?.timer_end_time, game?.status, onTimerExpired, clearTimer, offsetMs]);
 
   return timeLeft;
 };

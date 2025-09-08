@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { WordInput } from './WordInput';
 import { BombTimer } from './BombTimer';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Heart, Crown } from 'lucide-react';
 import { useGameInput } from '@/hooks/useGameInput';
+import { useServerClock } from '@/hooks/useServerClock';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -33,8 +34,22 @@ export const GamePlaying = ({
 }: GamePlayingProps) => {
   const alivePlayers = players.filter(p => p.is_alive);
   const deadPlayers = players.filter(p => !p.is_alive);
+  const { offsetMs } = useServerClock();
+  const [tick, setTick] = useState(0);
   
   console.log('GamePlaying render - game:', game, 'alivePlayers:', alivePlayers);
+
+  // Fast-forward UI if late (drift correction)
+  useEffect(() => {
+    if (!game?.timer_end_time) return;
+    const end = new Date(game.timer_end_time).getTime();
+    const left = end - (Date.now() + offsetMs);
+
+    // If we are behind by > 600ms (network lag), force immediate re-render
+    if (left < -600) {
+      setTick((t) => t + 1);
+    }
+  }, [game?.timer_end_time, offsetMs]);
 
   // Calculate player positions in a circle (smaller radius)
   const getPlayerPosition = (index: number, total: number) => {

@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStats } from '@/hooks/useUserStats';
 import { Tables } from '@/integrations/supabase/types';
+import { useServerClock } from './useServerClock';
 
 type Room = Tables<'rooms'>;
 type Game = Tables<'games'>;
@@ -22,6 +23,7 @@ export const useGameActions = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
   const isSubmittingRef = useRef(false);
+  const { offsetMs } = useServerClock();
   const { 
     incrementWordsGuessed, 
     updateStreak, 
@@ -42,6 +44,16 @@ export const useGameActions = (
     const me = players.find(p => p.user_id === user.id) ?? players.find(p => p.is_me);
     if (!me?.id || game?.current_player_id !== me.id) {
       console.log('useGameActions: Not my turn, submission blocked. Current player:', game?.current_player_id, 'My player ID:', me?.id);
+      return false;
+    }
+
+    // Submission guard uses server time + grace
+    const GRACE_MS = 200;
+    const end = game?.timer_end_time ? new Date(game.timer_end_time).getTime() : 0;
+    const serverNow = Date.now() + offsetMs;
+
+    if (end && serverNow > end + GRACE_MS) {
+      console.log('Timer expired on client - skipping submit');
       return false;
     }
 
@@ -119,7 +131,7 @@ export const useGameActions = (
 
           // 2) Broadcast the turn for all peers (fast)
           if (room?.id && responseData.current_player_id) {
-            supabase.channel(`room-${room.id}`).send({
+            supabase.channel(`game-fast-${room.id}`).send({
               type: 'broadcast',
               event: 'turn_advanced',
               payload: {
@@ -169,7 +181,7 @@ export const useGameActions = (
       isSubmittingRef.current = false; // ALWAYS unlock
       setIsSubmitting(false);
     }
-  }, [user, players, game?.current_player_id, game?.turn_seq, room?.id, roomLocator, setCurrentWord, toast, isGuest, incrementWordsGuessed, updateStreak, queryClient]);
+  }, [user, players, game?.current_player_id, game?.turn_seq, room?.id, roomLocator, setCurrentWord, toast, isGuest, incrementWordsGuessed, updateStreak, queryClient, offsetMs]);
 
   const startGame = useCallback(async () => {
     if (!user) {
