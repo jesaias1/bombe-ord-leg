@@ -1,69 +1,51 @@
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tables } from '@/integrations/supabase/types';
 import { useServerClock } from './useServerClock';
 
 type Game = Tables<'games'>;
 
-export const useGameTimer = (game: Game | null, onTimerExpired: () => void) => {
-  const [timeLeft, setTimeLeft] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hasExpiredRef = useRef(false);
-  const lastTimerEndTimeRef = useRef<string | null>(null);
-  const { offsetMs } = useServerClock();
+export function useGameTimer(game: {
+  timer_end_time: string | null,
+  timer_duration?: number,
+  turn_seq?: number
+}, onExpired: () => Promise<void> | void) {
 
-  const clearTimer = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  const { offsetMs } = useServerClock();
+  const [msLeft, setMsLeft] = useState(0);
+  const raf = useRef<number | null>(null);
+  const lastEnd = game?.timer_end_time ?? null;
+
+  function stop() {
+    if (raf.current != null) cancelAnimationFrame(raf.current);
+    raf.current = null;
+  }
+
+  function tick() {
+    const serverNow = Date.now() + offsetMs;
+    const end = lastEnd ? new Date(lastEnd).getTime() : 0;
+    const left = Math.max(0, end - serverNow);
+    setMsLeft(left);
+    if (left <= 0) {
+      stop();
+      onExpired?.();
+    } else {
+      raf.current = requestAnimationFrame(tick); // smooth; < 16ms jitter
     }
-  }, []);
+  }
 
   useEffect(() => {
-    // Clear any existing timer
-    clearTimer();
-    
-    if (!game?.timer_end_time || game.status !== 'playing') {
-      setTimeLeft(0);
-      hasExpiredRef.current = false;
+    stop();
+    if (!lastEnd) {
+      setMsLeft(0);
       return;
     }
+    // start fresh each turn (turn_seq change) or end change
+    raf.current = requestAnimationFrame(tick);
+    return stop;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastEnd, game?.turn_seq, offsetMs]); // <— resync when server offset refreshes
 
-    // Reset expiration flag when timer changes
-    if (lastTimerEndTimeRef.current !== game.timer_end_time) {
-      hasExpiredRef.current = false;
-      lastTimerEndTimeRef.current = game.timer_end_time;
-    }
-
-    const updateTimer = () => {
-      const endTime = new Date(game.timer_end_time!).getTime();
-      const serverNow = Date.now() + offsetMs; // Use server-synced time
-      
-      // Calculate remaining time
-      const timeDiff = endTime - serverNow;
-      const remaining = Math.max(0, Math.ceil(timeDiff / 1000));
-      
-      setTimeLeft(remaining);
-
-      // Only call onTimerExpired once when timer reaches 0
-      if (remaining === 0 && !hasExpiredRef.current) {
-        hasExpiredRef.current = true;
-        console.log('Timer expired, calling onTimerExpired');
-        clearTimer();
-        onTimerExpired();
-      }
-    };
-
-    // Initial update
-    updateTimer();
-
-    // Set up interval if timer hasn't expired
-    if (!hasExpiredRef.current) {
-      intervalRef.current = setInterval(updateTimer, 1000);
-    }
-
-    return clearTimer;
-  }, [game?.timer_end_time, game?.status, onTimerExpired, clearTimer, offsetMs]);
-
-  return timeLeft;
+  // return seconds with 1-decimal precision for UI if you use it
+  return Math.ceil(msLeft / 1000);
 };

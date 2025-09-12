@@ -249,14 +249,10 @@ export const GameRoom = () => {
   // Initialize timer handler with roomLocator and force refresh on timeout
   const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(eff, players, room, roomLocator, undefined, user, shadowGame);
   
-  // Wrap timer handler to force state refresh after timeout
+  // Wrap timer handler - no artificial delay, realtime + shadow will propagate instantly
   const handleTimerExpiredWithRefresh = async () => {
     await timerHandlerExpired();
-    // Ensure client sees the new current_player/timer/syllable
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
-      queryClient.invalidateQueries({ queryKey: ['players', room?.id] }),
-    ]);
+    // No artificial delay – realtime + shadow will propagate instantly
   };
   
   const timeLeft = useGameTimer(eff, handleTimerExpiredWithRefresh);

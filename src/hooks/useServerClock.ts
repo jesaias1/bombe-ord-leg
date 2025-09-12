@@ -1,49 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-type Clock = {
-  offsetMs: number;   // add this to Date.now() to approximate server time
-  rttMs: number;      // last round-trip for visibility/debug
-};
-
-export function useServerClock(pollMs = 20000): Clock {
-  const [state, setState] = useState<Clock>({ offsetMs: 0, rttMs: 0 });
-  const mounted = useRef(true);
+/** Returns serverClockOffsetMs = serverNow - clientNow */
+export function useServerClock(offsetRefreshMs = 15000) {
+  const [offset, setOffset] = useState(0);
+  const inFlight = useRef(false);
 
   async function syncOnce() {
-    const t0 = performance.now();
-    const localSend = Date.now();
-
-    const { data, error } = await supabase.rpc('get_server_time');
-    const t1 = performance.now();
-
-    if (error || !data) return;
-
-    // serverNow from DB (UTC)
-    const serverNow = new Date(data as string).getTime();
-    const rtt = t1 - t0;
-
-    // NTP-like estimate: serverTime ≈ serverNow + (rtt/2)
-    const estimatedServerAtArrive = serverNow + rtt / 2;
-    const offset = estimatedServerAtArrive - localSend - rtt / 2;
-
-    if (!mounted.current) return;
-    setState({ offsetMs: Math.round(offset), rttMs: Math.round(rtt) });
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const t0 = Date.now();
+      const { data, error } = await supabase.rpc('get_server_epoch_ms');
+      const t1 = Date.now();
+      if (!error && typeof data === 'number') {
+        // RTT correction: assume server time corresponds to the mid-point
+        const clientMid = (t0 + t1) / 2;
+        setOffset(data - clientMid);
+      }
+    } finally {
+      inFlight.current = false;
+    }
   }
 
   useEffect(() => {
-    mounted.current = true;
-    syncOnce();                   // initial
-    const id = setInterval(syncOnce, pollMs);  // keep fresh every 20s
-    const onVis = () => syncOnce();            // resync after tab back
-    document.addEventListener('visibilitychange', onVis);
+    syncOnce();
+    const id = setInterval(syncOnce, offsetRefreshMs);
+    return () => clearInterval(id);
+  }, [offsetRefreshMs]);
 
-    return () => {
-      mounted.current = false;
-      clearInterval(id);
-      document.removeEventListener('visibilitychange', onVis);
-    };
-  }, [pollMs]);
-
-  return state;
+  return { offsetMs: offset }; // add to timers: serverNow = Date.now() + offsetMs
 }

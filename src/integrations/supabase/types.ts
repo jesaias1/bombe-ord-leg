@@ -367,6 +367,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_server_epoch_ms: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_server_time: {
         Args: Record<PropertyKey, never>
         Returns: string
