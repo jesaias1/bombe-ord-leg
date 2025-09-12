@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { WordInput } from './WordInput';
 import { BombTimer } from './BombTimer';
+import { PlayersRail } from './PlayersRail';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Heart, Crown } from 'lucide-react';
@@ -90,60 +91,62 @@ export const GamePlaying = ({
           </div>
         </div>
 
-        {/* Players positioned around the bomb (closer) */}
-        {alivePlayers.map((player, index) => {
-          const position = getPlayerPosition(index, alivePlayers.length);
-          const isCurrentPlayer = player.id === game.current_player_id;
-          const isCurrentUserPlayer = player.user_id === currentUserId;
-          
-          return (
-            <div
-              key={player.id}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: `${position.x}%`,
-                top: `${position.y}%`,
-              }}
-            >
-              <div className="flex flex-col items-center space-y-1">
-                {/* Player Avatar - smaller */}
-                <div className="relative">
-                  <div className={cn(
-                    "w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all duration-300",
-                    isCurrentPlayer
-                      ? "bg-yellow-500 border-yellow-300 scale-110 animate-pulse shadow-lg shadow-yellow-400/50"
-                      : "bg-gray-700 border-gray-500"
-                  )}>
-                    <span className="text-white font-bold text-sm">
-                      {player.name.charAt(0).toUpperCase()}
-                    </span>
+        {/* Players positioned around the bomb (orbit view - desktop only) */}
+        <div className="hidden md:block game-orbit-layer">
+          {alivePlayers.map((player, index) => {
+            const position = getPlayerPosition(index, alivePlayers.length);
+            const isCurrentPlayer = player.id === game.current_player_id;
+            const isCurrentUserPlayer = player.user_id === currentUserId;
+            
+            return (
+              <div
+                key={player.id}
+                className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${position.x}%`,
+                  top: `${position.y}%`,
+                }}
+              >
+                <div className="flex flex-col items-center space-y-1">
+                  {/* Player Avatar - smaller */}
+                  <div className="relative">
+                    <div className={cn(
+                      "w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all duration-300",
+                      isCurrentPlayer
+                        ? "bg-yellow-500 border-yellow-300 scale-110 animate-pulse shadow-lg shadow-yellow-400/50"
+                        : "bg-gray-700 border-gray-500"
+                    )}>
+                      <span className="text-white font-bold text-sm">
+                        {player.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    {/* Crown for current user */}
+                    {isCurrentUserPlayer && (
+                      <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
+                    )}
                   </div>
-                  {/* Crown for current user */}
-                  {isCurrentUserPlayer && (
-                    <Crown className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
-                  )}
-                </div>
-                
-                {/* Player Name - smaller */}
-                <div className={cn(
-                  "px-2 py-1 rounded text-xs font-medium whitespace-nowrap",
-                  isCurrentPlayer 
-                    ? "bg-yellow-600 text-white shadow-md" 
-                    : "bg-gray-600 text-gray-200"
-                )}>
-                  {player.name}
-                </div>
-                
-                {/* Lives (Hearts) - smaller */}
-                <div className="flex space-x-0.5">
-                  {Array.from({ length: player.lives }).map((_, i) => (
-                    <Heart key={i} className="w-3 h-3 text-red-500 fill-current" />
-                  ))}
+                  
+                  {/* Player Name - smaller */}
+                  <div className={cn(
+                    "px-2 py-1 rounded text-xs font-medium whitespace-nowrap",
+                    isCurrentPlayer 
+                      ? "bg-yellow-600 text-white shadow-md" 
+                      : "bg-gray-600 text-gray-200"
+                  )}>
+                    {player.name}
+                  </div>
+                  
+                  {/* Lives (Hearts) - smaller */}
+                  <div className="flex space-x-0.5">
+                    {Array.from({ length: player.lives }).map((_, i) => (
+                      <Heart key={i} className="w-3 h-3 text-red-500 fill-current" />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {/* Arrow pointing to current player */}
         {currentPlayerIndex >= 0 && alivePlayers.length > 1 && (
@@ -172,11 +175,20 @@ export const GamePlaying = ({
         )}
       </div>
 
+      {/* Mobile Players Rail - only on mobile */}
+      <div className="block md:hidden sticky bottom-20 left-0 right-0 z-30">
+        <PlayersRail 
+          players={players}
+          currentPlayerId={game.current_player_id}
+          currentUserId={currentUserId}
+        />
+      </div>
+
       {/* Bottom spacer to prevent avatars from being hidden by input on small screens */}
       <div className="h-24 md:h-0" />
 
       {/* Bottom Status and Input - sticky positioned */}
-      <div className="sticky bottom-0 left-0 right-0 z-40 pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4">
+      <div className="sticky bottom-0 left-0 right-0 game-input-layer pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4">
         {/* Game status and spectator mode indicator */}
         {(() => {
           const currentUserPlayer = players.find(p => p.user_id === currentUserId);

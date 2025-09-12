@@ -74,13 +74,16 @@ export const GameFinished = ({
         {/* Winner display - use winner_player_id from database */}
         {game.winner_player_id && !isSinglePlayer && (() => {
           const winner = players.find(p => p.id === game.winner_player_id);
+          const me = players.find(p => p.user_id === currentUserId);
+          const iDidWin = me?.id === game.winner_player_id;
+          
           return winner ? (
             <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-6 shadow-lg border border-yellow-300">
               <p className="text-3xl font-bold text-orange-800">
-                🎉 Vinder: {winner.name} 🏆 
+                🎉 {iDidWin ? 'Du vandt!' : `Vinder: ${winner.name}`} 🏆 
               </p>
               <p className="text-lg text-orange-600 mt-2">
-                Tillykke! Du var den sidste overlevende!
+                {iDidWin ? 'Tillykke! Du var den sidste overlevende!' : `Spillet er slut. Vinderen var ${winner.name}.`}
               </p>
             </div>
           ) : null;
