@@ -21,18 +21,26 @@ export const useTimerHandler = (
 ) => {
   const alivePlayers = players.filter(player => player.is_alive);
   const pendingTurnSeqRef = useRef<number | null>(null);
+  const isCallingRef = useRef(false);
   const queryClient = useQueryClient();
   const { offsetMs } = useServerClock();
   const channel = useRoomChannel(room?.id || roomLocator);
 
   const handleTimerExpired = useCallback(async () => {
+    // Guards
     if (!game || game.status !== 'playing') return;
 
     const current = players.find(p => p.id === game.current_player_id);
-    if (!current || current.user_id !== user?.id) return;
+    if (!current) return;
 
-    if (pendingTurnSeqRef.current === (game as any)?.turn_seq) return;
-    pendingTurnSeqRef.current = (game as any)?.turn_seq;
+    // Only the current player device should call timeout
+    if (user?.id && current.user_id !== user.id) return;
+
+    // Prevent double fire in the same turn
+    const turnSeq = (game as any)?.turn_seq ?? -1;
+    if (pendingTurnSeqRef.current === turnSeq || isCallingRef.current) return;
+    pendingTurnSeqRef.current = turnSeq;
+    isCallingRef.current = true;
 
     try {
       const { data, error } = await supabase.rpc('handle_timeout', {
@@ -40,12 +48,37 @@ export const useTimerHandler = (
         p_player_id: current.id,
       });
 
-      if (error && !/turn already advanced|current turn/i.test(error.message)) {
-        toast.error(error.message);
+      if (error) {
+        // Ignore expected idempotency/ordering errors from server
+        const msg = (error.message || '').toLowerCase();
+        if (!/turn already advanced|not your turn|current turn/.test(msg)) {
+          console.error('handle_timeout error:', error);
+          toast.error('Fejl ved håndtering af timeren');
+        }
+        return;
       }
 
-      // Handle successful timeout with optimistic updates
-      if (!error && data && typeof data === 'object' && (data as any)?.success) {
+      // ⬇️ Immediately refresh both game and players so hearts update right away
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['game', room?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['players', room?.id] }),
+      ]);
+
+      // Optional optimistic hint: if server returned lives_remaining, update my card
+      if (data && typeof data === 'object' && (data as any)?.lives_remaining != null && current?.id) {
+        const livesRemaining = (data as any).lives_remaining;
+        queryClient.setQueryData(['players', room?.id], (prev: any) => {
+          if (!Array.isArray(prev)) return prev;
+          return prev.map((p: any) =>
+            p.id === current.id
+              ? { ...p, lives: livesRemaining, is_alive: livesRemaining > 0 }
+              : p
+          );
+        });
+      }
+
+      // Handle successful timeout with optimistic updates for multiplayer
+      if (data && typeof data === 'object' && (data as any)?.success) {
         const responseData = data as {
           success: boolean;
           timeout: boolean;
@@ -59,38 +92,6 @@ export const useTimerHandler = (
           timer_duration?: number;
           turn_seq?: number;
         };
-
-        // Immediately update React Query cache for optimistic turn advance
-        if (responseData.game_ended) {
-          queryClient.setQueryData(['game', room?.id], (prev: any) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              status: 'finished',
-              timer_end_time: null,
-              current_syllable: null,
-              updated_at: new Date().toISOString(),
-            };
-          });
-        } else if (responseData.timer_end_time) {
-          queryClient.setQueryData(['game', room?.id], (prev: any) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              current_player_id: responseData.current_player_id ?? prev.current_player_id,
-              current_syllable: responseData.current_syllable ?? prev.current_syllable,
-              timer_end_time: responseData.timer_end_time ?? prev.timer_end_time,
-              timer_duration: responseData.timer_duration ?? prev.timer_duration,
-              turn_seq: responseData.turn_seq ?? (prev.turn_seq ?? 0) + 1,
-              status: 'playing',
-              updated_at: new Date().toISOString(),
-            };
-          });
-        }
-        // Fire a tiny safety invalidate shortly after
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
-        }, 300);
 
         // Apply shadow state immediately for instant UI update
         if (shadowGame && !responseData.game_ended && responseData.turn_seq && responseData.current_player_id && 
@@ -127,7 +128,11 @@ export const useTimerHandler = (
           }, 180);
         }
       }
+    } catch (e) {
+      console.error('handle_timeout unexpected:', e);
     } finally {
+      // Unlock for next turn
+      isCallingRef.current = false;
       pendingTurnSeqRef.current = null;
     }
   }, [game, players, user?.id, room?.id, roomLocator, queryClient, offsetMs, shadowGame, channel]);

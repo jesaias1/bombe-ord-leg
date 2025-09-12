@@ -19,7 +19,7 @@ export function useGameTimer(game: {
   const endIso = game?.timer_end_time ?? null;
   const turnSeq = game?.turn_seq ?? 0;
   const leadAppliedRef = useRef<Record<number, boolean>>({}); // keyed by turnSeq
-  const hasExpiredRef = useRef(false);
+  const firedRef = useRef(false);
 
   function stop() {
     if (raf.current != null) cancelAnimationFrame(raf.current);
@@ -44,18 +44,20 @@ export function useGameTimer(game: {
     const left = Math.max(0, effectiveEnd - serverNow);
     setMsLeft(left);
     
-    if (left <= 0 && !hasExpiredRef.current) {
-      hasExpiredRef.current = true;
-      stop();
-      onExpired?.();
-    } else if (left > 0) {
+    if (left <= 0) {
+      if (!firedRef.current) {
+        firedRef.current = true;   // ← only fire once
+        stop();
+        onExpired?.();
+      }
+    } else {
       raf.current = requestAnimationFrame(tick);
     }
   }
 
   useEffect(() => {
     stop();
-    hasExpiredRef.current = false; // Reset expiration flag on timer restart
+    firedRef.current = false;      // ← reset per new turn/endIso
     
     if (!endIso) {
       setMsLeft(0);
