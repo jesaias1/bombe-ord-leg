@@ -82,15 +82,15 @@ export const GamePlaying = ({
             {/* Placeholder for consistency - actual badges rendered separately */}
           </div>
           
+          {/* Turn chip */}
+          <div className="turn-chip pointer-events-none">
+            <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
+              {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+            </span>
+          </div>
+          
           {/* Timer wrapper with responsive sizing */}
           <div className="timer-wrap">
-            {/* Compact turn chip above timer */}
-            <div className="turn-chip pointer-events-none">
-              <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
-                {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
-              </span>
-            </div>
-            
             <div className="mx-auto flex items-center justify-center">
               <BombTimer
                 timeLeft={timeLeft}

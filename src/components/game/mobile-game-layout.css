@@ -6,52 +6,50 @@
   --safe-bottom: max(env(safe-area-inset-bottom), 8px);
 }
 
-/* Outer stage around players+timer */
-.game-stage {
-  padding-top: calc(var(--safe-top) + 8px);
-  padding-bottom: calc(var(--safe-bottom) + 96px); /* room for bottom input/toasts */
-}
-
-/* Timer container should sit above background elements */
-.timer-wrap {
-  position: relative;
-  z-index: 30;
-  width: min(82vw, 420px);
-  aspect-ratio: 1 / 1;
-  margin-inline: auto;
-}
-
-/* Small turn chip above the timer (already added previously) */
-.turn-chip {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: -24px;
-  z-index: 40;
-}
-
-/* Player badges row spacing */
-.player-badges {
-  position: relative;
-  z-index: 25;
-  margin: 12px auto;
-}
-
-/* Bottom-docked input on phones */
 @media (max-width: 768px) {
-  .game-input-wrap {
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(var(--safe-bottom) + 12px);
-    width: 92vw;
-    max-width: 520px;
-    z-index: 55; /* above timer, below toasts */
+  .game-stage {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+    padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 96px);
   }
 
-  /* kill any big dark overlay/backdrop on mobile */
+  .player-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.25rem;
+  }
+
+  .timer-wrap {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0;
+  }
+
+  .turn-chip {
+    margin-bottom: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .game-input-wrap {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 55;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(4px);
+  }
+
   .game-input-panel {
-    background-color: rgba(0,0,0,0.35); /* subtle only */
-    backdrop-filter: none;
+    max-width: 600px;
+    margin: 0 auto;
   }
 }
