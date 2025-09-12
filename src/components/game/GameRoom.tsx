@@ -215,10 +215,16 @@ export const GameRoom = () => {
   // Subscribe to turn_advanced broadcasts
   useEffect(() => {
     if (!channel || !room?.id) return;
-    const handler = () => queryClient.refetchQueries({ queryKey: ['game', room.id], type: 'active' });
 
-    const subscription = channel.on('broadcast', { event: 'turn_advanced' }, handler);
-    return () => { /* no-op: shared channel must stay alive */ };
+    const handler = (payload?: any) => {
+      console.debug('[broadcast] turn_advanced received', payload);
+      queryClient.refetchQueries({ queryKey: ['game', room.id], type: 'active' });
+    };
+
+    channel.on('broadcast', { event: 'turn_advanced' }, handler);
+
+    // keep shared channel; do not unsubscribe handler here
+    return () => { /* no-op */ };
   }, [channel, room?.id, queryClient]);
 
   // Fast sync for multiplayer games

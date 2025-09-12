@@ -164,12 +164,24 @@ export const useGameActions = (
 
           // Broadcast turn advance to other clients
           try {
-            channel?.send({
+            console.debug('[broadcast] sending turn_advanced from submitWord');
+            const res = await channel?.send({
               type: 'broadcast',
               event: 'turn_advanced',
-              payload: { roomId: room?.id || roomLocator, turn_seq: responseData.turn_seq }
+              payload: {
+                roomId: room?.id || roomLocator,
+                at: Date.now(),
+              },
             });
-          } catch {}
+            if (res?.error) console.warn('[broadcast] send error', res.error);
+          } catch (e) {
+            console.warn('[broadcast] send failed', e);
+          }
+
+          // tiny safety net in case packet is dropped
+          setTimeout(() => {
+            queryClient.refetchQueries({ queryKey: ['game', room?.id], type: 'active' });
+          }, 180);
 
           toast({
             title: "Godt ord! 🎉",
