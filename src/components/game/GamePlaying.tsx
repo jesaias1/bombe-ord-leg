@@ -83,6 +83,13 @@ export const GamePlaying = ({
           
           {/* Timer wrapper with responsive sizing */}
           <div className="timer-wrap relative z-10">
+            {/* Compact turn chip above timer */}
+            <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 md:-top-8 z-[30]">
+              <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
+                {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+              </span>
+            </div>
+            
             <div className="mx-auto flex items-center justify-center">
               <BombTimer
                 timeLeft={timeLeft}
@@ -192,7 +199,7 @@ export const GamePlaying = ({
 
         {/* Bottom Status and Input - sticky positioned */}
         <div className="sticky bottom-0 left-0 right-0 game-input-layer pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4">
-          {/* Game status and spectator mode indicator */}
+          {/* Game status and spectator mode indicator - compact chips only */}
           {(() => {
             const currentUserPlayer = players.find(p => p.user_id === currentUserId);
             const isSpectating = currentUserPlayer && !currentUserPlayer.is_alive;
@@ -201,11 +208,8 @@ export const GamePlaying = ({
             if (isSpectating) {
               return (
                 <div className="text-center mb-4">
-                  <div className="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
+                  <div className="relative z-[30] mt-2 md:mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
                     👀 Du er ude - du ser med som tilskuer
-                  </div>
-                  <div className="mt-2 text-gray-400 text-sm">
-                    {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
                   </div>
                 </div>
               );
@@ -218,13 +222,7 @@ export const GamePlaying = ({
                 </div>
               );
             } else {
-              return (
-                <div className="text-center mb-4">
-                  <div className="text-gray-300">
-                    {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
-                  </div>
-                </div>
-              );
+              return null; // No additional message needed - turn info is in chip above timer
             }
           })()}
         
