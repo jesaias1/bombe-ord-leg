@@ -43,7 +43,7 @@ export const useTimerHandler = (
       }
 
       // Handle successful timeout with optimistic updates
-      if (!error && data && typeof data === 'object' && (data as any)?.success && !(data as any)?.game_ended) {
+      if (!error && data && typeof data === 'object' && (data as any)?.success) {
         const responseData = data as {
           success: boolean;
           timeout: boolean;
@@ -58,8 +58,40 @@ export const useTimerHandler = (
           turn_seq?: number;
         };
 
+        // Immediately update React Query cache for optimistic turn advance
+        if (responseData.game_ended) {
+          queryClient.setQueryData(['game', room?.id], (prev: any) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              status: 'finished',
+              timer_end_time: null,
+              current_syllable: null,
+              updated_at: new Date().toISOString(),
+            };
+          });
+        } else if (responseData.timer_end_time) {
+          queryClient.setQueryData(['game', room?.id], (prev: any) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              current_player_id: responseData.current_player_id ?? prev.current_player_id,
+              current_syllable: responseData.current_syllable ?? prev.current_syllable,
+              timer_end_time: responseData.timer_end_time ?? prev.timer_end_time,
+              timer_duration: responseData.timer_duration ?? prev.timer_duration,
+              turn_seq: responseData.turn_seq ?? (prev.turn_seq ?? 0) + 1,
+              status: 'playing',
+              updated_at: new Date().toISOString(),
+            };
+          });
+        }
+        // Fire a tiny safety invalidate shortly after
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
+        }, 300);
+
         // Apply shadow state immediately for instant UI update
-        if (shadowGame && responseData.turn_seq && responseData.current_player_id && 
+        if (shadowGame && !responseData.game_ended && responseData.turn_seq && responseData.current_player_id && 
             responseData.current_syllable && responseData.timer_end_time && 
             responseData.timer_duration) {
           shadowGame.apply({

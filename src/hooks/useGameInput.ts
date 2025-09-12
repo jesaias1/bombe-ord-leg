@@ -72,8 +72,6 @@ export const useGameInput = ({
                    serverNow() >= startTs &&
                    serverNow() <= endTs + GRACE_MS &&
                    !isSubmitting;
-  
-  console.log('useGameInput: canInput=', canInput, 'isMyTurn=', isMyTurn, 'isSubmitting=', isSubmitting, 'currentPlayer=', currentPlayer?.name);
 
   // Focus input when it becomes the user's turn (only on turn change, not every render)
   useEffect(() => {

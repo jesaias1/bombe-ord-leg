@@ -117,6 +117,27 @@ export const useGameActions = (
             updateStreak(true);
           }
 
+          // Immediately update React Query cache for optimistic turn advance
+          if (responseData.timer_end_time) {
+            queryClient.setQueryData(['game', room?.id], (prev: any) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                current_player_id: responseData.current_player_id ?? prev.current_player_id,
+                current_syllable: responseData.current_syllable ?? prev.current_syllable,
+                timer_end_time: responseData.timer_end_time ?? prev.timer_end_time,
+                timer_duration: responseData.timer_duration ?? prev.timer_duration,
+                turn_seq: responseData.turn_seq ?? (prev.turn_seq ?? 0) + 1,
+                status: 'playing',
+                updated_at: new Date().toISOString(),
+              };
+            });
+            // Fire a tiny safety invalidate shortly after
+            setTimeout(() => {
+              queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
+            }, 300);
+          }
+
           // Apply shadow state immediately for instant UI update
           if (shadowGame && responseData.turn_seq && responseData.current_player_id && 
               responseData.current_syllable && responseData.timer_end_time && 
