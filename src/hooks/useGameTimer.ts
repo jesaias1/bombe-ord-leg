@@ -15,6 +15,7 @@ export function useGameTimer(game: {
   const [msLeft, setMsLeft] = useState(0);
   const raf = useRef<number | null>(null);
   const lastEnd = game?.timer_end_time ?? null;
+  const hasExpiredRef = useRef(false);
 
   function stop() {
     if (raf.current != null) cancelAnimationFrame(raf.current);
@@ -26,21 +27,26 @@ export function useGameTimer(game: {
     const end = lastEnd ? new Date(lastEnd).getTime() : 0;
     const left = Math.max(0, end - serverNow);
     setMsLeft(left);
-    if (left <= 0) {
+    
+    if (left <= 0 && !hasExpiredRef.current) {
+      hasExpiredRef.current = true;
       stop();
       onExpired?.();
-    } else {
-      raf.current = requestAnimationFrame(tick); // smooth; < 16ms jitter
+    } else if (left > 0) {
+      raf.current = requestAnimationFrame(tick);
     }
   }
 
   useEffect(() => {
     stop();
+    hasExpiredRef.current = false; // Reset expiration flag on timer restart
+    
     if (!lastEnd) {
       setMsLeft(0);
       return;
     }
-    // start fresh each turn (turn_seq change) or end change
+    
+    // Start fresh each turn (turn_seq change) or end change
     raf.current = requestAnimationFrame(tick);
     return stop;
     // eslint-disable-next-line react-hooks/exhaustive-deps

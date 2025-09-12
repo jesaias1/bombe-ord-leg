@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -6,6 +6,10 @@ import { useAuth } from '@/components/auth/AuthProvider';
 export function useRoomRealtime(roomId?: string, onPing?: () => void) {
   const queryClient = useQueryClient();
   const { user, isGuest } = useAuth();
+  
+  // Debounce refs for smooth realtime updates
+  const playersDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const gameDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -16,15 +20,30 @@ export function useRoomRealtime(roomId?: string, onPing?: () => void) {
     });
 
     const invalidatePlayers = () => {
-      // invalidate both keys you use in code
-      queryClient.invalidateQueries({ queryKey: ['players', roomId] });
-      queryClient.invalidateQueries({ queryKey: ['players', roomId, isGuest, user?.id] });
-      onPing?.();
+      // Clear previous debounce
+      if (playersDebounceRef.current) {
+        clearTimeout(playersDebounceRef.current);
+      }
+      
+      // Debounce with 50ms for smooth updates
+      playersDebounceRef.current = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['players', roomId] });
+        queryClient.invalidateQueries({ queryKey: ['players', roomId, isGuest, user?.id] });
+        onPing?.();
+      }, 50);
     };
 
     const invalidateGame = () => {
-      queryClient.invalidateQueries({ queryKey: ['game', roomId] });
-      onPing?.();
+      // Clear previous debounce
+      if (gameDebounceRef.current) {
+        clearTimeout(gameDebounceRef.current);
+      }
+      
+      // Debounce with 50ms for smooth updates
+      gameDebounceRef.current = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['game', roomId] });
+        onPing?.();
+      }, 50);
     };
 
     channel.on('postgres_changes',
@@ -50,6 +69,13 @@ export function useRoomRealtime(roomId?: string, onPing?: () => void) {
     const poll = setInterval(invalidatePlayers, 2500);
 
     return () => {
+      // Clear debounce timers
+      if (playersDebounceRef.current) {
+        clearTimeout(playersDebounceRef.current);
+      }
+      if (gameDebounceRef.current) {
+        clearTimeout(gameDebounceRef.current);
+      }
       clearInterval(poll);
       supabase.removeChannel(channel);
     };

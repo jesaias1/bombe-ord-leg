@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 /** Returns serverClockOffsetMs = serverNow - clientNow */
-export function useServerClock(offsetRefreshMs = 15000) {
+export function useServerClock(offsetRefreshMs = 45000) { // Poll every 45s
   const [offset, setOffset] = useState(0);
   const inFlight = useRef(false);
 
@@ -17,6 +17,9 @@ export function useServerClock(offsetRefreshMs = 15000) {
         // RTT correction: assume server time corresponds to the mid-point
         const clientMid = (t0 + t1) / 2;
         setOffset(data - clientMid);
+      } else {
+        // Fallback to 0 if RPC unavailable (solo mode compatibility)
+        setOffset(0);
       }
     } finally {
       inFlight.current = false;
