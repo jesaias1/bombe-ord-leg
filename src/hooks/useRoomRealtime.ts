@@ -46,24 +46,29 @@ export function useRoomRealtime(roomId?: string, onPing?: () => void) {
       }, 50);
     };
 
-    channel.on('postgres_changes',
-      { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
-      invalidatePlayers
-    );
-    channel.on('postgres_changes',
-      { event: '*', schema: 'public', table: 'games', filter: `room_id=eq.${roomId}` },
-      invalidateGame
-    );
+    // Subscribe but never throw if API changes
+    try {
+      channel.on?.('postgres_changes',
+        { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
+        invalidatePlayers
+      );
+      channel.on?.('postgres_changes',
+        { event: '*', schema: 'public', table: 'games', filter: `room_id=eq.${roomId}` },
+        invalidateGame
+      );
 
-    // Also listen to our NOTIFY nudge
-    channel.on('broadcast', { event: 'ping' }, () => invalidatePlayers());
+      // Also listen to our NOTIFY nudge
+      channel.on?.('broadcast', { event: 'ping' }, () => invalidatePlayers());
 
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        // Small kick so late joins appear instantly
-        invalidatePlayers();
-      }
-    });
+      channel.subscribe?.((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Small kick so late joins appear instantly
+          invalidatePlayers();
+        }
+      });
+    } catch (e) {
+      console.warn('[room-realtime] channel setup warn', e);
+    }
 
     // Fallback poll while in lobby (covers any realtime hiccups)
     const poll = setInterval(invalidatePlayers, 2500);
@@ -77,7 +82,7 @@ export function useRoomRealtime(roomId?: string, onPing?: () => void) {
         clearTimeout(gameDebounceRef.current);
       }
       clearInterval(poll);
-      supabase.removeChannel(channel);
+      try { supabase.removeChannel?.(channel); } catch {}
     };
   }, [roomId, queryClient, user?.id, isGuest, onPing]);
 }

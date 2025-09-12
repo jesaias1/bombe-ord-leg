@@ -1,53 +1,54 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// simple singleton cache per roomId
+// simple per-room singleton cache (lives for the session)
 const channelCache = new Map<string, any>();
 
 export function useRoomChannel(roomId?: string | null) {
-  const roomKey = roomId ?? null;
+  const key = roomId ?? null;
   const chanRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!roomKey) return;
+    // guard SSR / undefined room
+    if (typeof window === 'undefined' || !key) return;
 
-    // reuse if exists
-    if (channelCache.has(roomKey)) {
-      chanRef.current = channelCache.get(roomKey);
+    // reuse existing channel if we already created one
+    const cached = channelCache.get(key);
+    if (cached) {
+      chanRef.current = cached;
       return;
     }
 
-    const channel = supabase.channel(`room-${roomKey}`, {
-      config: { broadcast: { ack: true } },
+    const ch = supabase.channel(`room-${key}`, {
+      config: { broadcast: { ack: false } }, // lowest-latency fire-and-forget
     });
 
-    console.debug('[room-channel] subscribe', roomKey);
-    channel.subscribe((status: string) => {
-      console.debug('[room-channel] status', roomKey, status);
-    });
+    // subscribe but never throw if API changes
+    try {
+      ch.subscribe((status: string) => {
+        console.debug('[room-channel] status', key, status);
+      });
+    } catch (e) {
+      console.warn('[room-channel] subscribe warn', e);
+    }
 
-    channelCache.set(roomKey, channel);
-    chanRef.current = channel;
+    channelCache.set(key, ch);
+    chanRef.current = ch;
 
-    // IMPORTANT: do not remove the channel on unmount here.
-    // The GameRoom-level cleanup will handle it when truly leaving the room.
-    return () => {
-      // no-op: keep channel alive while user is in room
-    };
-  }, [roomKey]);
+    // IMPORTANT: keep channel alive while user is in the room.
+    // No unsubscribe here to avoid tearing down during re-renders.
+    return () => { /* no-op */ };
+  }, [key]);
 
   return chanRef.current;
 }
 
-// Optional helper to fully dispose when truly leaving a room (call once on leave)
+// Optional full dispose when actually leaving a room (call only on explicit Leave)
 export function disposeRoomChannel(roomId?: string | null) {
-  const key = roomId ?? null;
-  const ch = key ? channelCache.get(key) : null;
+  if (!roomId) return;
+  const ch = channelCache.get(roomId);
   if (ch) {
-    try {
-      console.debug('[room-channel] dispose', key);
-      supabase.removeChannel(ch);
-    } catch {}
-    channelCache.delete(key);
+    try { supabase.removeChannel(ch); } catch {}
+    channelCache.delete(roomId);
   }
 }

@@ -217,21 +217,22 @@ export const GameRoom = () => {
     if (!channel || !room?.id) return;
 
     const handler = (payload?: any) => {
-      console.debug('[broadcast] turn_advanced received', payload);
+      console.debug('[broadcast] turn_advanced', payload);
       queryClient.refetchQueries({ queryKey: ['game', room.id], type: 'active' });
       queryClient.refetchQueries({ queryKey: ['players', room.id], type: 'active' });
     };
 
-    channel.on('broadcast', { event: 'turn_advanced' }, handler);
+    // use optional chaining; some SDK builds don't support .off()
+    try { channel.on?.('broadcast', { event: 'turn_advanced' }, handler); } catch {}
 
-    // keep shared channel; do not unsubscribe handler here
+    // keep shared channel alive; no unsubscribe here
     return () => { /* no-op */ };
-  }, [channel, room?.id, queryClient]);
+  }, [Boolean(channel), room?.id, queryClient]);
 
   // Fast sync for multiplayer games
   const isMultiplayer = (players?.length ?? 0) > 1;
   const playing = game?.status === 'playing';
-  useFastGameSync(room?.id, isMultiplayer && playing, 150);
+  useFastGameSync(room?.id ?? undefined, Boolean(room?.id && isMultiplayer && playing), 150);
 
   // Dispose room channel when leaving
   useEffect(() => {
