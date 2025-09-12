@@ -65,12 +65,13 @@ export const useGameInput = ({
                    game?.status === 'playing' &&
                    !!currentUserPlayer?.is_alive;
 
-  // Use authoritative timing - only enable input from computed start moment
+  // Calculate time left for more tolerant input availability
+  const timeLeftMs = endTs ? Math.max(0, endTs - serverNow()) : 0;
+
+  // Simplified input availability - can type if it's my turn and timer shows time left
   const canInput = game?.status === 'playing' &&
                    isMyTurn &&
-                   startTs > 0 &&
-                   serverNow() >= startTs &&
-                   serverNow() <= endTs + GRACE_MS &&
+                   timeLeftMs > 0 &&
                    !isSubmitting;
 
   // Focus input when it becomes the user's turn (only on turn change, not every render)

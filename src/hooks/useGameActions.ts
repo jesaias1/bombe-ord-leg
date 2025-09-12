@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useRoomChannel } from '@/hooks/useRoomChannel';
 import { useUserStats } from '@/hooks/useUserStats';
 import { Tables } from '@/integrations/supabase/types';
 import { useServerClock } from './useServerClock';
@@ -33,6 +34,7 @@ export const useGameActions = (
     updateFastestWordTime,
     addPlaytime 
   } = useUserStats();
+  const channel = useRoomChannel(room?.id || roomLocator);
 
   const submitWord = useCallback(async (word: string): Promise<boolean> => {
     console.log('useGameActions: submitWord called with word:', word);
@@ -160,21 +162,14 @@ export const useGameActions = (
             }, 0);
           }
 
-          // Broadcast the turn for all peers (fast)
-          if (room?.id && responseData.current_player_id) {
-            supabase.channel(`game-fast-${room.id}`).send({
+          // Broadcast turn advance to other clients
+          try {
+            channel?.send({
               type: 'broadcast',
               event: 'turn_advanced',
-              payload: {
-                room_id: room.id,
-                current_player_id: responseData.current_player_id,
-                current_syllable: responseData.current_syllable,
-                timer_end_time: responseData.timer_end_time,
-                timer_duration: responseData.timer_duration,
-                turn_seq: responseData.turn_seq,
-              },
+              payload: { roomId: room?.id || roomLocator, turn_seq: responseData.turn_seq }
             });
-          }
+          } catch {}
 
           toast({
             title: "Godt ord! 🎉",

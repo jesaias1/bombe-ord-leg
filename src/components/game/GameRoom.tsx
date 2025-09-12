@@ -18,6 +18,8 @@ import { useShadowGame } from '@/hooks/useShadowGame';
 import { useEffectiveGame } from '@/hooks/useEffectiveGame';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRoomRealtime } from '@/hooks/useRoomRealtime';
+import { useRoomChannel } from '@/hooks/useRoomChannel';
+import { useFastGameSync } from '@/hooks/useFastGameSync';
 import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
 import { getRandomDanishSyllable } from '@/utils/danishSyllables';
@@ -206,6 +208,23 @@ export const GameRoom = () => {
     queryClient.invalidateQueries({ queryKey: ['game', room?.id] });
     queryClient.invalidateQueries({ queryKey: ['players', room?.id, isGuest, user?.id] });
   });
+
+  // Setup room channel for broadcasts
+  const channel = useRoomChannel(room?.id);
+
+  // Subscribe to turn_advanced broadcasts
+  useEffect(() => {
+    if (!channel || !room?.id) return;
+    const handler = () => queryClient.refetchQueries({ queryKey: ['game', room.id], type: 'active' });
+
+    const subscription = channel.on('broadcast', { event: 'turn_advanced' }, handler);
+    return () => { channel.unsubscribe(); };
+  }, [channel, room?.id, queryClient]);
+
+  // Fast sync for multiplayer games
+  const isMultiplayer = (players?.length ?? 0) > 1;
+  const playing = game?.status === 'playing';
+  useFastGameSync(room?.id, isMultiplayer && playing, 250);
 
   // Setup game subscriptions
   const { cleanup: cleanupSubscriptions } = useGameSubscriptions({

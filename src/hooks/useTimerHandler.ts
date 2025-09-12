@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useServerClock } from './useServerClock';
+import { useRoomChannel } from '@/hooks/useRoomChannel';
 
 type Game = Tables<'games'>;
 type Player = Tables<'players'>;
@@ -22,6 +23,7 @@ export const useTimerHandler = (
   const pendingTurnSeqRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
   const { offsetMs } = useServerClock();
+  const channel = useRoomChannel(room?.id || roomLocator);
 
   const handleTimerExpired = useCallback(async () => {
     if (!game || game.status !== 'playing') return;
@@ -103,26 +105,21 @@ export const useTimerHandler = (
           });
         }
 
-        // Ping everyone with the turn change
-        if (room?.id && responseData.current_player_id) {
-          supabase.channel(`game-fast-${room.id}`).send({
-            type: 'broadcast',
-            event: 'turn_advanced',
-            payload: {
-              room_id: room.id,
-              current_player_id: responseData.current_player_id,
-              current_syllable: responseData.current_syllable,
-              timer_end_time: responseData.timer_end_time,
-              timer_duration: responseData.timer_duration,
-              turn_seq: responseData.turn_seq,
-            },
-          });
+        // Broadcast turn advance to other clients
+        if (!responseData.game_ended) {
+          try {
+            channel?.send({
+              type: 'broadcast',
+              event: 'turn_advanced',
+              payload: { roomId: room?.id || roomLocator, turn_seq: responseData.turn_seq }
+            });
+          } catch {}
         }
       }
     } finally {
       pendingTurnSeqRef.current = null;
     }
-  }, [game, players, user?.id, room?.id, roomLocator, queryClient, offsetMs, shadowGame]);
+  }, [game, players, user?.id, room?.id, roomLocator, queryClient, offsetMs, shadowGame, channel]);
 
   return { handleTimerExpired };
 };
