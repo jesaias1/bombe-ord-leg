@@ -9,6 +9,7 @@ import { Heart, Crown } from 'lucide-react';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useServerClock } from '@/hooks/useServerClock';
 import './GameBoard.css';
+import './mobile-game-layout.css';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -82,9 +83,9 @@ export const GamePlaying = ({
           </div>
           
           {/* Timer wrapper with responsive sizing */}
-          <div className="timer-wrap relative z-10">
+          <div className="timer-wrap">
             {/* Compact turn chip above timer */}
-            <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 md:-top-8 z-[30]">
+            <div className="turn-chip pointer-events-none">
               <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
                 {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
               </span>
@@ -197,8 +198,9 @@ export const GamePlaying = ({
       {/* Bottom spacer to prevent avatars from being hidden by input on small screens */}
       <div className="h-24 md:h-0" />
 
-        {/* Bottom Status and Input - sticky positioned */}
-        <div className="sticky bottom-0 left-0 right-0 game-input-layer pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4">
+        {/* Bottom Status and Input - responsive positioned */}
+        <div className="game-input-wrap sticky bottom-0 left-0 right-0 game-input-layer pb-[env(safe-area-inset-bottom)]">
+          <div className="game-input-panel bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4 rounded-xl shadow-lg">
           {/* Game status and spectator mode indicator - compact chips only */}
           {(() => {
             const currentUserPlayer = players.find(p => p.user_id === currentUserId);
@@ -226,18 +228,19 @@ export const GamePlaying = ({
             }
           })()}
         
-        <div className="max-w-md mx-auto">
-          <WordInput
-            onSubmit={gameInput.handleWordSubmit}
-            disabled={!gameInput.canInput}
-            currentSyllable={gameInput.currentSyllable || ''}
-            isSubmitting={gameInput.isSubmitting}
-            currentWord={gameInput.currentWord}
-            onWordChange={gameInput.setCurrentWord}
-            inputRef={gameInput.inputRef}
-          />
+            <div className="max-w-md mx-auto">
+              <WordInput
+                onSubmit={gameInput.handleWordSubmit}
+                disabled={!gameInput.canInput}
+                currentSyllable={gameInput.currentSyllable || ''}
+                isSubmitting={gameInput.isSubmitting}
+                currentWord={gameInput.currentWord}
+                onWordChange={gameInput.setCurrentWord}
+                inputRef={gameInput.inputRef}
+              />
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Eliminated Players */}
       {deadPlayers.length > 0 && (

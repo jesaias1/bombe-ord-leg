@@ -1,0 +1,57 @@
+/* mobile-game-layout.css */
+
+/* Respect notches and leave space for a bottom-docked input */
+:root {
+  --safe-top: max(env(safe-area-inset-top), 8px);
+  --safe-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+/* Outer stage around players+timer */
+.game-stage {
+  padding-top: calc(var(--safe-top) + 8px);
+  padding-bottom: calc(var(--safe-bottom) + 96px); /* room for bottom input/toasts */
+}
+
+/* Timer container should sit above background elements */
+.timer-wrap {
+  position: relative;
+  z-index: 30;
+  width: min(82vw, 420px);
+  aspect-ratio: 1 / 1;
+  margin-inline: auto;
+}
+
+/* Small turn chip above the timer (already added previously) */
+.turn-chip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -24px;
+  z-index: 40;
+}
+
+/* Player badges row spacing */
+.player-badges {
+  position: relative;
+  z-index: 25;
+  margin: 12px auto;
+}
+
+/* Bottom-docked input on phones */
+@media (max-width: 768px) {
+  .game-input-wrap {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--safe-bottom) + 12px);
+    width: 92vw;
+    max-width: 520px;
+    z-index: 55; /* above timer, below toasts */
+  }
+
+  /* kill any big dark overlay/backdrop on mobile */
+  .game-input-panel {
+    background-color: rgba(0,0,0,0.35); /* subtle only */
+    backdrop-filter: none;
+  }
+}
