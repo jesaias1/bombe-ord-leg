@@ -16,7 +16,7 @@ export const PlayersRail = ({ players, currentPlayerId, currentUserId }: Players
   
   return (
     <div className="w-full bg-gray-900/50 backdrop-blur-sm border-t border-gray-700">
-      <div className="flex space-x-3 overflow-x-auto no-scrollbar p-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 px-2 overflow-x-auto no-scrollbar p-2">
         {alivePlayers.map((player) => {
           const isCurrentPlayer = player.id === currentPlayerId;
           const isCurrentUser = player.user_id === currentUserId;

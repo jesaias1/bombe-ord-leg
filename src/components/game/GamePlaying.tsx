@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Heart, Crown } from 'lucide-react';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useServerClock } from '@/hooks/useServerClock';
+import './GameBoard.css';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -73,20 +74,22 @@ export const GamePlaying = ({
       {/* Game Area - responsive layout to prevent overlap */}
       <div className="absolute inset-0 flex items-center justify-center">
         
-        {/* Responsive wrapper for timer - prevents overlap with player hearts */}
-        <div className="relative flex w-full flex-col items-center justify-center">
-          {/* Timer wrapper with size constraints */}
-          <div className="relative z-10">
+        {/* Safe area wrapper with padding to prevent UI overlap */}
+        <div className="game-stage relative flex w-full flex-col items-center justify-center">
+          {/* Player badges positioning */}
+          <div className="player-badges">
+            {/* Placeholder for consistency - actual badges rendered separately */}
+          </div>
+          
+          {/* Timer wrapper with responsive sizing */}
+          <div className="timer-wrap relative z-10">
             <div className="mx-auto flex items-center justify-center">
-              {/* Size clamps prevent the circle from growing into player hearts */}
-              <div className="relative w-[clamp(120px,28vw,200px)] h-[clamp(120px,28vw,200px)]">
-                <BombTimer
-                  timeLeft={timeLeft}
-                  totalTime={game.timer_duration || 15}
-                  isActive={game.status === 'playing'}
-                  syllable={game.current_syllable || ''}
-                />
-              </div>
+              <BombTimer
+                timeLeft={timeLeft}
+                totalTime={game.timer_duration || 15}
+                isActive={game.status === 'playing'}
+                syllable={game.current_syllable || ''}
+              />
             </div>
           </div>
         </div>
@@ -187,43 +190,43 @@ export const GamePlaying = ({
       {/* Bottom spacer to prevent avatars from being hidden by input on small screens */}
       <div className="h-24 md:h-0" />
 
-      {/* Bottom Status and Input - sticky positioned */}
-      <div className="sticky bottom-0 left-0 right-0 game-input-layer pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4">
-        {/* Game status and spectator mode indicator */}
-        {(() => {
-          const currentUserPlayer = players.find(p => p.user_id === currentUserId);
-          const isSpectating = currentUserPlayer && !currentUserPlayer.is_alive;
-          const isCurrentUserTurn = isCurrentUser && currentUserPlayer?.is_alive;
-          
-          if (isSpectating) {
-            return (
-              <div className="text-center mb-4">
-                <div className="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
-                  👀 Du er ude - du ser med som tilskuer
+        {/* Bottom Status and Input - sticky positioned */}
+        <div className="sticky bottom-0 left-0 right-0 game-input-layer pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4">
+          {/* Game status and spectator mode indicator */}
+          {(() => {
+            const currentUserPlayer = players.find(p => p.user_id === currentUserId);
+            const isSpectating = currentUserPlayer && !currentUserPlayer.is_alive;
+            const isCurrentUserTurn = isCurrentUser && currentUserPlayer?.is_alive;
+            
+            if (isSpectating) {
+              return (
+                <div className="text-center mb-4">
+                  <div className="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
+                    👀 Du er ude - du ser med som tilskuer
+                  </div>
+                  <div className="mt-2 text-gray-400 text-sm">
+                    {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+                  </div>
                 </div>
-                <div className="mt-2 text-gray-400 text-sm">
-                  {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+              );
+            } else if (isCurrentUserTurn) {
+              return (
+                <div className="text-center mb-4">
+                  <div className="relative z-[30] mt-2 md:mt-3 bg-yellow-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
+                    🎯 Din tur! Skriv et ord med "{game.current_syllable}"
+                  </div>
                 </div>
-              </div>
-            );
-          } else if (isCurrentUserTurn) {
-            return (
-              <div className="text-center mb-4">
-                <div className="bg-yellow-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
-                  🎯 Din tur! Skriv et ord med "{game.current_syllable}"
+              );
+            } else {
+              return (
+                <div className="text-center mb-4">
+                  <div className="text-gray-300">
+                    {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+                  </div>
                 </div>
-              </div>
-            );
-          } else {
-            return (
-              <div className="text-center mb-4">
-                <div className="text-gray-300">
-                  {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
-                </div>
-              </div>
-            );
-          }
-        })()}
+              );
+            }
+          })()}
         
         <div className="max-w-md mx-auto">
           <WordInput
