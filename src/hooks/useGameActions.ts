@@ -130,6 +130,15 @@ export const useGameActions = (
             });
           }
 
+          // Solo fallback: if there's only me in the room, force a quick refresh
+          const isSolo = Array.isArray(players) && players.filter(p => p.is_alive !== false).length <= 1;
+          if (isSolo && room?.id) {
+            // small microtask/timeout so UI can apply shadow first
+            setTimeout(() => {
+              queryClient.invalidateQueries({ queryKey: ['game', room.id] });
+            }, 0);
+          }
+
           // Broadcast the turn for all peers (fast)
           if (room?.id && responseData.current_player_id) {
             supabase.channel(`game-fast-${room.id}`).send({

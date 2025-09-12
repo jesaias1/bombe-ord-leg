@@ -15,6 +15,7 @@ import { useGameSubscriptions } from '@/hooks/useGameSubscriptions';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useGameRealtime, useGameRealtimeFast } from '@/hooks/useGameRealtime';
 import { useShadowGame } from '@/hooks/useShadowGame';
+import { useEffectiveGame } from '@/hooks/useEffectiveGame';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRoomRealtime } from '@/hooks/useRoomRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -238,11 +239,15 @@ export const GameRoom = () => {
   // Clear shadow state when server game updates  
   useEffect(() => shadowGame.clearIfNewer(game), [game?.id, (game as any)?.turn_seq]);
 
+  // Build effective game that merges shadow + server state
+  const snap = shadowGame.get();
+  const eff = useEffectiveGame(game, snap);
+
   // Initialize game actions hook with roomLocator from URL
-  const { submitWord, startNewGame, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, game, shadowGame);
+  const { submitWord, startNewGame, trackGameCompletion, isSubmitting } = useGameActions(room, roomLocator, players, eff, shadowGame);
 
   // Initialize timer handler with roomLocator and force refresh on timeout
-  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(game, players, room, roomLocator, undefined, user, shadowGame);
+  const { handleTimerExpired: timerHandlerExpired } = useTimerHandler(eff, players, room, roomLocator, undefined, user, shadowGame);
   
   // Wrap timer handler to force state refresh after timeout
   const handleTimerExpiredWithRefresh = async () => {
@@ -254,11 +259,11 @@ export const GameRoom = () => {
     ]);
   };
   
-  const timeLeft = useGameTimer(game, handleTimerExpiredWithRefresh);
+  const timeLeft = useGameTimer(eff, handleTimerExpiredWithRefresh);
 
   // Use the game input hook for proper input management
   const gameInput = useGameInput({
-    game,
+    game: eff,
     players,
     currentUserId: user?.id,
     onWordSubmit: submitWord,
@@ -302,13 +307,13 @@ export const GameRoom = () => {
     );
   }
 
-  const currentPlayer = players.find(p => p.id === game?.current_player_id);
+  const currentPlayer = players.find(p => p.id === eff?.current_player_id);
   const isCurrentUser = currentPlayer?.user_id === user?.id;
 
   const renderGameContent = () => {
     console.log('GameRoom renderGameContent - game:', game, 'players:', players);
     
-    if (!game || game.status === 'waiting') {
+    if (!eff || eff.status === 'waiting') {
       return (
         <GameWaiting 
           isSinglePlayer={players.length === 1}
@@ -321,12 +326,12 @@ export const GameRoom = () => {
       );
     }
     
-    if (game.status === 'playing') {
+    if (eff.status === 'playing') {
       console.log('Rendering GamePlaying component');
       
       return (
         <GamePlaying 
-          game={game}
+          game={eff}
           players={players}
           timeLeft={timeLeft}
           currentPlayer={currentPlayer}
@@ -338,13 +343,13 @@ export const GameRoom = () => {
       );
     }
     
-    if (game.status === 'finished') {
+    if (eff.status === 'finished') {
       return (
         <GameFinished 
           isSinglePlayer={players.length === 1}
           alivePlayers={players.filter(p => p.is_alive)}
           players={players}
-          game={game}
+          game={eff}
           currentUserId={user?.id}
           onBackHome={() => window.location.href = '/'}
           room={room}
