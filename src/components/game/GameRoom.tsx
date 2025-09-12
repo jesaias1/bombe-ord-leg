@@ -218,13 +218,13 @@ export const GameRoom = () => {
     const handler = () => queryClient.refetchQueries({ queryKey: ['game', room.id], type: 'active' });
 
     const subscription = channel.on('broadcast', { event: 'turn_advanced' }, handler);
-    return () => { channel.unsubscribe(); };
+    return () => { /* no-op: shared channel must stay alive */ };
   }, [channel, room?.id, queryClient]);
 
   // Fast sync for multiplayer games
   const isMultiplayer = (players?.length ?? 0) > 1;
   const playing = game?.status === 'playing';
-  useFastGameSync(room?.id, isMultiplayer && playing, 250);
+  useFastGameSync(room?.id, isMultiplayer && playing, 150);
 
   // Setup game subscriptions
   const { cleanup: cleanupSubscriptions } = useGameSubscriptions({
