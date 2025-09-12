@@ -18,7 +18,7 @@ import { useShadowGame } from '@/hooks/useShadowGame';
 import { useEffectiveGame } from '@/hooks/useEffectiveGame';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRoomRealtime } from '@/hooks/useRoomRealtime';
-import { useRoomChannel } from '@/hooks/useRoomChannel';
+import { useRoomChannel, disposeRoomChannel } from '@/hooks/useRoomChannel';
 import { useFastGameSync } from '@/hooks/useFastGameSync';
 import { Skeleton } from '@/components/ui/skeleton';
 import { selectRandomSyllable } from '@/utils/syllableSelection';
@@ -219,6 +219,7 @@ export const GameRoom = () => {
     const handler = (payload?: any) => {
       console.debug('[broadcast] turn_advanced received', payload);
       queryClient.refetchQueries({ queryKey: ['game', room.id], type: 'active' });
+      queryClient.refetchQueries({ queryKey: ['players', room.id], type: 'active' });
     };
 
     channel.on('broadcast', { event: 'turn_advanced' }, handler);
@@ -231,6 +232,11 @@ export const GameRoom = () => {
   const isMultiplayer = (players?.length ?? 0) > 1;
   const playing = game?.status === 'playing';
   useFastGameSync(room?.id, isMultiplayer && playing, 150);
+
+  // Dispose room channel when leaving
+  useEffect(() => {
+    return () => { if (room?.id) disposeRoomChannel(room.id); };
+  }, [room?.id]);
 
   // Setup game subscriptions
   const { cleanup: cleanupSubscriptions } = useGameSubscriptions({
