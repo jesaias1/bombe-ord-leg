@@ -392,53 +392,50 @@ export const GameRoom = () => {
   return (
     <div className={cn(
       "bg-background",
-      isMobile ? "ob-root grid min-h-[100svh] grid-rows-[1fr_auto] overflow-visible sm:min-h-0" : "min-h-screen p-4"
+      isMobile ? "game-screen" : "min-h-screen p-4"
     )}>
       {isMobile ? (
         <>
-          {/* ===== CONTENT (badges, turn chip, timer) ===== */}
-          <div className="ob-content relative overflow-visible px-3">
-            <div className="animate-fade-in">
-              <GameHeader 
-                roomName={room.name}
-                roomId={room.id}
-                difficulty={room.difficulty}
-                isSinglePlayer={players.length === 1}
-              />
-            </div>
+          <div className="animate-fade-in">
+            <GameHeader 
+              roomName={room.name}
+              roomId={room.id}
+              difficulty={room.difficulty}
+              isSinglePlayer={players.length === 1}
+            />
+          </div>
 
-            {/* Player badges rail (mobile fallback) */}
-            <div className="ob-badges-rail sm:hidden sticky top-[env(safe-area-inset-top,0px)] z-30 mt-2 flex items-center justify-center gap-2">
-              {players.map((player) => (
-                <div key={player.id} className="flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
-                  <span>{player.name.charAt(0)}</span>
-                  {Array.from({ length: player.lives }, (_, i) => (
-                    <span key={i} className="text-red-500">♥</span>
-                  ))}
-                </div>
-              ))}
-            </div>
+          {/* Player badges rail */}
+          <div className="players-rail">
+            {players.map((player) => (
+              <div key={player.id} className="player-badge flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
+                <span>{player.name.charAt(0)}</span>
+                {Array.from({ length: player.lives }, (_, i) => (
+                  <span key={i} className="text-red-500">♥</span>
+                ))}
+              </div>
+            ))}
+          </div>
 
-            {/* Turn chip (compact) */}
-            {currentPlayer && (
-              <div className="ob-turn-chip mx-auto mt-2 mb-2 inline-block rounded-full bg-black/50 px-3 py-1 text-sm text-white backdrop-blur-sm z-30">
-                {currentPlayer.name} er på tur
-              </div>
-            )}
-            
-            {/* Debug panel for admins */}
-            <DebugPanel roomId={room.id} />
-            
-            {/* Timer wrapper: IMPORTANT — big mobile bottom margin so input never covers letters */}
-            <div className="ob-timer-wrap z-20 mb-[140px] sm:mb-8">
-              <div className="animate-scale-in">
-                {renderGameContent()}
-              </div>
+          {/* Turn chip */}
+          {currentPlayer && (
+            <div className="turn-chip mx-auto inline-block rounded-full bg-black/50 px-3 py-1 text-sm text-white backdrop-blur-sm">
+              {currentPlayer.name} er på tur
+            </div>
+          )}
+          
+          {/* Debug panel for admins */}
+          <DebugPanel roomId={room.id} />
+          
+          {/* Timer wrapper */}
+          <div className="timer-wrap">
+            <div className="animate-scale-in timer-circle">
+              {renderGameContent()}
             </div>
           </div>
 
-          {/* ===== BOTTOM INPUT AREA ===== */}
-          <div className="ob-input sticky bottom-0 z-40 bg-gradient-to-t from-[rgba(10,12,20,0.97)] to-transparent pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] backdrop-blur-[2px]">
+          {/* Input docked to bottom */}
+          <div className="input-dock">
             {/* Input will be rendered by GamePlaying component */}
           </div>
         </>

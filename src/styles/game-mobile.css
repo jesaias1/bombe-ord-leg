@@ -1,0 +1,85 @@
+/* ===== Mobile-only layout fixes (no gameplay changes) ===== */
+@media (max-width: 480px) {
+  /* Root screen */
+  .game-screen {
+    position: relative;
+    min-height: 100dvh;           /* avoid 100vh bugs on Android */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); /* room for input */
+    overflow: hidden;             /* prevent off-screen scroll jank */
+  }
+
+  /* Player badges: rail above the timer, never overlapping it */
+  .players-rail {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px 4px;
+    min-height: 56px;             /* consistent area so things don't jump */
+  }
+  .players-rail .player-badge {
+    position: relative !important; /* detach from absolute/around-timer logic on mobile */
+    transform: none !important;
+    margin: 0 4px;
+  }
+
+  /* "X er på tur" chip – just above the timer */
+  .turn-chip {
+    position: relative;
+    z-index: 1;
+    margin: 6px auto 4px;
+    width: max-content;
+  }
+
+  /* Timer: centered and never covered by input */
+  .timer-wrap {
+    position: relative;
+    z-index: 0;
+    margin-inline: auto;
+    /* Reserve space under the timer so it never sits behind the input */
+    margin-bottom: clamp(72px, 22vh, 160px);
+    /* Keep it large enough on phones */
+    max-width: 420px;
+  }
+
+  /* The orange circle container if it exists */
+  .timer-circle {
+    margin-inline: auto;
+    display: block;
+  }
+
+  /* Input docked to the bottom, above the safe-area */
+  .input-dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 30; /* above timer, below toasts */
+    padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
+    background: linear-gradient(to top, rgba(7,10,20,0.85), rgba(7,10,20,0.35) 60%, transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  /* Make the text field fill width on phones */
+  .input-dock .word-input {
+    width: 100%;
+  }
+
+  /* Helper row ("Find ord med…") */
+  .hint-row {
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* Toasts shouldn't cover the center timer */
+  .radix-toast-viewport,
+  .toast-viewport {
+    z-index: 40;         /* above input (30) but not blocking interactions */
+    pointer-events: none; /* clicks go through */
+  }
+  .radix-toast-viewport > *,
+  .toast-viewport > * {
+    pointer-events: auto; /* toast itself remains dismissible */
+  }
+}
