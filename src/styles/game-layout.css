@@ -1,0 +1,82 @@
+/* ============ Desktop polish ============ */
+@media (min-width: 768px) {
+  .play-stack {
+    max-width: 760px;
+    margin-inline: auto;
+    padding-inline: 16px;
+  }
+
+  .turn-chip {
+    margin: 8px auto 10px;
+  }
+
+  .input-dock {
+    position: static;              /* desktop: no sticky */
+    background: none;
+    padding: 0;
+    margin: 10px 0 6px;            /* space around input */
+  }
+
+  .timer-wrap {
+    margin-top: 14px;              /* space below helper */
+  }
+
+  .timer-wrap .timer-circle {
+    max-width: 520px;
+    margin-inline: auto;
+  }
+}
+
+/* ============ Mobile layout (<= 640px) ============ */
+@media (max-width: 640px) {
+  /* Reserve space at the bottom so the timer/letters never sit under the input */
+  :root {
+    --safe-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    --input-dock-h: 112px;         /* final height of input/status area */
+  }
+
+  .game-screen {
+    min-height: 100svh;            /* stable viewport height on mobile */
+    display: grid;
+    grid-template-rows: 1fr auto;  /* content + bottom input */
+  }
+
+  /* Content column: badges, turn chip, timer */
+  .game-content {
+    padding-block-end: calc(var(--input-dock-h) + var(--safe-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Bottom, sticky input/status container */
+  .input-dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    background: linear-gradient(to top, rgba(8,11,22,0.96), rgba(8,11,22,0.0));
+    padding: 10px 12px calc(var(--safe-bottom) + 8px);
+    box-shadow: 0 -8px 20px rgba(0,0,0,0.25);
+  }
+
+  /* Timer block: keep it comfortably above the input */
+  .timer-wrap {
+    margin-top: 10px;
+    margin-bottom: 16px;           /* extra guard space above input */
+  }
+
+  /* Toasts should not block the timer letters */
+  .toast-viewport {
+    z-index: 50;
+    pointer-events: none;
+  }
+  .toast-viewport > * {
+    pointer-events: auto;
+  }
+
+  /* Optional: keep player badges from colliding visually */
+  .players-rail {
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+}

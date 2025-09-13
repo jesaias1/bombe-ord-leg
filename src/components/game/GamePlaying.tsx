@@ -72,11 +72,11 @@ export const GamePlaying = ({
 
   return (
     <div className="game-screen min-h-screen bg-gray-800 relative overflow-hidden">
-      {/* Game Area - responsive layout to prevent overlap */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Content column */}
+      <div className="game-content play-stack absolute inset-0 flex items-center justify-center">
         
         {/* Safe area wrapper with padding to prevent UI overlap */}
-        <div className="play-stack game-stage relative flex w-full flex-col items-center justify-center">
+        <div className="game-stage relative flex w-full flex-col items-center justify-center">
           {/* Player badges positioning */}
           <div className="player-badges">
             {/* Placeholder for consistency - actual badges rendered separately */}
@@ -235,10 +235,6 @@ export const GamePlaying = ({
                 onWordChange={gameInput.setCurrentWord}
                 inputRef={gameInput.inputRef}
               />
-            </div>
-            
-            <div className="hint-row text-center text-sm text-gray-400 mt-2">
-              Find ord med "{game.current_syllable}"
             </div>
           </div>
         </div>
