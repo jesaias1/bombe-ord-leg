@@ -10,7 +10,6 @@ import { useGameInput } from '@/hooks/useGameInput';
 import { useServerClock } from '@/hooks/useServerClock';
 import './GameBoard.css';
 import './mobile-game-layout.css';
-import '@/styles/ob-responsive.css';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
