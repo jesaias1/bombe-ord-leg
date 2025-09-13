@@ -1,13 +1,13 @@
-/* ===== Mobile-only layout fixes (no gameplay changes) ===== */
+/* ===== Mobile-only layout — keep desktop unchanged ===== */
 @media (max-width: 480px) {
   .game-screen {
     position: relative;
     min-height: 100dvh;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); /* room for input */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); /* space for input */
     overflow: hidden;
   }
 
-  /* Player badges live together above the timer on phones */
+  /* Player badges above timer, never absolute in mobile */
   .players-rail {
     position: relative;
     z-index: 1;
@@ -25,7 +25,7 @@
     margin: 0 4px;
   }
 
-  /* "X er på tur" chip right above timer */
+  /* "X er på tur" chip sits above timer */
   .turn-chip {
     position: relative;
     z-index: 1;
@@ -33,12 +33,12 @@
     width: max-content;
   }
 
-  /* Timer stays clear of the input */
+  /* Keep timer/letters clear of bottom UI */
   .timer-wrap {
     position: relative;
     z-index: 0;
     margin-inline: auto;
-    margin-bottom: clamp(72px, 22vh, 160px); /* space so letters never hide */
+    margin-bottom: clamp(84px, 25vh, 180px); /* bigger margin so S23 never overlaps */
     max-width: 420px;
   }
   .timer-circle {
@@ -46,23 +46,19 @@
     margin-inline: auto;
   }
 
-  /* Input docked at bottom */
+  /* Bottom input dock */
   .input-dock {
     position: sticky;
     bottom: 0;
     z-index: 30; /* above timer, below toasts */
     padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
-    background: linear-gradient(to top, rgba(7,10,20,0.85), rgba(7,10,20,0.35) 60%, transparent);
+    background: linear-gradient(to top, rgba(7,10,20,0.9), rgba(7,10,20,0.45) 60%, transparent);
     backdrop-filter: blur(2px);
   }
   .input-dock .word-input { width: 100%; }
+  .hint-row { margin-top: 6px; text-align: center; }
 
-  .hint-row {
-    margin-top: 6px;
-    text-align: center;
-  }
-
-  /* Toasts should not block timer */
+  /* Toasts should not block input/timer interactions */
   .radix-toast-viewport,
   .toast-viewport {
     z-index: 40;

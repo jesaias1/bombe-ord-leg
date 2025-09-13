@@ -106,8 +106,8 @@ export const GamePlaying = ({
           </div>
         </div>
 
-        {/* Players positioned around the bomb (orbit view - desktop only) */}
-        <div className="hidden md:block game-orbit-layer">
+        {/* Players positioned around the bomb (orbit on desktop, rail on mobile) */}
+        <div className="game-orbit-layer players-rail">
           {alivePlayers.map((player, index) => {
             const position = getPlayerPosition(index, alivePlayers.length);
             const isCurrentPlayer = player.id === game.current_player_id;
@@ -116,7 +116,7 @@ export const GamePlaying = ({
             return (
               <div
                 key={player.id}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 player-badge"
                 style={{
                   left: `${position.x}%`,
                   top: `${position.y}%`,
@@ -190,14 +190,6 @@ export const GamePlaying = ({
         )}
       </div>
 
-      {/* Mobile Players Rail - only on mobile */}
-      <div className="block md:hidden sticky bottom-20 left-0 right-0 z-30">
-        <PlayersRail 
-          players={players}
-          currentPlayerId={game.current_player_id}
-          currentUserId={currentUserId}
-        />
-      </div>
 
       {/* Bottom spacer to prevent avatars from being hidden by input on small screens */}
       <div className="h-24 md:h-0" />
