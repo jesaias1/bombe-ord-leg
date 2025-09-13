@@ -1,0 +1,64 @@
+/* --------- Responsive layout for game screen (UI only) --------- */
+
+@media (max-width: 768px) {
+  :root {
+    /* Approx height of the bottom input/status zone */
+    --ob-input-h: clamp(120px, 28vh, 180px);
+  }
+
+  /* Root wrapper for the game view */
+  .ob-layout {
+    min-height: 100dvh;           /* respects Android URL bar */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scrollable content (badges + turn chip + timer) */
+  .ob-content {
+    flex: 1 1 auto;
+    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
+  }
+
+  /* Turn chip pill */
+  .ob-turn-chip {
+    margin: 6px auto 6px;
+    z-index: 2; /* above timer */
+  }
+
+  /* Timer block — add breathing room above input */
+  .ob-timer-area {
+    position: relative;
+    z-index: 1;
+    margin: 10px auto calc(var(--ob-input-h) + 16px);
+    max-width: 480px;
+  }
+
+  /* Bottom input/status area sits above everything */
+  .ob-input-area {
+    position: sticky;
+    bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 50;
+    background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    backdrop-filter: blur(2px);
+  }
+
+  /* Toasts below the input layer so they don't cover timer */
+  .toast-viewport { z-index: 30; pointer-events: none; }
+  .toast-viewport > * { pointer-events: auto; }
+
+  /* Player badge rail (mobile) */
+  .ob-players-rail { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+  .ob-players-rail--top { justify-content: center; }
+}
+
+/* Desktop spacing — keep it neat */
+@media (min-width: 769px) {
+  .ob-layout { min-height: 100vh; display: flex; flex-direction: column; }
+  .ob-content { flex: 1 1 auto; padding-bottom: 48px; }
+  .ob-timer-area { margin: 16px auto 72px; max-width: 560px; }
+}
+
+/* Optional helpers (safe) */
+.ob-timer-circle { display: block; margin-inline: auto; }
+.ob-players-rail { gap: 10px; }

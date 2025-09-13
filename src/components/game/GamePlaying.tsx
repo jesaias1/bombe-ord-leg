@@ -10,6 +10,7 @@ import { useGameInput } from '@/hooks/useGameInput';
 import { useServerClock } from '@/hooks/useServerClock';
 import './GameBoard.css';
 import './mobile-game-layout.css';
+import '@/styles/ob-responsive.css';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -191,12 +192,8 @@ export const GamePlaying = ({
       </div>
 
 
-      {/* Bottom spacer to prevent avatars from being hidden by input on small screens */}
-      <div className="h-24 md:h-0" />
-
-        {/* Input Area - sticky to bottom with safe-area padding and gradient bg */}
-        <div className="ob-input-area input-dock game-input-area sticky bottom-0 z-40 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]
-                        bg-gradient-to-t from-[rgba(10,12,20,0.95)] to-transparent backdrop-blur-[2px]">
+        {/* Input Area */}
+        <div className="ob-input-area">
           <div className="game-input-panel max-w-md mx-auto">
           {/* Game status and spectator mode indicator - compact chips only */}
           {(() => {
