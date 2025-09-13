@@ -1,31 +1,33 @@
-/* -------- Responsive UI fixes (no gameplay impact) -------- */
-
+/* -------- Mobile layout hotfix (no gameplay impact) -------- */
 @media (max-width: 768px) {
   :root {
-    --ob-input-h: clamp(120px, 28vh, 180px);
+    /* Height reserved for bottom input block (input + helper) */
+    --ob-input-h: clamp(160px, 34vh, 220px);
   }
 
   .ob-layout {
-    min-height: 100dvh;
+    min-height: 100dvh;       /* Android URL bar aware */
     display: flex;
     flex-direction: column;
   }
 
   .ob-content {
     flex: 1 1 auto;
-    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
+    /* Prevent timer/letters from sitting under the fixed input */
+    padding-bottom: calc(var(--ob-input-h) + max(14px, env(safe-area-inset-bottom, 0px)));
   }
 
   .ob-turn-chip {
+    position: relative;
+    z-index: 2;               /* above timer, below input */
     margin: 6px auto;
-    z-index: 2;
   }
 
   .ob-timer-area {
     position: relative;
     z-index: 1;
-    margin: 10px auto calc(var(--ob-input-h) + 16px);
-    max-width: 480px;
+    margin: 12px auto calc(var(--ob-input-h) + 20px); /* extra bottom space */
+    max-width: 520px;
   }
 
   .ob-timer-circle {
@@ -33,21 +35,34 @@
     margin-inline: auto;
   }
 
+  /* FIXED bottom input area (top-most UI layer) */
   .ob-input-area {
-    position: sticky;
+    position: fixed;
+    left: 0; right: 0;
     bottom: env(safe-area-inset-bottom, 0px);
-    z-index: 50;
-    background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
+    z-index: 60;              /* top of stack */
+    background: linear-gradient(to top, rgba(9,14,23,.97) 72%, rgba(9,14,23,0));
     padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-    backdrop-filter: blur(2px);
+    padding-top: 8px;
   }
 
-  .toast-viewport { z-index: 30; pointer-events: none; }
+  /* Helper must render inside .ob-input-area; if there's a stray one in content, hide it */
+  .ob-helper-top { display: none !important; }
+
+  /* Keep toasts below the input so they never cover letters */
+  .toast-viewport {
+    z-index: 40;              /* below input (60), above content (1) */
+    pointer-events: none;
+  }
   .toast-viewport > * { pointer-events: auto; }
+
+  /* Optional rail tweaks on narrow phones */
+  .ob-players-rail { gap: 10px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: thin; }
 }
 
+/* Desktop tidy spacing (unchanged gameplay) */
 @media (min-width: 769px) {
   .ob-layout   { min-height: 100vh; display: flex; flex-direction: column; }
-  .ob-content  { flex: 1 1 auto; padding-bottom: 48px; }
-  .ob-timer-area { margin: 16px auto 72px; max-width: 560px; }
+  .ob-content  { flex: 1 1 auto; padding-bottom: 56px; }
+  .ob-timer-area { margin: 20px auto 84px; max-width: 640px; }
 }

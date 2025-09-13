@@ -92,7 +92,7 @@ export const GamePlaying = ({
           </div>
           
           {/* Timer wrapper with mobile spacing to prevent overlap */}
-          <div className="ob-timer-area game-timer-wrap mb-[132px] sm:mb-6 z-30">
+          <div className="ob-timer-area game-timer-wrap z-30">
             <div className="timer-wrap">
               <div className="ob-timer-circle timer-circle mx-auto flex items-center justify-center">
                 <BombTimer
@@ -234,7 +234,7 @@ export const GamePlaying = ({
             </div>
             
             {/* Helper text inside footer on mobile */}
-            <div className="ob-helper">Find ord med "{game.current_syllable}"</div>
+            <div className="syllable-helper ob-helper">Find ord med "{game.current_syllable}"</div>
           </div>
         </div>
 
