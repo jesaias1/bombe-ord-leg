@@ -29,7 +29,7 @@
 /* Content column (players + turn chip + timer) */
 .ob-content {
   position: relative;
-  overflow: hidden;
+  overflow: visible;  /* Don't clip anything on phones */
   padding-inline: clamp(12px, 3vw, 24px);
   /* Reserve room so timer never hides under the input on phones */
   padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
@@ -68,6 +68,7 @@
   display: grid;
   place-items: center;
   position: relative;
+  z-index: 2;  /* Above background, below input */
 }
 
 /* Circle that shows the letters – scales nicely on any screen */
@@ -77,7 +78,7 @@
   display: grid;
   place-items: center;
   position: relative;
-  z-index: 1; /* below input area/footer but above background */
+  z-index: 2; /* Same level as timer area, above background */
 }
 
 /* Bottom input/status area (footer) – docked on mobile, normal on desktop */
@@ -91,10 +92,33 @@
   border-top: 1px solid rgba(255,255,255,0.06);
 }
 
-/* On mobile, ensure enough vertical space so input never covers the letters */
+/* Mobile: ensure circle always clears the input and orbiting badges are hidden */
 @media (max-width: 768px) {
   .ob-content {
     padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
+  }
+  .ob-timer-circle {
+    width: clamp(220px, 76vmin, 520px);  /* a touch bigger than before, but capped */
+  }
+  .ob-timer-area {
+    margin-bottom: calc(var(--ob-input-h) + 16px);
+  }
+  /* If any orbiting badges exist, hide them on phones and use the rail instead */
+  .players-orbit, .players-orbit-ring {  /* only if these exist; harmless if not */
+    display: none !important;
+  }
+  .ob-players-rail {
+    display: flex !important;
+  }
+}
+
+/* Desktop: let the circle breathe more and grow larger on big screens */
+@media (min-width: 1024px) {
+  .ob-timer-circle {
+    width: clamp(320px, 42vmin, 560px);  /* slightly larger max on big screens */
+  }
+  .ob-timer-area {
+    padding-bottom: 40px;                /* more space from footer */
   }
 }
 
@@ -112,7 +136,7 @@
   pointer-events: auto;     /* keep toasts clickable */
 }
 
-/* Optional: if badges ever collide, reduce font or allow horizontal scroll on phones */
+/* Safety: if rails get crowded on small phones, allow horizontal scroll */
 @media (max-width: 480px) {
   .ob-players-rail {
     overflow-x: auto;
