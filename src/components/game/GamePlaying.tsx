@@ -82,22 +82,26 @@ export const GamePlaying = ({
             {/* Placeholder for consistency - actual badges rendered separately */}
           </div>
           
-          {/* Turn chip */}
-          <div className="turn-chip pointer-events-none">
-            <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
-              {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
-            </span>
+          {/* Turn chip with proper wrapper */}
+          <div className="game-status-chip mx-auto mt-2 mb-2 inline-block z-40">
+            <div className="turn-chip pointer-events-none">
+              <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
+                {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+              </span>
+            </div>
           </div>
           
-          {/* Timer wrapper with responsive sizing */}
-          <div className="timer-wrap">
-            <div className="mx-auto flex items-center justify-center">
-              <BombTimer
-                timeLeft={timeLeft}
-                totalTime={game.timer_duration || 15}
-                isActive={game.status === 'playing'}
-                syllable={game.current_syllable || ''}
-              />
+          {/* Timer wrapper with mobile spacing to prevent overlap */}
+          <div className="game-timer-wrap mb-[132px] sm:mb-6 z-30">
+            <div className="timer-wrap">
+              <div className="mx-auto flex items-center justify-center">
+                <BombTimer
+                  timeLeft={timeLeft}
+                  totalTime={game.timer_duration || 15}
+                  isActive={game.status === 'playing'}
+                  syllable={game.current_syllable || ''}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -198,9 +202,10 @@ export const GamePlaying = ({
       {/* Bottom spacer to prevent avatars from being hidden by input on small screens */}
       <div className="h-24 md:h-0" />
 
-        {/* Bottom Status and Input - responsive positioned */}
-        <div className="game-input-wrap sticky bottom-0 left-0 right-0 game-input-layer pb-[env(safe-area-inset-bottom)]">
-          <div className="game-input-panel bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/70 backdrop-blur-sm p-4 rounded-xl shadow-lg">
+        {/* Input Area - sticky to bottom with safe-area padding and gradient bg */}
+        <div className="game-input-area sticky bottom-0 z-40 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]
+                        bg-gradient-to-t from-[rgba(10,12,20,0.95)] to-transparent backdrop-blur-[2px]">
+          <div className="game-input-panel max-w-md mx-auto">
           {/* Game status and spectator mode indicator - compact chips only */}
           {(() => {
             const currentUserPlayer = players.find(p => p.user_id === currentUserId);
@@ -228,17 +233,15 @@ export const GamePlaying = ({
             }
           })()}
         
-            <div className="max-w-md mx-auto">
-              <WordInput
-                onSubmit={gameInput.handleWordSubmit}
-                disabled={!gameInput.canInput}
-                currentSyllable={gameInput.currentSyllable || ''}
-                isSubmitting={gameInput.isSubmitting}
-                currentWord={gameInput.currentWord}
-                onWordChange={gameInput.setCurrentWord}
-                inputRef={gameInput.inputRef}
-              />
-            </div>
+            <WordInput
+              onSubmit={gameInput.handleWordSubmit}
+              disabled={!gameInput.canInput}
+              currentSyllable={gameInput.currentSyllable || ''}
+              isSubmitting={gameInput.isSubmitting}
+              currentWord={gameInput.currentWord}
+              onWordChange={gameInput.setCurrentWord}
+              inputRef={gameInput.inputRef}
+            />
           </div>
         </div>
 

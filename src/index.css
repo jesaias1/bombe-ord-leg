@@ -329,12 +329,27 @@
     }
   }
 
-  /* Handle mobile keyboard overlay */
+  /* Handle mobile keyboard overlay and new layout system */
   @media (max-width: 768px) {
+    /* Ensure sticky works: parent must not clip it */
+    .game-root, .game-content { overflow: visible; }
+
+    /* Mobile safe area improvements */
     .mobile-safe-area {
-      min-height: 100vh;
-      min-height: calc(100vh - env(keyboard-inset-height, 0px));
-      padding-bottom: env(keyboard-inset-height, 0px);
+      padding-top: constant(safe-area-inset-top);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: constant(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Prevent mobile input zoom */
+    input, textarea {
+      font-size: 16px;
+    }
+
+    /* Guard in case a parent sets overflow that breaks sticky; keep it visible */
+    .game-input-area { 
+      position: sticky; 
     }
 
     .mobile-input-container {
@@ -360,5 +375,23 @@
       transform: translateY(-env(keyboard-inset-height, 0px));
       transition: transform 0.2s ease-in-out;
     }
+  }
+
+  /* Toasts above input & timer on mobile */
+  [data-radix-toast-viewport],
+  .toast-viewport {
+    z-index: 70 !important;
+  }
+
+  @media (max-width: 768px) {
+    [data-radix-toast-viewport],
+    .toast-viewport {
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+    }
+  }
+
+  /* If any container previously used 100vh, prefer small viewport unit to avoid URL-bar jumps */
+  @supports (height: 100svh) {
+    .min-h-\[100svh\] { min-height: 100svh !important; }
   }
 }

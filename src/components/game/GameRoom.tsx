@@ -391,33 +391,62 @@ export const GameRoom = () => {
 
   return (
     <div className={cn(
-      "bg-background p-4",
-      isMobile ? "mobile-safe-area" : "min-h-screen"
+      "bg-background",
+      isMobile ? "game-root min-h-[100svh] sm:min-h-0 grid grid-rows-[1fr_auto] overflow-visible" : "min-h-screen p-4"
     )}>
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="animate-fade-in">
-          <GameHeader 
-            roomName={room.name}
-            roomId={room.id}
-            difficulty={room.difficulty}
-            isSinglePlayer={players.length === 1}
-          />
-        </div>
-        
-        {/* Show word import option if word count is low */}
-        {wordCount < 50000 && !isMobile && (
-          <div className="animate-fade-in">
-            <QuickWordImport />
+      {isMobile ? (
+        <>
+          {/* CONTENT (header, badges, timer) */}
+          <div className="game-content relative overflow-visible px-3">
+            <div className="animate-fade-in">
+              <GameHeader 
+                roomName={room.name}
+                roomId={room.id}
+                difficulty={room.difficulty}
+                isSinglePlayer={players.length === 1}
+              />
+            </div>
+            
+            {/* Debug panel for admins */}
+            <DebugPanel roomId={room.id} />
+            
+            <div className="animate-scale-in">
+              {renderGameContent()}
+            </div>
           </div>
-        )}
 
-        {/* Debug panel for admins */}
-        <DebugPanel roomId={room.id} />
-        
-        <div className="animate-scale-in">
-          {renderGameContent()}
+          {/* INPUT AREA — sticky to bottom with safe-area padding and gradient bg */}
+          <div className="game-input-area sticky bottom-0 z-40 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]
+                          bg-gradient-to-t from-[rgba(10,12,20,0.95)] to-transparent backdrop-blur-[2px]">
+            {/* Input will be rendered by GamePlaying component */}
+          </div>
+        </>
+      ) : (
+        <div className="max-w-4xl mx-auto space-y-8 p-4">
+          <div className="animate-fade-in">
+            <GameHeader 
+              roomName={room.name}
+              roomId={room.id}
+              difficulty={room.difficulty}
+              isSinglePlayer={players.length === 1}
+            />
+          </div>
+          
+          {/* Show word import option if word count is low */}
+          {wordCount < 50000 && (
+            <div className="animate-fade-in">
+              <QuickWordImport />
+            </div>
+          )}
+
+          {/* Debug panel for admins */}
+          <DebugPanel roomId={room.id} />
+          
+          <div className="animate-scale-in">
+            {renderGameContent()}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
