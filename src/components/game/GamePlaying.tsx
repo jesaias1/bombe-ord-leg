@@ -71,7 +71,7 @@ export const GamePlaying = ({
   const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
 
   return (
-    <div className="ob-game-root game-screen min-h-screen bg-gray-800 relative overflow-hidden">
+    <div className="ob-layout game-screen min-h-screen bg-gray-800 relative overflow-hidden">
       {/* Content column */}
       <div className="ob-content game-content play-stack absolute inset-0 flex items-center justify-center">
         
@@ -92,9 +92,9 @@ export const GamePlaying = ({
           </div>
           
           {/* Timer wrapper with mobile spacing to prevent overlap */}
-          <div className="ob-timer-stack game-timer-wrap mb-[132px] sm:mb-6 z-30">
+          <div className="ob-timer-area game-timer-wrap mb-[132px] sm:mb-6 z-30">
             <div className="timer-wrap">
-              <div className="timer-circle mx-auto flex items-center justify-center">
+              <div className="ob-timer-circle timer-circle mx-auto flex items-center justify-center">
                 <BombTimer
                   timeLeft={timeLeft}
                   totalTime={game.timer_duration || 15}
@@ -107,7 +107,7 @@ export const GamePlaying = ({
         </div>
 
         {/* Players positioned around the bomb (orbit on desktop, rail on mobile) */}
-        <div className="game-orbit-layer players-rail">
+        <div className="ob-players-rail ob-players-rail--top game-orbit-layer players-rail">
           {alivePlayers.map((player, index) => {
             const position = getPlayerPosition(index, alivePlayers.length);
             const isCurrentPlayer = player.id === game.current_player_id;

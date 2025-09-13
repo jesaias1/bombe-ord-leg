@@ -1,0 +1,127 @@
+/* ---------- Unified responsive layout (UI only) ---------- */
+
+:root {
+  /* Default desktop sizes */
+  --ob-input-h: 140px;                     /* footer/input target height */
+  --ob-max-circle: 520px;                  /* max circle size on desktop */
+  --ob-min-circle: 260px;                  /* min circle size on desktop */
+  --ob-bg: #090e17;
+}
+
+@media (max-width: 768px) {
+  :root {
+    /* Taller input/footer on phones; respect safe area */
+    --ob-input-h: clamp(120px, 28vh, 200px);
+    --ob-max-circle: 78vmin;
+    --ob-min-circle: 220px;
+  }
+}
+
+/* Top-level layout: header (players), main (timer), footer (input) */
+.ob-layout {
+  min-height: 100dvh;              /* mobile-friendly viewport */
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  background: var(--ob-bg);
+}
+
+/* Content column (players + turn chip + timer) */
+.ob-content {
+  position: relative;
+  overflow: hidden;
+  padding-inline: clamp(12px, 3vw, 24px);
+  /* Reserve room so timer never hides under the input on phones */
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+}
+
+/* Players rail(s) – readable and never overlapping the circle */
+.ob-players-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding-block: 6px;
+}
+
+.ob-players-rail--top {
+  margin-bottom: 8px;
+}
+
+.ob-players-rail--bottom {
+  margin-top: 8px;
+}
+
+/* Turn chip (the "X er på tur" pill) */
+.ob-turn-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px auto 10px auto;
+  z-index: 2;
+}
+
+/* Timer area centers the circle and keeps it visible */
+.ob-timer-area {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+/* Circle that shows the letters – scales nicely on any screen */
+.ob-timer-circle {
+  width: clamp(var(--ob-min-circle), 42vmin, var(--ob-max-circle));
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  position: relative;
+  z-index: 1; /* below input area/footer but above background */
+}
+
+/* Bottom input/status area (footer) – docked on mobile, normal on desktop */
+.ob-input-area {
+  position: sticky;  /* behaves like fixed-at-bottom when content scrolls */
+  bottom: 0;
+  z-index: 50;
+  background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  /* Provide a gentle separation from content */
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* On mobile, ensure enough vertical space so input never covers the letters */
+@media (max-width: 768px) {
+  .ob-content {
+    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
+  }
+}
+
+/* Tidy spacing under timer on desktop so it breathes */
+@media (min-width: 769px) {
+  .ob-timer-area { padding-bottom: 32px; }
+}
+
+/* Toasts should not cover the timer; keep them under the input layer */
+.toast-viewport {
+  z-index: 30;              /* below .ob-input-area (50) */
+  pointer-events: none;
+}
+.toast-viewport > * {
+  pointer-events: auto;     /* keep toasts clickable */
+}
+
+/* Optional: if badges ever collide, reduce font or allow horizontal scroll on phones */
+@media (max-width: 480px) {
+  .ob-players-rail {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+}
+
+/* (Optional) TEMP debug – uncomment while testing
+.ob-timer-circle { outline: 1px dashed #4ade80; }
+.ob-input-area  { outline: 1px dashed #60a5fa; }
+.toast-viewport { outline: 1px dashed #f59e0b; }
+*/
