@@ -144,6 +144,68 @@
   }
 }
 
+/* ---------- Mobile fix: pin input, reserve space, and put helper inside footer ---------- */
+@media (max-width: 768px) {
+  :root {
+    /* Height of the bottom input/status zone */
+    --ob-input-h: clamp(132px, 30vh, 190px);
+  }
+
+  /* Content that scrolls behind the fixed footer */
+  .ob-content {
+    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
+    overflow: visible; /* make sure the circle never gets clipped */
+  }
+
+  /* Timer stack and circle: ensure they sit above the page background but below the footer */
+  .ob-timer-area,
+  .ob-timer-circle {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Always give extra breathing space under the timer so it never collides with footer */
+  .ob-timer-area {
+    margin-bottom: calc(var(--ob-input-h) + 12px);
+  }
+
+  /* Bottom input/status area: fixed, full width, safe-area aware */
+  .ob-input-area {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50; /* above everything else */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
+    backdrop-filter: blur(2px);
+  }
+
+  /* The helper lives inside the footer beneath the input on phones */
+  .ob-helper {
+    font-size: 14px;
+    line-height: 1.25rem;
+    opacity: .9;
+    text-align: center;
+  }
+
+  /* Toasts: keep below the fixed footer */
+  .toast-viewport {
+    z-index: 30; /* below .ob-input-area(50) */
+    pointer-events: none;
+  }
+  .toast-viewport > * { pointer-events: auto; }
+}
+
+/* ---------- Desktop polish ---------- */
+@media (min-width: 769px) {
+  .ob-timer-area { margin-bottom: 48px; }
+  .ob-timer-circle { width: clamp(320px, 42vmin, 560px); }
+}
+
 /* (Optional) TEMP debug – uncomment while testing
 .ob-timer-circle { outline: 1px dashed #4ade80; }
 .ob-input-area  { outline: 1px dashed #60a5fa; }

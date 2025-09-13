@@ -216,7 +216,7 @@ export const GamePlaying = ({
               return (
                 <div className="text-center mb-4">
                   <div className="relative z-[30] mt-2 md:mt-3 bg-yellow-600 text-white px-4 py-2 rounded-lg inline-block shadow-lg">
-                    🎯 Din tur! Skriv et ord med "{game.current_syllable}"
+                    🎯 Din tur!
                   </div>
                 </div>
               );
@@ -236,6 +236,9 @@ export const GamePlaying = ({
                 inputRef={gameInput.inputRef}
               />
             </div>
+            
+            {/* Helper text inside footer on mobile */}
+            <div className="ob-helper">Find ord med "{game.current_syllable}"</div>
           </div>
         </div>
 
