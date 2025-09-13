@@ -71,12 +71,12 @@ export const GamePlaying = ({
   const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
 
   return (
-    <div className="min-h-screen bg-gray-800 relative overflow-hidden">
+    <div className="game-screen min-h-screen bg-gray-800 relative overflow-hidden">
       {/* Game Area - responsive layout to prevent overlap */}
       <div className="absolute inset-0 flex items-center justify-center">
         
         {/* Safe area wrapper with padding to prevent UI overlap */}
-        <div className="game-stage relative flex w-full flex-col items-center justify-center">
+        <div className="play-stack game-stage relative flex w-full flex-col items-center justify-center">
           {/* Player badges positioning */}
           <div className="player-badges">
             {/* Placeholder for consistency - actual badges rendered separately */}
