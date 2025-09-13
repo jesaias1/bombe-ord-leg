@@ -394,4 +394,24 @@
   @supports (height: 100svh) {
     .min-h-\[100svh\] { min-height: 100svh !important; }
   }
+
+  /* Do not clip sticky children */
+  .ob-root, .ob-content { overflow: visible; }
+
+  /* Keep toast viewport above everything */
+  [data-radix-toast-viewport], .toast-viewport {
+    z-index: 70 !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+  }
+
+  /* Badge ring: ensure it never steals pointer on desktop */
+  .ob-badges-ring { pointer-events: none; }
+
+  /* Ensure the input area actually sticks and stacks */
+  .ob-input { position: sticky; z-index: 40; }
+
+  /* Optional: slightly smaller banner on narrow phones */
+  @media (max-width: 380px) {
+    .ob-turn-chip { font-size: 12px; padding: 6px 10px; }
+  }
 }
