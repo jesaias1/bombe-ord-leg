@@ -12,25 +12,24 @@
 }
 
 .game-input-wrap {
-  z-index: 60;
+  z-index: 40;
 }
 
 .timer-wrap {
-  z-index: 40;
+  z-index: 30;
 }
 
 .player-badges {
   z-index: 30;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .game-stage {
     display: flex;
     flex-direction: column;
     height: 100dvh; /* Use dvh when supported */
     height: 100vh; /* Fallback */
     justify-content: space-between;
-    padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 96px);
   }
 
   .player-badges {
@@ -48,6 +47,7 @@
     justify-content: center;
     align-items: center;
     margin: 1rem 0;
+    margin-bottom: 120px; /* Prevent input overlap */
   }
 
   .turn-chip {
@@ -57,12 +57,12 @@
   }
 
   .game-input-wrap {
-    position: fixed;
+    position: sticky;
     bottom: 0;
     left: 0;
     right: 0;
     padding: 0.5rem;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
     background: rgba(0,0,0,0.35);
     backdrop-filter: blur(4px);
   }
@@ -70,5 +70,12 @@
   .game-input-panel {
     max-width: 600px;
     margin: 0 auto;
+  }
+
+  /* Status banner above input */
+  .game-input-panel > div:first-child {
+    margin-bottom: 4px;
+    display: block;
+    text-align: center;
   }
 }
