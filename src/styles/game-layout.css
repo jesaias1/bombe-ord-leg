@@ -1,39 +1,33 @@
 /* ---------- Mobile UI fixes (no gameplay impact) ---------- */
 @media (max-width: 768px) {
   :root {
-    /* Height occupied by the bottom input/status zone on phones */
+    /* reserved space for bottom input/status zone */
     --ob-input-h: clamp(120px, 28vh, 180px);
   }
 
-  /* Root wrapper for the game screen */
   .ob-game-root {
-    min-height: 100dvh;            /* respects Android URL bar */
+    min-height: 100dvh;         /* respects Android URL bar shrink */
     display: flex;
     flex-direction: column;
   }
 
-  /* The scrollable/content area that contains badges, chip and timer */
   .ob-content {
     flex: 1 1 auto;
-    /* Make sure nothing at the bottom is covered by the sticky input */
     padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
   }
 
-  /* Timer stack: extra breathing room so letters never sit under the input */
   .ob-timer-stack {
     margin-bottom: calc(var(--ob-input-h) + 16px);
-    position: relative;             /* so chip offsets behave nicely */
+    position: relative;
     z-index: 1;
   }
 
-  /* Turn chip (the black pill that says "X er på tur") */
   .ob-turn-chip {
     margin-top: 6px;
     margin-bottom: 6px;
-    z-index: 2;                     /* above timer, below input */
+    z-index: 2;
   }
 
-  /* Player badges rail */
   .players-rail {
     display: flex;
     flex-wrap: wrap;
@@ -41,27 +35,34 @@
     margin-bottom: 8px;
   }
 
-  /* Bottom input area: docked, above safe area, above everything else */
   .ob-input-area {
-    position: sticky;               /* stays at bottom while scrolling content */
+    position: fixed;
     bottom: env(safe-area-inset-bottom, 0px);
-    z-index: 50;                    /* top of UI stack */
+    left: 0;
+    right: 0;
+    z-index: 50;
     background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
     padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
     backdrop-filter: blur(2px);
   }
 
-  /* Toasts: don't cover the timer; keep under the input layer */
   .toast-viewport {
-    z-index: 30;                    /* below .ob-input-area(50), above content */
+    z-index: 30;   /* below input area */
     pointer-events: none;
   }
   .toast-viewport > * {
-    pointer-events: auto;           /* individual toasts still clickable */
+    pointer-events: auto;
   }
 }
 
-/* Desktop guard: tiny, tidy spacing (no huge mobile margins) */
+/* TEMP debug outlines — REMOVE after testing */
+@media (max-width: 768px) {
+  .ob-timer-stack { outline: 1px dashed #4ade80; }
+  .ob-input-area  { outline: 1px dashed #60a5fa; }
+  .toast-viewport { outline: 1px dashed #f59e0b; }
+}
+
+/* Desktop tidy spacing */
 @media (min-width: 769px) {
   .ob-timer-stack { margin-bottom: 48px; }
 }
