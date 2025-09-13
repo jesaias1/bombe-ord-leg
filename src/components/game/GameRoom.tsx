@@ -404,39 +404,12 @@ export const GameRoom = () => {
               isSinglePlayer={players.length === 1}
             />
           </div>
-
-          {/* Player badges rail */}
-          <div className="players-rail">
-            {players.map((player) => (
-              <div key={player.id} className="player-badge flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
-                <span>{player.name.charAt(0)}</span>
-                {Array.from({ length: player.lives }, (_, i) => (
-                  <span key={i} className="text-red-500">♥</span>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Turn chip */}
-          {currentPlayer && (
-            <div className="turn-chip mx-auto inline-block rounded-full bg-black/50 px-3 py-1 text-sm text-white backdrop-blur-sm">
-              {currentPlayer.name} er på tur
-            </div>
-          )}
           
           {/* Debug panel for admins */}
           <DebugPanel roomId={room.id} />
           
-          {/* Timer wrapper */}
-          <div className="timer-wrap">
-            <div className="animate-scale-in timer-circle">
-              {renderGameContent()}
-            </div>
-          </div>
-
-          {/* Input docked to bottom */}
-          <div className="input-dock">
-            {/* Input will be rendered by GamePlaying component */}
+          <div className="animate-scale-in timer-circle">
+            {renderGameContent()}
           </div>
         </>
       ) : (

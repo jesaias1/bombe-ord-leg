@@ -1,14 +1,13 @@
 /* ===== Mobile-only layout fixes (no gameplay changes) ===== */
 @media (max-width: 480px) {
-  /* Root screen */
   .game-screen {
     position: relative;
-    min-height: 100dvh;           /* avoid 100vh bugs on Android */
+    min-height: 100dvh;
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); /* room for input */
-    overflow: hidden;             /* prevent off-screen scroll jank */
+    overflow: hidden;
   }
 
-  /* Player badges: rail above the timer, never overlapping it */
+  /* Player badges live together above the timer on phones */
   .players-rail {
     position: relative;
     z-index: 1;
@@ -18,15 +17,15 @@
     gap: 10px;
     flex-wrap: wrap;
     padding: 8px 12px 4px;
-    min-height: 56px;             /* consistent area so things don't jump */
+    min-height: 56px;
   }
   .players-rail .player-badge {
-    position: relative !important; /* detach from absolute/around-timer logic on mobile */
+    position: relative !important;
     transform: none !important;
     margin: 0 4px;
   }
 
-  /* "X er på tur" chip – just above the timer */
+  /* "X er på tur" chip right above timer */
   .turn-chip {
     position: relative;
     z-index: 1;
@@ -34,24 +33,20 @@
     width: max-content;
   }
 
-  /* Timer: centered and never covered by input */
+  /* Timer stays clear of the input */
   .timer-wrap {
     position: relative;
     z-index: 0;
     margin-inline: auto;
-    /* Reserve space under the timer so it never sits behind the input */
-    margin-bottom: clamp(72px, 22vh, 160px);
-    /* Keep it large enough on phones */
+    margin-bottom: clamp(72px, 22vh, 160px); /* space so letters never hide */
     max-width: 420px;
   }
-
-  /* The orange circle container if it exists */
   .timer-circle {
-    margin-inline: auto;
     display: block;
+    margin-inline: auto;
   }
 
-  /* Input docked to the bottom, above the safe-area */
+  /* Input docked at bottom */
   .input-dock {
     position: sticky;
     bottom: 0;
@@ -60,26 +55,21 @@
     background: linear-gradient(to top, rgba(7,10,20,0.85), rgba(7,10,20,0.35) 60%, transparent);
     backdrop-filter: blur(2px);
   }
+  .input-dock .word-input { width: 100%; }
 
-  /* Make the text field fill width on phones */
-  .input-dock .word-input {
-    width: 100%;
-  }
-
-  /* Helper row ("Find ord med…") */
   .hint-row {
     margin-top: 6px;
     text-align: center;
   }
 
-  /* Toasts shouldn't cover the center timer */
+  /* Toasts should not block timer */
   .radix-toast-viewport,
   .toast-viewport {
-    z-index: 40;         /* above input (30) but not blocking interactions */
-    pointer-events: none; /* clicks go through */
+    z-index: 40;
+    pointer-events: none;
   }
   .radix-toast-viewport > *,
   .toast-viewport > * {
-    pointer-events: auto; /* toast itself remains dismissible */
+    pointer-events: auto;
   }
 }

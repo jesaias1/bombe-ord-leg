@@ -94,7 +94,7 @@ export const GamePlaying = ({
           {/* Timer wrapper with mobile spacing to prevent overlap */}
           <div className="game-timer-wrap mb-[132px] sm:mb-6 z-30">
             <div className="timer-wrap">
-              <div className="mx-auto flex items-center justify-center">
+              <div className="timer-circle mx-auto flex items-center justify-center">
                 <BombTimer
                   timeLeft={timeLeft}
                   totalTime={game.timer_duration || 15}
@@ -203,7 +203,7 @@ export const GamePlaying = ({
       <div className="h-24 md:h-0" />
 
         {/* Input Area - sticky to bottom with safe-area padding and gradient bg */}
-        <div className="game-input-area sticky bottom-0 z-40 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]
+        <div className="input-dock game-input-area sticky bottom-0 z-40 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]
                         bg-gradient-to-t from-[rgba(10,12,20,0.95)] to-transparent backdrop-blur-[2px]">
           <div className="game-input-panel max-w-md mx-auto">
           {/* Game status and spectator mode indicator - compact chips only */}
@@ -233,15 +233,21 @@ export const GamePlaying = ({
             }
           })()}
         
-            <WordInput
-              onSubmit={gameInput.handleWordSubmit}
-              disabled={!gameInput.canInput}
-              currentSyllable={gameInput.currentSyllable || ''}
-              isSubmitting={gameInput.isSubmitting}
-              currentWord={gameInput.currentWord}
-              onWordChange={gameInput.setCurrentWord}
-              inputRef={gameInput.inputRef}
-            />
+            <div className="word-input">
+              <WordInput
+                onSubmit={gameInput.handleWordSubmit}
+                disabled={!gameInput.canInput}
+                currentSyllable={gameInput.currentSyllable || ''}
+                isSubmitting={gameInput.isSubmitting}
+                currentWord={gameInput.currentWord}
+                onWordChange={gameInput.setCurrentWord}
+                inputRef={gameInput.inputRef}
+              />
+            </div>
+            
+            <div className="hint-row text-center text-sm text-gray-400 mt-2">
+              Find ord med "{game.current_syllable}"
+            </div>
           </div>
         </div>
 
