@@ -71,9 +71,9 @@ export const GamePlaying = ({
   const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
 
   return (
-    <div className="game-screen min-h-screen bg-gray-800 relative overflow-hidden">
+    <div className="ob-game-root game-screen min-h-screen bg-gray-800 relative overflow-hidden">
       {/* Content column */}
-      <div className="game-content play-stack absolute inset-0 flex items-center justify-center">
+      <div className="ob-content game-content play-stack absolute inset-0 flex items-center justify-center">
         
         {/* Safe area wrapper with padding to prevent UI overlap */}
         <div className="game-stage relative flex w-full flex-col items-center justify-center">
@@ -83,7 +83,7 @@ export const GamePlaying = ({
           </div>
           
           {/* Turn chip with proper wrapper */}
-          <div className="game-status-chip mx-auto mt-2 mb-2 inline-block z-40">
+          <div className="ob-turn-chip game-status-chip mx-auto mt-2 mb-2 inline-block z-40">
             <div className="turn-chip pointer-events-none">
               <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
                 {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
@@ -92,7 +92,7 @@ export const GamePlaying = ({
           </div>
           
           {/* Timer wrapper with mobile spacing to prevent overlap */}
-          <div className="game-timer-wrap mb-[132px] sm:mb-6 z-30">
+          <div className="ob-timer-stack game-timer-wrap mb-[132px] sm:mb-6 z-30">
             <div className="timer-wrap">
               <div className="timer-circle mx-auto flex items-center justify-center">
                 <BombTimer
@@ -195,7 +195,7 @@ export const GamePlaying = ({
       <div className="h-24 md:h-0" />
 
         {/* Input Area - sticky to bottom with safe-area padding and gradient bg */}
-        <div className="input-dock game-input-area sticky bottom-0 z-40 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]
+        <div className="ob-input-area input-dock game-input-area sticky bottom-0 z-40 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]
                         bg-gradient-to-t from-[rgba(10,12,20,0.95)] to-transparent backdrop-blur-[2px]">
           <div className="game-input-panel max-w-md mx-auto">
           {/* Game status and spectator mode indicator - compact chips only */}

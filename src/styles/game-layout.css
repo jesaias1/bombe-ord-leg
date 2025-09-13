@@ -1,82 +1,67 @@
-/* ============ Desktop polish ============ */
-@media (min-width: 768px) {
-  .play-stack {
-    max-width: 760px;
-    margin-inline: auto;
-    padding-inline: 16px;
-  }
-
-  .turn-chip {
-    margin: 8px auto 10px;
-  }
-
-  .input-dock {
-    position: static;              /* desktop: no sticky */
-    background: none;
-    padding: 0;
-    margin: 10px 0 6px;            /* space around input */
-  }
-
-  .timer-wrap {
-    margin-top: 14px;              /* space below helper */
-  }
-
-  .timer-wrap .timer-circle {
-    max-width: 520px;
-    margin-inline: auto;
-  }
-}
-
-/* ============ Mobile layout (<= 640px) ============ */
-@media (max-width: 640px) {
-  /* Reserve space at the bottom so the timer/letters never sit under the input */
+/* ---------- Mobile UI fixes (no gameplay impact) ---------- */
+@media (max-width: 768px) {
   :root {
-    --safe-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
-    --input-dock-h: 112px;         /* final height of input/status area */
+    /* Height occupied by the bottom input/status zone on phones */
+    --ob-input-h: clamp(120px, 28vh, 180px);
   }
 
-  .game-screen {
-    min-height: 100svh;            /* stable viewport height on mobile */
-    display: grid;
-    grid-template-rows: 1fr auto;  /* content + bottom input */
-  }
-
-  /* Content column: badges, turn chip, timer */
-  .game-content {
-    padding-block-end: calc(var(--input-dock-h) + var(--safe-bottom));
+  /* Root wrapper for the game screen */
+  .ob-game-root {
+    min-height: 100dvh;            /* respects Android URL bar */
     display: flex;
     flex-direction: column;
-    align-items: center;
   }
 
-  /* Bottom, sticky input/status container */
-  .input-dock {
-    position: sticky;
-    bottom: 0;
-    z-index: 30;
-    background: linear-gradient(to top, rgba(8,11,22,0.96), rgba(8,11,22,0.0));
-    padding: 10px 12px calc(var(--safe-bottom) + 8px);
-    box-shadow: 0 -8px 20px rgba(0,0,0,0.25);
+  /* The scrollable/content area that contains badges, chip and timer */
+  .ob-content {
+    flex: 1 1 auto;
+    /* Make sure nothing at the bottom is covered by the sticky input */
+    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
   }
 
-  /* Timer block: keep it comfortably above the input */
-  .timer-wrap {
-    margin-top: 10px;
-    margin-bottom: 16px;           /* extra guard space above input */
+  /* Timer stack: extra breathing room so letters never sit under the input */
+  .ob-timer-stack {
+    margin-bottom: calc(var(--ob-input-h) + 16px);
+    position: relative;             /* so chip offsets behave nicely */
+    z-index: 1;
   }
 
-  /* Toasts should not block the timer letters */
-  .toast-viewport {
-    z-index: 50;
-    pointer-events: none;
-  }
-  .toast-viewport > * {
-    pointer-events: auto;
+  /* Turn chip (the black pill that says "X er på tur") */
+  .ob-turn-chip {
+    margin-top: 6px;
+    margin-bottom: 6px;
+    z-index: 2;                     /* above timer, below input */
   }
 
-  /* Optional: keep player badges from colliding visually */
+  /* Player badges rail */
   .players-rail {
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 8px;
   }
+
+  /* Bottom input area: docked, above safe area, above everything else */
+  .ob-input-area {
+    position: sticky;               /* stays at bottom while scrolling content */
+    bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 50;                    /* top of UI stack */
+    background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    backdrop-filter: blur(2px);
+  }
+
+  /* Toasts: don't cover the timer; keep under the input layer */
+  .toast-viewport {
+    z-index: 30;                    /* below .ob-input-area(50), above content */
+    pointer-events: none;
+  }
+  .toast-viewport > * {
+    pointer-events: auto;           /* individual toasts still clickable */
+  }
+}
+
+/* Desktop guard: tiny, tidy spacing (no huge mobile margins) */
+@media (min-width: 769px) {
+  .ob-timer-stack { margin-bottom: 48px; }
 }
