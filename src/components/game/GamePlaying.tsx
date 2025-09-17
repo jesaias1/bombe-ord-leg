@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Heart, Crown } from 'lucide-react';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useServerClock } from '@/hooks/useServerClock';
+import { useVisualViewportPadding } from '@/hooks/useVisualViewportPadding';
 import './GameBoard.css';
 import './mobile-game-layout.css';
 
@@ -35,6 +36,8 @@ export const GamePlaying = ({
   currentUserId,
   gameInput
 }: GamePlayingProps) => {
+  useVisualViewportPadding();
+  
   const alivePlayers = players.filter(p => p.is_alive);
   const deadPlayers = players.filter(p => !p.is_alive);
   const { offsetMs } = useServerClock();
@@ -73,7 +76,7 @@ export const GamePlaying = ({
   return (
     <div className="ob-layout">
       {/* Content stage */}
-      <div className="ob-stage">
+      <div className="ob-content">
         
         {/* Turn chip with proper wrapper */}
         <div className="ob-turn-chip game-status-chip mx-auto mt-2 mb-2 inline-block z-40">
@@ -226,7 +229,7 @@ export const GamePlaying = ({
             </div>
             
             {/* Helper text inside footer on mobile */}
-            <div className="ob-input-helper syllable-helper ob-helper ob-helper--top">Find ord med "{game.current_syllable}"</div>
+            <div className="syllable-helper">Find ord med "{game.current_syllable}"</div>
           </div>
         </div>
 
