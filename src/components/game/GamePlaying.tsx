@@ -72,8 +72,8 @@ export const GamePlaying = ({
 
   return (
     <div className="ob-layout">
-      {/* Content column */}
-      <div className="ob-content">
+      {/* Content stage */}
+      <div className="ob-stage">
         
         {/* Safe area wrapper with padding to prevent UI overlap */}
         <div className="game-stage relative flex w-full flex-col items-center justify-center">
@@ -107,7 +107,7 @@ export const GamePlaying = ({
         </div>
 
         {/* Players positioned around the bomb (orbit on desktop, rail on mobile) */}
-        <div className="ob-players-rail ob-players-rail--top game-orbit-layer players-rail">
+        <div className="ob-players-rail game-orbit-layer players-rail">
           {alivePlayers.map((player, index) => {
             const position = getPlayerPosition(index, alivePlayers.length);
             const isCurrentPlayer = player.id === game.current_player_id;
@@ -234,7 +234,7 @@ export const GamePlaying = ({
             </div>
             
             {/* Helper text inside footer on mobile */}
-            <div className="syllable-helper ob-helper">Find ord med "{game.current_syllable}"</div>
+            <div className="syllable-helper ob-helper ob-helper--top">Find ord med "{game.current_syllable}"</div>
           </div>
         </div>
 

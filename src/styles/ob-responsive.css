@@ -1,68 +1,86 @@
-/* -------- Mobile layout hotfix (no gameplay impact) -------- */
-@media (max-width: 768px) {
-  :root {
-    /* Height reserved for bottom input block (input + helper) */
-    --ob-input-h: clamp(160px, 34vh, 220px);
-  }
-
-  .ob-layout {
-    min-height: 100dvh;       /* Android URL bar aware */
-    display: flex;
-    flex-direction: column;
-  }
-
-  .ob-content {
-    flex: 1 1 auto;
-    /* Prevent timer/letters from sitting under the fixed input */
-    padding-bottom: calc(var(--ob-input-h) + max(14px, env(safe-area-inset-bottom, 0px)));
-  }
-
-  .ob-turn-chip {
-    position: relative;
-    z-index: 2;               /* above timer, below input */
-    margin: 6px auto;
-  }
-
-  .ob-timer-area {
-    position: relative;
-    z-index: 1;
-    margin: 12px auto calc(var(--ob-input-h) + 20px); /* extra bottom space */
-    max-width: 520px;
-  }
-
-  .ob-timer-circle {
-    display: block;
-    margin-inline: auto;
-  }
-
-  /* FIXED bottom input area (top-most UI layer) */
-  .ob-input-area {
-    position: fixed;
-    left: 0; right: 0;
-    bottom: env(safe-area-inset-bottom, 0px);
-    z-index: 60;              /* top of stack */
-    background: linear-gradient(to top, rgba(9,14,23,.97) 72%, rgba(9,14,23,0));
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-    padding-top: 8px;
-  }
-
-  /* Helper must render inside .ob-input-area; if there's a stray one in content, hide it */
-  .ob-helper-top { display: none !important; }
-
-  /* Keep toasts below the input so they never cover letters */
-  .toast-viewport {
-    z-index: 40;              /* below input (60), above content (1) */
-    pointer-events: none;
-  }
-  .toast-viewport > * { pointer-events: auto; }
-
-  /* Optional rail tweaks on narrow phones */
-  .ob-players-rail { gap: 10px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: thin; }
+/* ---------- Mobile-first: keep timer, chip and input visible together ---------- */
+:root {
+  --ob-input-h: clamp(120px, 28vh, 180px); /* reserved height for bottom input zone */
 }
 
-/* Desktop tidy spacing (unchanged gameplay) */
+.ob-layout {
+  min-height: 100dvh;              /* respects mobile URL bar */
+  display: grid;
+  grid-template-rows: 1fr auto;    /* stage grows, input sits at bottom */
+  background: #0b1321;             /* keep existing app bg if different */
+}
+
+.ob-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 12px calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
+  /* Bottom padding ensures timer never hides behind input */
+}
+
+.ob-turn-chip {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  z-index: 2;
+}
+
+.ob-players-rail {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ob-timer-area {
+  width: 100%;
+  display: grid;
+  place-items: center;
+  margin: 6px 0 16px 0;
+  /* Make sure the circle scales nicely on phones */
+}
+
+.ob-timer-circle {
+  /* Size the bomb responsively; adjust clamp to your design */
+  width: clamp(220px, 46vw, 360px);
+  height: clamp(220px, 46vw, 360px);
+  max-width: 90vw;
+  max-height: 90vw;
+}
+
+.ob-input-area {
+  position: sticky;                 /* stays at bottom while stage can scroll if ever needed */
+  bottom: 0;
+  z-index: 50;
+  padding: 12px 12px max(12px, env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(9,14,23,0.96) 72%, rgba(9,14,23,0.0));
+  backdrop-filter: blur(2px);
+}
+
+/* Keep toasts below the input so they don't cover the timer */
+.toast-viewport { z-index: 30; pointer-events: none; }
+.toast-viewport > * { pointer-events: auto; }
+
+/* Helpers: show only one copy on mobile */
+@media (max-width: 768px) {
+  .ob-helper--under-timer { display: none !important; }
+  .ob-helper--top { display: block !important; }
+}
+
+/* Desktop polish */
 @media (min-width: 769px) {
-  .ob-layout   { min-height: 100vh; display: flex; flex-direction: column; }
-  .ob-content  { flex: 1 1 auto; padding-bottom: 56px; }
-  .ob-timer-area { margin: 20px auto 84px; max-width: 640px; }
+  .ob-stage { 
+    padding: 24px 16px 64px;       /* bigger breathing room on desktop */
+  }
+  .ob-timer-circle {
+    width: clamp(320px, 32vw, 420px);
+    height: clamp(320px, 32vw, 420px);
+  }
+  .toast-viewport { z-index: 10; }
+  /* On desktop show helper under timer, hide the top one to avoid duplication */
+  .ob-helper--top { display: none !important; }
+  .ob-helper--under-timer { display: block !important; }
 }
