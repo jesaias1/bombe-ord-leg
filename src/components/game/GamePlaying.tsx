@@ -71,9 +71,9 @@ export const GamePlaying = ({
   const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
 
   return (
-    <div className="ob-layout game-screen min-h-screen bg-gray-800 relative overflow-hidden">
+    <div className="ob-layout">
       {/* Content column */}
-      <div className="ob-content game-content play-stack absolute inset-0 flex items-center justify-center">
+      <div className="ob-content">
         
         {/* Safe area wrapper with padding to prevent UI overlap */}
         <div className="game-stage relative flex w-full flex-col items-center justify-center">

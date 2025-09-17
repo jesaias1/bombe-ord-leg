@@ -1,100 +1,97 @@
-/* ---------- Shared (desktop + mobile) ---------- */
-
-.ob-layout {
-  min-height: 100dvh;              /* respects mobile URL bar dynamics */
-  display: flex;
-  flex-direction: column;
+/* ---------- Global Fixes ---------- */
+* {
+  pointer-events: auto; /* keep toasts clickable */
 }
 
-.ob-content {
-  flex: 1 1 auto;                  /* grow to fill remaining vertical space */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Keep toasts under the input layer but above content */
-.toast-viewport {
-  z-index: 30;
-  pointer-events: none;
-}
-.toast-viewport > * {
-  pointer-events: auto;            /* individual toasts remain clickable */
-}
-
-/* Desktop tidy spacing */
-@media (min-width: 769px) {
-  .ob-timer-area { margin-top: 16px; margin-bottom: 48px; }
-  .ob-players-rail { margin-top: 8px; margin-bottom: 8px; }
-}
-
-/* ---------- Mobile-specific fixes ---------- */
+/* ---------- Mobile Layout ---------- */
 @media (max-width: 768px) {
   :root {
-    /* Height reserved for the bottom input/status zone */
-    --ob-input-h: clamp(120px, 28vh, 184px);
+    --ob-input-h: clamp(120px, 28vh, 180px);
+  }
+
+  .ob-layout {
+    min-height: 100dvh; 
+    display: flex;
+    flex-direction: column;
   }
 
   .ob-content {
-    /* Prevent the sticky input from covering the bottom of content */
-    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
-    width: 100%;
-  }
-
-  /* The stack around the timer gets extra breathing room so letters never sit under input */
-  .ob-timer-area {
-    width: 100%;
+    flex: 1 1 auto;
     display: flex;
-    justify-content: center;
-    margin-top: 8px;
-    margin-bottom: calc(var(--ob-input-h) + 16px);
-    position: relative;            /* for chip layering */
-    z-index: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
   }
 
   .ob-turn-chip {
-    margin-top: 6px;
-    margin-bottom: 6px;
-    z-index: 2;                    /* above timer circle, under input */
+    margin: 6px 0;
+    z-index: 2;
+  }
+
+  .ob-timer-area {
+    margin-bottom: calc(var(--ob-input-h) + 16px);
+    position: relative;
+    z-index: 1;
+  }
+
+  .ob-timer-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
   }
 
   .ob-players-rail {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 4px;
     margin-bottom: 8px;
     justify-content: center;
-    padding: 0 8px;
-    max-width: 100%;
-    overflow: hidden;
   }
 
-  /* Bottom input/footer: docked, always visible, on top */
   .ob-input-area {
-    position: sticky;               /* sticks to bottom of viewport as user scrolls */
+    position: sticky;
     bottom: env(safe-area-inset-bottom, 0px);
-    z-index: 50;                    /* above toasts and content */
-    background: linear-gradient(to top, rgba(9,14,23,.97) 72%, rgba(9,14,23,0));
+    z-index: 50;
+    background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
     padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-    /* Optional small top padding so it doesn't touch timer when close */
-    padding-top: 8px;
+    backdrop-filter: blur(2px);
   }
 
-  /* If helper text ever wraps too tall, keep it from pushing the input up */
-  .ob-input-area .helper,
-  .ob-input-area [data-helper],
-  .ob-input-area .hint {
-    max-height: 2.6em;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .toast-viewport {
+    z-index: 30;
+    pointer-events: none;
+  }
+  .toast-viewport > * {
+    pointer-events: auto;
   }
 }
 
-/* Optional: horizontal scroll for many players on tiny phones */
-@media (max-width: 420px) {
-  .ob-players-rail {
-    overflow-x: auto;
-    scrollbar-width: thin;
+/* ---------- Desktop Layout ---------- */
+@media (min-width: 769px) {
+  .ob-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ob-content {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ob-timer-area {
+    margin-bottom: 48px;
+  }
+
+  .ob-players-rail--top {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 16px;
   }
 }
