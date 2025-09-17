@@ -75,33 +75,25 @@ export const GamePlaying = ({
       {/* Content stage */}
       <div className="ob-stage">
         
-        {/* Safe area wrapper with padding to prevent UI overlap */}
-        <div className="game-stage relative flex w-full flex-col items-center justify-center">
-          {/* Player badges positioning */}
-          <div className="player-badges">
-            {/* Placeholder for consistency - actual badges rendered separately */}
+        {/* Turn chip with proper wrapper */}
+        <div className="ob-turn-chip game-status-chip mx-auto mt-2 mb-2 inline-block z-40">
+          <div className="turn-chip pointer-events-none">
+            <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
+              {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
+            </span>
           </div>
-          
-          {/* Turn chip with proper wrapper */}
-          <div className="ob-turn-chip game-status-chip mx-auto mt-2 mb-2 inline-block z-40">
-            <div className="turn-chip pointer-events-none">
-              <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/70 text-white text-xs md:text-sm px-3 py-1 shadow">
-                {currentPlayer ? `${currentPlayer.name} er på tur` : 'Venter...'}
-              </span>
-            </div>
-          </div>
-          
-          {/* Timer wrapper with mobile spacing to prevent overlap */}
-          <div className="ob-timer-area game-timer-wrap z-30">
-            <div className="timer-wrap">
-              <div className="ob-timer-circle timer-circle mx-auto flex items-center justify-center">
-                <BombTimer
-                  timeLeft={timeLeft}
-                  totalTime={game.timer_duration || 15}
-                  isActive={game.status === 'playing'}
-                  syllable={game.current_syllable || ''}
-                />
-              </div>
+        </div>
+        
+        {/* Timer wrapper with mobile spacing to prevent overlap */}
+        <div className="ob-timer-area game-timer-wrap z-30">
+          <div className="timer-wrap">
+            <div className="ob-timer-circle timer-circle mx-auto flex items-center justify-center">
+              <BombTimer
+                timeLeft={timeLeft}
+                totalTime={game.timer_duration || 15}
+                isActive={game.status === 'playing'}
+                syllable={game.current_syllable || ''}
+              />
             </div>
           </div>
         </div>
@@ -234,7 +226,7 @@ export const GamePlaying = ({
             </div>
             
             {/* Helper text inside footer on mobile */}
-            <div className="syllable-helper ob-helper ob-helper--top">Find ord med "{game.current_syllable}"</div>
+            <div className="ob-input-helper syllable-helper ob-helper ob-helper--top">Find ord med "{game.current_syllable}"</div>
           </div>
         </div>
 

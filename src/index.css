@@ -420,3 +420,111 @@
 @import './styles/game-desktop.css';
 @import './styles/game-layout.css';
 @import './styles/game-unified-layout.css';
+
+/* ====== Game screen responsive layout – no gameplay impact ====== */
+
+/* Reset the page to a predictable viewport and prevent "blank scroll" */
+html, body, #root {
+  height: 100%;
+}
+.ob-root, .ob-layout {
+  height: 100dvh;                   /* respect mobile browser UI bars */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;                 /* page itself won't overscroll */
+}
+
+/* Stage = scrollable middle area (turn chip + timer + players) */
+.ob-stage {
+  flex: 1 1 auto;
+  min-height: 0;                    /* allow child to shrink in flex */
+  overflow-y: auto;                 /* internal scroll only if needed */
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+/* Input area is always visible at bottom */
+.ob-input-area {
+  position: sticky;
+  bottom: max(0px, env(safe-area-inset-bottom));
+  z-index: 60;                      /* on top of stage content */
+  background: linear-gradient(to top, rgba(9,14,23,0.96) 70%, rgba(9,14,23,0));
+  padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+  backdrop-filter: blur(2px);
+}
+
+/* Helper line (errors / "Find ord med …") is part of input area */
+.ob-input-helper {
+  margin-top: 8px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* Turn chip safely above timer but below input */
+.ob-turn-chip {
+  z-index: 10;
+  margin-top: 6px;
+}
+
+/* Timer block with safe breathing room */
+.ob-timer-area {
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+/* Actual circular timer */
+.ob-timer-circle {
+  z-index: 5;                       /* under chip, above background */
+}
+
+/* Players rail: under timer on mobile; spaced around on desktop */
+.ob-players-rail {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* Toasts should not cover the input – keep them under the input layer */
+.toast-viewport {
+  z-index: 40;                      /* below .ob-input-area (60) */
+  pointer-events: none;
+}
+.toast-viewport > * {
+  pointer-events: auto;
+}
+
+/* ---------- Mobile-first tweaks ---------- */
+@media (max-width: 768px) {
+  :root {
+    --ob-input-h: clamp(120px, 28vh, 180px);
+  }
+  /* Ensure stage can never be hidden behind sticky input */
+  .ob-stage {
+    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom)));
+  }
+  .ob-timer-area {
+    margin-bottom: 6px;
+  }
+}
+
+/* ---------- Desktop spacing ---------- */
+@media (min-width: 769px) {
+  .ob-stage { gap: 16px; }
+  .ob-timer-area { margin-bottom: 12px; }
+
+  /* Optional: orbit-like feel by spacing players wider on desktop */
+  .ob-players-rail {
+    gap: 14px;
+    flex-wrap: nowrap;
+  }
+}
