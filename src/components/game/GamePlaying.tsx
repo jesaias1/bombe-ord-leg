@@ -57,14 +57,14 @@ export const GamePlaying = ({
     }
   }, [game?.timer_end_time, offsetMs]);
 
-  // Calculate player positions in a circle (smaller radius)
+  // Calculate player positions in a circle
   const getPlayerPosition = (index: number, total: number) => {
     if (total === 1) {
-      return { x: 50, y: 30 };
+      return { x: 50, y: 20 };
     }
     
     const angle = (index * 360) / total - 90; // Start from top
-    const radius = 30; // Smaller radius for compact layout
+    const radius = 42; // Increased radius to prevent overlap with timer
     const x = 50 + Math.cos((angle * Math.PI) / 180) * radius;
     const y = 50 + Math.sin((angle * Math.PI) / 180) * radius;
     return { x, y };
