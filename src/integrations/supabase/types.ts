@@ -238,6 +238,33 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       syllables: {
         Row: {
           created_at: string
@@ -337,6 +364,15 @@ export type Database = {
         Args: { p_room_id: string }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          p_action: string
+          p_max_attempts?: number
+          p_user_id: string
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -392,6 +428,10 @@ export type Database = {
       }
       is_room_member: {
         Args: { p_room_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      is_valid_guest_id: {
+        Args: { guest_id: string }
         Returns: boolean
       }
       join_room_with_lives: {
