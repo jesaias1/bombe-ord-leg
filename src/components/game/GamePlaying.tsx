@@ -87,22 +87,20 @@ export const GamePlaying = ({
           </div>
         </div>
         
-        {/* Timer wrapper with mobile spacing to prevent overlap */}
-        <div className="ob-timer-area game-timer-wrap z-30">
-          <div className="timer-wrap">
-            <div className="ob-timer-circle timer-circle mx-auto flex items-center justify-center">
-              <BombTimer
-                timeLeft={timeLeft}
-                totalTime={game.timer_duration || 15}
-                isActive={game.status === 'playing'}
-                syllable={game.current_syllable || ''}
-              />
-            </div>
+        {/* Game circle area: Timer + Players positioned absolutely in same space */}
+        <div className="relative w-full flex items-center justify-center" style={{ height: '500px' }}>
+          
+          {/* Timer in center */}
+          <div className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 30 }}>
+            <BombTimer
+              timeLeft={timeLeft}
+              totalTime={game.timer_duration || 15}
+              isActive={game.status === 'playing'}
+              syllable={game.current_syllable || ''}
+            />
           </div>
-        </div>
 
-        {/* Players positioned around the bomb in a circle */}
-        <div className="ob-players-rail game-orbit-layer players-rail relative">
+          {/* Players positioned around the bomb in a circle */}
           {alivePlayers.map((player, index) => {
             const position = getPlayerPosition(index, alivePlayers.length);
             const isCurrentPlayer = player.id === game.current_player_id;
@@ -115,6 +113,7 @@ export const GamePlaying = ({
                 style={{
                   left: `${position.x}%`,
                   top: `${position.y}%`,
+                  zIndex: 20,
                 }}
               >
                 <div className="flex flex-col items-center space-y-1">
@@ -156,34 +155,30 @@ export const GamePlaying = ({
               </div>
             );
           })}
-        </div>
 
-        {/* Arrow pointing to current player */}
-        {currentPlayerIndex >= 0 && alivePlayers.length > 1 && (
-          <div className="absolute z-20">
+          {/* Arrow pointing to current player */}
+          {currentPlayerIndex >= 0 && alivePlayers.length > 1 && (
+            <div className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 25 }}>
             {(() => {
               const currentPos = getPlayerPosition(currentPlayerIndex, alivePlayers.length);
               const angle = Math.atan2(currentPos.y - 50, currentPos.x - 50) * 180 / Math.PI;
               
               return (
                 <div
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2"
                   style={{
-                    left: '50%',
-                    top: '50%',
-                    transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
+                    transform: `rotate(${angle + 90}deg)`,
                   }}
                 >
                   <div 
                     className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[12px] border-l-transparent border-r-transparent border-b-yellow-400 animate-bounce"
-                    style={{ marginTop: '-65px' }}
+                    style={{ marginTop: '-100px' }}
                   />
                 </div>
               );
             })()}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
 
         {/* Input Area */}
@@ -246,6 +241,7 @@ export const GamePlaying = ({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
