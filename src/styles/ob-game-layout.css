@@ -6,13 +6,15 @@
 /* ---------- Mobile Layout ---------- */
 @media (max-width: 768px) {
   :root {
-    --ob-input-h: clamp(120px, 28vh, 180px);
+    --ob-input-h: clamp(140px, 30vh, 200px);
   }
 
   .ob-layout {
-    min-height: 100dvh; 
+    min-height: 100dvh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
   }
 
   .ob-content {
@@ -21,7 +23,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding-bottom: calc(var(--ob-input-h) + max(12px, env(safe-area-inset-bottom, 0px)));
+    padding-bottom: calc(var(--ob-input-h) + max(20px, env(safe-area-inset-bottom, 0px)));
+    overflow-y: auto;
   }
 
   .ob-turn-chip {
@@ -50,12 +53,16 @@
   }
 
   .ob-input-area {
-    position: sticky;
-    bottom: env(safe-area-inset-bottom, 0px);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 50;
-    background: linear-gradient(to top, rgba(9,14,23,.96) 70%, rgba(9,14,23,0));
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-    backdrop-filter: blur(2px);
+    background: linear-gradient(to top, rgba(9,14,23,.98) 80%, rgba(9,14,23,0.4));
+    padding: 12px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+    backdrop-filter: blur(4px);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
   }
 
   .toast-viewport {

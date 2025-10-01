@@ -23,12 +23,13 @@ export const HomePage = () => {
   
   const [roomName, setRoomName] = useState('');
   const [difficulty, setDifficulty] = useState<'let' | 'mellem' | 'svaer'>('mellem');
-  const [bonusLetters, setBonusLetters] = useState(false);
+  const [bonusLetters, setBonusLetters] = useState(true); // Default to enabled
   const [joinRoomId, setJoinRoomId] = useState('');
   const [loading, setLoading] = useState(false);
   const [showWordImporter, setShowWordImporter] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeCard, setActiveCard] = useState<'create' | 'join' | null>(null);
+  const [quickStarting, setQuickStarting] = useState(false);
 
   // Check if user is admin
   const { data: isAdmin = false } = useQuery({
@@ -57,7 +58,7 @@ export const HomePage = () => {
     setActiveCard(null);
     setRoomName('');
     setDifficulty('mellem');
-    setBonusLetters(false);
+    setBonusLetters(true); // Reset to default enabled
     setJoinRoomId('');
   };
 
@@ -148,6 +149,49 @@ export const HomePage = () => {
     navigate(`/room/${joinRoomId.trim().toUpperCase()}`);
   };
 
+  const quickStartSolo = async () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    setQuickStarting(true);
+    try {
+      const roomId = generateRoomId();
+      
+      const { error } = await supabase
+        .from('rooms')
+        .insert({
+          id: roomId,
+          name: 'Solo træning',
+          creator_id: user.id,
+          difficulty: 'mellem',
+          bonus_letters_enabled: true,
+        });
+
+      if (error) {
+        console.error('Error creating solo room:', error);
+        toast({
+          title: "Fejl",
+          description: "Kunne ikke starte solo spil",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      navigate(`/room/${roomId}`);
+    } catch (error: any) {
+      console.error('Error creating solo room:', error);
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke starte solo spil",
+        variant: "destructive",
+      });
+    } finally {
+      setQuickStarting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/10 p-4">
       <div className="max-w-6xl mx-auto pt-12">
@@ -159,11 +203,11 @@ export const HomePage = () => {
             Multiplayer ordspil på dansk
           </p>
           {!user && (
-            <div className="mt-6">
-              <Button onClick={() => setShowAuthModal(true)} size="lg">
+            <div className="mt-6 space-y-3">
+              <Button onClick={() => setShowAuthModal(true)} size="lg" className="text-lg px-8">
                 🎮 Start spillet
               </Button>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-muted-foreground">
                 Spil som gæst eller opret en konto
               </p>
             </div>
@@ -215,35 +259,63 @@ export const HomePage = () => {
             )}
 
             {!activeCard && (
-              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto animate-scale-in">
-                {/* Create Room Button */}
-                <Card 
-                  className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300 cursor-pointer"
-                  onClick={() => setActiveCard('create')}
-                >
-                  <CardHeader>
-                    <CardTitle className="text-xl font-bold text-foreground text-center">Opret nyt rum</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center">
-                    <div className="text-6xl mb-4">🎮</div>
-                    <p className="text-muted-foreground">Start et nyt spil med dine indstillinger</p>
-                  </CardContent>
-                </Card>
+              <>
+                {/* Quick Start Solo Button */}
+                <div className="max-w-2xl mx-auto mb-8 animate-fade-in">
+                  <Button 
+                    onClick={quickStartSolo}
+                    disabled={quickStarting}
+                    size="lg"
+                    className="w-full h-20 text-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold shadow-2xl transform hover:scale-[1.02] transition-all duration-300"
+                  >
+                    {quickStarting ? "Starter..." : "🚀 Hurtig Solo Træning"}
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground mt-2">
+                    Start øjeblikkelig træning uden setup
+                  </p>
+                </div>
 
-                {/* Join Room Button */}
-                <Card 
-                  className="bg-card/90 backdrop-blur-sm shadow-xl border border-border transform hover:scale-[1.02] transition-all duration-300 cursor-pointer"
-                  onClick={() => setActiveCard('join')}
-                >
-                  <CardHeader>
-                    <CardTitle className="text-xl font-bold text-foreground text-center">Tilslut eksisterende rum</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center">
-                    <div className="text-6xl mb-4">🚪</div>
-                    <p className="text-muted-foreground">Deltag i et eksisterende spil</p>
-                  </CardContent>
-                </Card>
-              </div>
+                {/* Divider */}
+                <div className="max-w-2xl mx-auto mb-8 flex items-center gap-4">
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="text-sm text-muted-foreground">eller</span>
+                  <div className="flex-1 h-px bg-border"></div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto animate-scale-in">
+                  {/* Create Room Card */}
+                  <Card 
+                    className="bg-card/90 backdrop-blur-sm shadow-xl border-2 border-border hover:border-primary/50 transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
+                    onClick={() => setActiveCard('create')}
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold text-foreground text-center group-hover:text-primary transition-colors">
+                        Opret multiplayer rum
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center">
+                      <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">🎮</div>
+                      <p className="text-sm text-muted-foreground">Tilpas indstillinger og inviter venner</p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Join Room Card */}
+                  <Card 
+                    className="bg-card/90 backdrop-blur-sm shadow-xl border-2 border-border hover:border-secondary/50 transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
+                    onClick={() => setActiveCard('join')}
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold text-foreground text-center group-hover:text-secondary transition-colors">
+                        Tilslut eksisterende rum
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center">
+                      <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">🚪</div>
+                      <p className="text-sm text-muted-foreground">Brug rumkode for at deltage</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
             )}
 
             {activeCard === 'create' && (

@@ -83,13 +83,20 @@ export const WordInput: React.FC<WordInputProps> = ({
     try {
       const success = await onSubmit(word.trim());
       console.log('WordInput: Submission result:', success);
-      if (success) {
-        setWord('');
-        onWordChange?.('');
+      // Always clear input after submission attempt
+      // This prevents the issue where failed words stay in input
+      setWord('');
+      onWordChange?.('');
+      
+      if (!success) {
+        // Focus back on input for quick retry
+        setTimeout(() => finalInputRef.current?.focus(), 100);
       }
-      // If unsuccessful, keep the word in the input for retry
     } catch (err) {
       console.error('Error submitting word:', err);
+      // Clear input even on error
+      setWord('');
+      onWordChange?.('');
     } finally {
       setIsLocalSubmitting(false);
     }

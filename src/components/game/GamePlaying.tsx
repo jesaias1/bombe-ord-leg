@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { WordInput } from './WordInput';
 import { BombTimer } from './BombTimer';
 import { PlayersRail } from './PlayersRail';
+import { ExplosionFeedback } from './ExplosionFeedback';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Heart, Crown } from 'lucide-react';
@@ -42,8 +43,39 @@ export const GamePlaying = ({
   const deadPlayers = players.filter(p => !p.is_alive);
   const { offsetMs } = useServerClock();
   const [tick, setTick] = useState(0);
+  const [showExplosion, setShowExplosion] = useState(false);
+  const [explosionPlayer, setExplosionPlayer] = useState<string>();
   
   console.log('GamePlaying render - game:', game, 'alivePlayers:', alivePlayers);
+
+  // Show explosion feedback when a player loses a life
+  useEffect(() => {
+    // Track last known turn sequence to detect life changes
+    const lastTurnSeq = (window as any).__lastTurnSeq;
+    const currentTurnSeq = (game as any)?.turn_seq;
+    
+    if (lastTurnSeq !== undefined && currentTurnSeq > lastTurnSeq) {
+      // Turn advanced - check if anyone lost a life
+      const lostLifePlayer = players.find(p => {
+        const prevLives = (window as any)[`__playerLives_${p.id}`];
+        if (prevLives !== undefined && p.lives < prevLives) {
+          return true;
+        }
+        return false;
+      });
+      
+      if (lostLifePlayer) {
+        setExplosionPlayer(lostLifePlayer.name);
+        setShowExplosion(true);
+      }
+    }
+    
+    // Store current state for next comparison
+    (window as any).__lastTurnSeq = currentTurnSeq;
+    players.forEach(p => {
+      (window as any)[`__playerLives_${p.id}`] = p.lives;
+    });
+  }, [(game as any)?.turn_seq, players.map(p => `${p.id}-${p.lives}`).join(',')]);
 
   // Fast-forward UI if late (drift correction)
   useEffect(() => {
@@ -74,9 +106,21 @@ export const GamePlaying = ({
   const currentPlayerIndex = alivePlayers.findIndex(p => p.id === game.current_player_id);
 
   return (
-    <div className="ob-layout">
-      {/* Content stage */}
-      <div className="ob-content">
+    <>
+      {/* Explosion feedback overlay */}
+      {showExplosion && (
+        <ExplosionFeedback 
+          playerName={explosionPlayer}
+          onComplete={() => {
+            setShowExplosion(false);
+            setExplosionPlayer(undefined);
+          }}
+        />
+      )}
+      
+      <div className="ob-layout">
+        {/* Content stage */}
+        <div className="ob-content">
         
         {/* Turn chip with proper wrapper */}
         <div className="ob-turn-chip game-status-chip mx-auto mt-2 mb-2 inline-block z-40">
@@ -241,7 +285,8 @@ export const GamePlaying = ({
           </div>
         </div>
       )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
