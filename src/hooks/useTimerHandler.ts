@@ -28,19 +28,33 @@ export const useTimerHandler = (
 
   const handleTimerExpired = useCallback(async () => {
     // Guards
-    if (!game || game.status !== 'playing') return;
+    if (!game || game.status !== 'playing') {
+      console.log('Timer expired but game not playing:', game?.status);
+      return;
+    }
 
     const current = players.find(p => p.id === game.current_player_id);
-    if (!current) return;
+    if (!current) {
+      console.log('Timer expired but no current player found');
+      return;
+    }
 
     // Only the current player device should call timeout
-    if (user?.id && current.user_id !== user.id) return;
+    if (user?.id && current.user_id !== user.id) {
+      console.log('Timer expired but not current user turn');
+      return;
+    }
 
     // Prevent double fire in the same turn
     const turnSeq = (game as any)?.turn_seq ?? -1;
-    if (pendingTurnSeqRef.current === turnSeq || isCallingRef.current) return;
+    if (pendingTurnSeqRef.current === turnSeq || isCallingRef.current) {
+      console.log('Timer expired but already handling this turn');
+      return;
+    }
     pendingTurnSeqRef.current = turnSeq;
     isCallingRef.current = true;
+
+    console.log('Handling timer expiry for player:', current.name, 'turn:', turnSeq);
 
     try {
       const { data, error } = await supabase.rpc('handle_timeout', {
@@ -54,9 +68,13 @@ export const useTimerHandler = (
         if (!/turn already advanced|not your turn|current turn/.test(msg)) {
           console.error('handle_timeout error:', error);
           toast.error('Fejl ved håndtering af timeren');
+        } else {
+          console.log('Ignoring expected timeout error:', msg);
         }
         return;
       }
+
+      console.log('Timeout handled successfully:', data);
 
       // ⬇️ Immediately refresh both game and players so hearts update right away
       await Promise.all([
@@ -97,6 +115,7 @@ export const useTimerHandler = (
         if (shadowGame && !responseData.game_ended && responseData.turn_seq && responseData.current_player_id && 
             responseData.current_syllable && responseData.timer_end_time && 
             responseData.timer_duration) {
+          console.log('Applying shadow state for new turn:', responseData.turn_seq);
           shadowGame.apply({
             turn_seq: responseData.turn_seq,
             current_player_id: responseData.current_player_id,
@@ -126,10 +145,13 @@ export const useTimerHandler = (
           setTimeout(() => {
             queryClient.refetchQueries({ queryKey: ['game', room?.id], type: 'active' });
           }, 180);
+        } else {
+          console.log('Game ended after timeout');
         }
       }
     } catch (e) {
       console.error('handle_timeout unexpected:', e);
+      toast.error('Uventet fejl - prøv at genindlæs siden');
     } finally {
       // Unlock for next turn
       isCallingRef.current = false;

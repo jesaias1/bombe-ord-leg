@@ -1,6 +1,5 @@
-/* mobile-game-layout.css */
+/* mobile-game-layout.css - Game circle layout */
 
-/* Respect notches and leave space for a bottom-docked input */
 :root {
   --safe-top: max(env(safe-area-inset-top), 8px);
   --safe-bottom: max(env(safe-area-inset-bottom), 8px);
@@ -15,39 +14,13 @@
   z-index: 40;
 }
 
-.timer-wrap {
-  z-index: 30;
-}
-
-.player-badges {
-  z-index: 30;
-}
-
 @media (max-width: 600px) {
   .game-stage {
     display: flex;
     flex-direction: column;
-    height: 100dvh; /* Use dvh when supported */
-    height: 100vh; /* Fallback */
+    height: 100dvh;
+    height: 100vh;
     justify-content: space-between;
-  }
-
-  .player-badges {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
-    padding: 0.25rem;
-    min-height: 56px;
-  }
-
-  .timer-wrap {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 1rem 0;
-    margin-bottom: 120px; /* Prevent input overlap */
   }
 
   .turn-chip {
@@ -72,7 +45,6 @@
     margin: 0 auto;
   }
 
-  /* Status banner above input */
   .game-input-panel > div:first-child {
     margin-bottom: 4px;
     display: block;

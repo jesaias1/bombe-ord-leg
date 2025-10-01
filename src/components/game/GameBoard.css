@@ -1,44 +1,16 @@
-/* GameBoard.css - Safe area and overlap prevention */
+/* GameBoard.css - Circle layout for players around timer */
 
-/* Keep a bit of breathing room at the very top (notch / chrome) */
 :root {
   --safe-top: max(env(safe-area-inset-top), 8px);
   --safe-bottom: max(env(safe-area-inset-bottom), 8px);
 }
 
-/* Wrap around your timer+players container */
 .game-stage {
   padding-top: calc(var(--safe-top) + 8px);
-  padding-bottom: calc(var(--safe-bottom) + 72px); /* space for input/toast on phones */
+  padding-bottom: calc(var(--safe-bottom) + 72px);
 }
 
-/* Clamp timer so it doesn't overflow small viewports */
-.timer-wrap {
-  /* Keeps the circle visible on small phones */
-  width: min(82vw, 420px);
-  aspect-ratio: 1 / 1;
-  margin-inline: auto;
-  position: relative;
-}
-
-/* Floating player badges: keep them inside the viewport edge */
-.player-badges {
-  position: relative;
-  z-index: 5;
-  /* Prevent overlap with the toast and the input bar */
-  margin-top: 12px;
-  margin-bottom: 12px;
-}
-
-/* On very small screens, pull badges slightly inside */
-@media (max-width: 420px) {
-  .player-badges {
-    transform: translateY(-4px);
-  }
-}
-
-/* Ensure toast and input always sit above background visuals,
-   but below modal dialogs */
+/* Toast should be above everything */
 .toast-viewport, .shadcn-toast-viewport {
   z-index: 60;
 }
