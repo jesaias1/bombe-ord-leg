@@ -60,11 +60,11 @@ export const GamePlaying = ({
   // Calculate player positions in a circle
   const getPlayerPosition = (index: number, total: number) => {
     if (total === 1) {
-      return { x: 50, y: 20 };
+      return { x: 50, y: 15 };
     }
     
     const angle = (index * 360) / total - 90; // Start from top
-    const radius = 42; // Increased radius to prevent overlap with timer
+    const radius = 35; // Radius for player positioning
     const x = 50 + Math.cos((angle * Math.PI) / 180) * radius;
     const y = 50 + Math.sin((angle * Math.PI) / 180) * radius;
     return { x, y };
@@ -101,8 +101,8 @@ export const GamePlaying = ({
           </div>
         </div>
 
-        {/* Players positioned around the bomb (orbit on desktop, rail on mobile) */}
-        <div className="ob-players-rail game-orbit-layer players-rail">
+        {/* Players positioned around the bomb in a circle */}
+        <div className="ob-players-rail game-orbit-layer players-rail relative">
           {alivePlayers.map((player, index) => {
             const position = getPlayerPosition(index, alivePlayers.length);
             const isCurrentPlayer = player.id === game.current_player_id;
