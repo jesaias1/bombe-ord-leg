@@ -5,6 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tables } from '@/integrations/supabase/types';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { Copy, Check } from 'lucide-react';
 
 type Player = Tables<'players'>;
 type Room = Tables<'rooms'>;
@@ -28,6 +30,7 @@ export const GameWaiting = ({
 }: GameWaitingProps) => {
   const [isRocketFlying, setIsRocketFlying] = useState(false);
   const [showExplosion, setShowExplosion] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   const playerCount = players?.length ?? 0;
   const isSolo = playerCount <= 1;
@@ -51,6 +54,25 @@ export const GameWaiting = ({
 
     // Success animations
     setTimeout(() => setShowExplosion(true), 900);
+  };
+
+  const handleCopyLink = async () => {
+    const roomUrl = window.location.href;
+    try {
+      await navigator.clipboard.writeText(roomUrl);
+      setCopied(true);
+      toast({
+        title: "Link kopieret! 🎉",
+        description: "Del linket med dine venner for at invitere dem til spillet",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Kunne ikke kopiere link",
+        description: "Prøv venligst igen",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -101,6 +123,29 @@ export const GameWaiting = ({
             </p>
           </div>
         </div>
+
+        {/* Copy room link button */}
+        {!isSolo && (
+          <div className="mt-4">
+            <Button 
+              onClick={handleCopyLink}
+              variant="outline"
+              className="gap-2"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Kopieret!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Kopier rum link
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
       
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-lg border border-blue-200 transform hover:scale-[1.02] transition-all duration-300">
