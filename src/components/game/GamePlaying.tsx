@@ -2,6 +2,7 @@
 import React from 'react';
 import { BombTimer } from './BombTimer';
 import { ExplosionFeedback } from './ExplosionFeedback';
+import { UsedWordsList } from './UsedWordsList';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Heart } from 'lucide-react';
@@ -151,6 +152,9 @@ export const GamePlaying = ({
           syllable={game.current_syllable || ''}
         />
       </div>
+
+      {/* Used Words List Overlay */}
+      <UsedWordsList words={game.correct_words || game.used_words || []} />
 
       {/* Status chip */}
       {isSpectating ? (
