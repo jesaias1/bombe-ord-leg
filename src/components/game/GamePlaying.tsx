@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Heart } from 'lucide-react';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useEffect, useState, useRef } from 'react';
+import confetti from 'canvas-confetti';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -48,10 +49,22 @@ export const GamePlaying = ({
     const lastTurnSeq = (window as any).__lastTurnSeq;
     const currentTurnSeq = (game as any)?.turn_seq;
 
-    // If a new word was accepted, credit the previous current player
-    if (totalWords > lastWordCountRef.current && lastTurnSeq !== undefined) {
+    // If a new word was accepted
+    if (totalWords > lastWordCountRef.current) {
+      // Trigger confetti if it was ME who submitted (or always if single player)
       const prevPlayerId = (window as any).__lastCurrentPlayerId;
-      if (prevPlayerId) {
+      const wasMe = prevPlayerId === (players.find(p => p.user_id === currentUserId)?.id);
+      
+      if (wasMe || isSinglePlayer) {
+        confetti({
+          particleCount: 40,
+          spread: 70,
+          origin: { y: 0.8 },
+          colors: ['#34d399', '#fbbf24', '#f87171'] // Emerald, Amber, Red
+        });
+      }
+
+      if (prevPlayerId && lastTurnSeq !== undefined) {
         wordCountsRef.current[prevPlayerId] = (wordCountsRef.current[prevPlayerId] || 0) + 1;
       }
     }

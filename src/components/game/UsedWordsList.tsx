@@ -9,7 +9,7 @@ export const UsedWordsList = ({ words }: UsedWordsListProps) => {
   if (!words || words.length === 0) return null;
 
   return (
-    <div className="absolute top-2 left-2 z-10 max-w-[120px] sm:max-w-[160px] flex flex-col gap-1 pointer-events-none opacity-60 hover:opacity-100 transition-opacity">
+    <div className="absolute top-16 left-2 z-10 max-w-[120px] sm:max-w-[160px] flex flex-col gap-1 pointer-events-none opacity-60 hover:opacity-100 transition-opacity">
       <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider px-1">
         Brugte ord ({words.length})
       </div>
