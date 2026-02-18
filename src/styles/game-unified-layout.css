@@ -1,0 +1,98 @@
+/* ========== Ordbomben — Game Layout ========== */
+/* Single source of truth. Everything fits in one viewport. */
+
+:root {
+  --ob-bg: #0c1220;
+  --ob-text: #e2e8f0;
+  --ob-text-muted: #94a3b8;
+  --ob-orange: #f97316;
+  --ob-border: rgba(255,255,255,0.08);
+}
+
+/* ---------- Full-screen game shell ---------- */
+.ob-game-shell {
+  height: 100dvh;
+  height: 100vh; /* fallback */
+  display: flex;
+  flex-direction: column;
+  background: var(--ob-bg);
+  color: var(--ob-text);
+  overflow: hidden;
+}
+
+/* ---------- Compact header bar ---------- */
+.ob-topbar {
+  flex: 0 0 auto;
+  text-align: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--ob-border);
+}
+
+/* ---------- Main game area (fills remaining space) ---------- */
+.ob-game-main {
+  flex: 1 1 0;
+  min-height: 0; /* critical for flex shrink */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  overflow: hidden;
+}
+
+/* ---------- Bottom input dock ---------- */
+.ob-input-dock {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--ob-border);
+  background: var(--ob-bg);
+}
+
+.ob-input-dock .ob-input-inner {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ---------- Glass card ---------- */
+.ob-glass {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--ob-border);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
+/* ---------- Responsive timer sizing ---------- */
+.ob-bomb-wrap {
+  width: clamp(160px, 32vmin, 280px);
+  aspect-ratio: 1;
+  flex-shrink: 1;
+}
+
+@media (max-height: 600px) {
+  .ob-bomb-wrap {
+    width: clamp(120px, 28vmin, 200px);
+  }
+  .ob-game-main {
+    gap: 6px;
+    padding: 4px 12px;
+  }
+  .ob-topbar {
+    padding: 4px 12px;
+  }
+}
+
+@media (min-height: 800px) {
+  .ob-bomb-wrap {
+    width: clamp(200px, 34vmin, 320px);
+  }
+  .ob-game-main {
+    gap: 16px;
+  }
+}
+
+/* ---------- Dark scrollbar ---------- */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }

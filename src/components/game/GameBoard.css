@@ -1,0 +1,16 @@
+/* GameBoard.css - Circle layout for players around timer */
+
+:root {
+  --safe-top: max(env(safe-area-inset-top), 8px);
+  --safe-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+.game-stage {
+  padding-top: calc(var(--safe-top) + 8px);
+  padding-bottom: calc(var(--safe-bottom) + 72px);
+}
+
+/* Toast should be above everything */
+.toast-viewport, .shadcn-toast-viewport {
+  z-index: 60;
+}

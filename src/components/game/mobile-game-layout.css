@@ -1,0 +1,53 @@
+/* mobile-game-layout.css - Game circle layout */
+
+:root {
+  --safe-top: max(env(safe-area-inset-top), 8px);
+  --safe-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+/* Z-index stacking order */
+.toast-viewport {
+  z-index: 70;
+}
+
+.game-input-wrap {
+  z-index: 40;
+}
+
+@media (max-width: 600px) {
+  .game-stage {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    height: 100vh;
+    justify-content: space-between;
+  }
+
+  .turn-chip {
+    margin-bottom: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .game-input-wrap {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5rem;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(4px);
+  }
+
+  .game-input-panel {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .game-input-panel > div:first-child {
+    margin-bottom: 4px;
+    display: block;
+    text-align: center;
+  }
+}
