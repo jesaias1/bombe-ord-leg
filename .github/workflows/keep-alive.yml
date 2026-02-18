@@ -1,0 +1,21 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Run at 00:00 every day
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Project
+        # Pings the database to reset the 7-day inactivity timer
+        # Using the anon key is safe as it's public client-side anyway
+        run: |
+          curl -I https://oaolwmbknfwpnkrsqrxt.supabase.co/rest/v1/ \
+          -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hb2x3bWJrbmZ3cG5rcnNxcnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5Nzc5MTMsImV4cCI6MjA2NDU1MzkxM30.rAUSze48pqW4QE4R2ZGLARPGGdY3mQIWsNQArpuH1qM" \
+          -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hb2x3bWJrbmZ3cG5rcnNxcnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5Nzc5MTMsImV4cCI6MjA2NDU1MzkxM30.rAUSze48pqW4QE4R2ZGLARPGGdY3mQIWsNQArpuH1qM" \
+          > /dev/null 2>&1 || true
+          echo "Pinged Supabase successfully"
