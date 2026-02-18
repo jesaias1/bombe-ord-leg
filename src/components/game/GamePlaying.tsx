@@ -36,6 +36,7 @@ export const GamePlaying = ({
   const deadPlayers = players.filter(p => !p.is_alive);
   const [showExplosion, setShowExplosion] = useState(false);
   const [explosionPlayer, setExplosionPlayer] = useState<string>();
+  const [explosionIsMe, setExplosionIsMe] = useState(false);
 
   // Track per-player word counts client-side
   const wordCountsRef = useRef<Record<string, number>>({});
@@ -63,6 +64,7 @@ export const GamePlaying = ({
       });
       if (lostLifePlayer) {
         setExplosionPlayer(lostLifePlayer.name);
+        setExplosionIsMe(lostLifePlayer.user_id === currentUserId);
         setShowExplosion(true);
       }
     }
@@ -84,6 +86,7 @@ export const GamePlaying = ({
       {showExplosion && (
         <ExplosionFeedback
           playerName={explosionPlayer}
+          isMe={explosionIsMe}
           onComplete={() => { setShowExplosion(false); setExplosionPlayer(undefined); }}
         />
       )}
