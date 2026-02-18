@@ -59,11 +59,11 @@ export const useGameInput = ({
   const startTs = endTs ? endTs - durationMs : 0;
   const GRACE_MS = 200; // tiny grace to smooth "just expired" submissions
   
-  // Check if it's my turn
+  // Check if it's my turn - rely on server authority (game.current_player_id)
+  // If server says it's my turn, I am alive, even if local player list is stale
   const isMyTurn = !!currentPlayer && 
                    currentPlayer.user_id === currentUserId && 
-                   game?.status === 'playing' &&
-                   !!currentUserPlayer?.is_alive;
+                   game?.status === 'playing';
 
   // Calculate time left for more tolerant input availability
   const timeLeftMs = endTs ? Math.max(0, endTs - serverNow()) : 0;

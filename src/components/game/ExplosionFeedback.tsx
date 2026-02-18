@@ -13,7 +13,7 @@ export const ExplosionFeedback = ({ playerName, onComplete }: ExplosionFeedbackP
     const timer = setTimeout(() => {
       setShow(false);
       setTimeout(onComplete, 300); // Wait for fade out animation
-    }, 2000); // Show for 2 seconds
+    }, 1200); // Show for 1.2 seconds (reduced from 2s)
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -21,7 +21,7 @@ export const ExplosionFeedback = ({ playerName, onComplete }: ExplosionFeedbackP
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300",
+        "fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300 pointer-events-none",
         show ? "opacity-100" : "opacity-0"
       )}
     >
