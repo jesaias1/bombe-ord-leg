@@ -14,56 +14,31 @@ export const ExplosionFeedback = ({ playerName, isMe, onComplete }: ExplosionFee
     const timer = setTimeout(() => {
       setShow(false);
       setTimeout(onComplete, 300); // Wait for fade out animation
-    }, isMe ? 1200 : 800); // Shorter for others
+    }, 800); // Show for 0.8 seconds
 
     return () => clearTimeout(timer);
-  }, [onComplete, isMe]);
+  }, [onComplete]);
 
-  if (!isMe) {
-    // Subtle toast for others
-    return (
-      <div className={cn(
-        "fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none transition-opacity duration-300",
-        show ? "opacity-100" : "opacity-0"
-      )}>
-        <div className="bg-slate-900/90 border border-white/10 text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-3">
-          <span className="text-xl">💥</span>
-          <span className="text-sm font-medium">
-            <span className="text-red-400 font-bold">{playerName}</span> mistede et liv
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // Full screen for me
+  // Unified non-blocking overlay for everyone
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300 pointer-events-none",
+        "fixed inset-x-0 top-[15%] z-[100] flex flex-col items-center justify-center pointer-events-none transition-opacity duration-300",
         show ? "opacity-100" : "opacity-0"
       )}
     >
-      <div className="text-center space-y-6 animate-scale-in">
+      <div className="text-center space-y-2 animate-bounce-in">
         {/* Explosion animation */}
-        <div className="text-9xl animate-bounce">
+        <div className="text-7xl drop-shadow-2xl filter brightness-110">
           💥
         </div>
         
-        {/* Message */}
-        <div className="space-y-2">
-          <h2 className="text-4xl font-bold text-white drop-shadow-lg">
-            Bomben sprang!
-          </h2>
-          {playerName && (
-            <p className="text-2xl text-red-400 font-semibold">
-              Du mistede et liv
-            </p>
-          )}
+        {/* Minimal Message */}
+        <div className="bg-slate-900/90 backdrop-blur-md px-6 py-2 rounded-full border border-red-500/30 shadow-2xl">
+           <span className="text-white font-bold text-lg">
+             {isMe ? "Av! Du mistede et liv!" : `${playerName} mistede et liv!`}
+           </span>
         </div>
-
-        {/* Pulsing effect */}
-        <div className="absolute inset-0 bg-red-500/20 animate-pulse rounded-full blur-3xl" />
       </div>
     </div>
   );

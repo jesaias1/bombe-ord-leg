@@ -15,9 +15,12 @@ export const BombTimer = ({ timeLeft, totalTime, isActive, syllable }: BombTimer
 
   useEffect(() => {
     if (isActive && timeLeft !== lastTickRef.current && timeLeft > 0) {
-       const urgency = 1 - (timeLeft / totalTime);
-       soundManager.playTick(urgency);
-       hapticManager.vibrateTick(urgency);
+       // Only tick in the last 5 seconds to reduce stress
+       if (timeLeft <= 5) {
+           const urgency = 1 - (timeLeft / totalTime);
+           soundManager.playTick(urgency);
+           hapticManager.vibrateTick(urgency);
+       }
        lastTickRef.current = timeLeft;
     }
   }, [timeLeft, isActive, totalTime]);
