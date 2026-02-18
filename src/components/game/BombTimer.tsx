@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { soundManager } from '@/utils/SoundManager';
+import { hapticManager } from '@/utils/HapticManager';
 
 interface BombTimerProps {
   timeLeft: number;
@@ -9,6 +11,16 @@ interface BombTimerProps {
 }
 
 export const BombTimer = ({ timeLeft, totalTime, isActive, syllable }: BombTimerProps) => {
+  const lastTickRef = useRef<number>(timeLeft);
+
+  useEffect(() => {
+    if (isActive && timeLeft !== lastTickRef.current && timeLeft > 0) {
+       const urgency = 1 - (timeLeft / totalTime);
+       soundManager.playTick(urgency);
+       hapticManager.vibrateTick(urgency);
+       lastTickRef.current = timeLeft;
+    }
+  }, [timeLeft, isActive, totalTime]);
   const progress = totalTime > 0 ? Math.min(1, Math.max(0, timeLeft / totalTime)) : 0;
   const isCritical = timeLeft <= 3;
 

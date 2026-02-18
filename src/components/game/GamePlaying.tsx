@@ -9,6 +9,8 @@ import { Heart } from 'lucide-react';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useEffect, useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
+import { soundManager } from '@/utils/SoundManager';
+import { hapticManager } from '@/utils/HapticManager';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
@@ -56,6 +58,8 @@ export const GamePlaying = ({
       const wasMe = prevPlayerId === (players.find(p => p.user_id === currentUserId)?.id);
       
       if (wasMe || isSinglePlayer) {
+        soundManager.playSuccess();
+        hapticManager.vibrateSuccess();
         confetti({
           particleCount: 40,
           spread: 70,
@@ -80,6 +84,11 @@ export const GamePlaying = ({
         setExplosionPlayer(lostLifePlayer.name);
         setExplosionIsMe(lostLifePlayer.user_id === currentUserId);
         setShowExplosion(true);
+        
+        if (lostLifePlayer.user_id === currentUserId) {
+            soundManager.playExplosion();
+            hapticManager.vibrateExplosion();
+        }
       }
     }
 
