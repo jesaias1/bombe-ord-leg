@@ -1,16 +1,16 @@
 # Danish wordlist
 
-`wordlist.txt` is generated from the same source strategy used by the Supabase word importer, then normalized to lowercase Danish words.
+`wordlist.txt` is the canonical Ordbomben wordlist. It combines the original Ordbomben Supabase export with DSDO, then normalizes to lowercase Danish words.
 
-- Current generated size: 194,231 words.
+- Current generated size: 1,868,285 words.
 - Public app path after deployment: `/wordlist.txt`.
 - GitHub path after commit: `public/wordlist.txt`.
 
 Source availability can change over time. The generation stats for this build are in `wordlist-stats.json`.
 
-Main sources used successfully in this build:
+Main sources:
 
-- LibreOffice Danish dictionary: `https://raw.githubusercontent.com/LibreOffice/dictionaries/master/da_DK/da_DK.dic`
-- wooorm dictionaries Danish index: `https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/da/index.dic`
-- HermitDave FrequencyWords Danish 50k: `https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/da/da_50k.txt`
-- TitoBouzout Danish dictionary: `https://raw.githubusercontent.com/titoBouzout/Dictionaries/master/Danish.dic`
+- Original Ordbomben Supabase export: 265,470 words after dedupe and rebuilt extras.
+- DSDO, Den store danske ordliste: `https://github.com/mortenivar/dsdo`
+
+DSDO is GPL-2.0 licensed. A copy of its license and third-party permissions is stored in `docs/third-party/dsdo/`.

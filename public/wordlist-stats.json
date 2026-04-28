@@ -1,18 +1,24 @@
 {
-  "generatedAt": "2026-04-28T23:14:33.303Z",
-  "canonicalSource": "C:/Users/lin4s/Downloads/Supabase Snippet Sorted Danish Words.csv",
-  "exportedWords": 265461,
-  "rebuiltExtrasAdded": 9,
-  "totalWords": 265470,
-  "rebuiltExtras": [
-    "a",
-    "e",
-    "i",
-    "o",
-    "u",
-    "y",
-    "æ",
-    "ø",
-    "å"
+  "generatedAt": "2026-04-28T23:47:38.367Z",
+  "totalWords": 1868285,
+  "previousCanonicalWords": 265470,
+  "dsdoRawLines": 1804916,
+  "dsdoValidWords": 1768495,
+  "dsdoInvalidOrNonWordLines": 36421,
+  "dsdoOverlap": 165680,
+  "dsdoWordsAdded": 1602815,
+  "sources": [
+    {
+      "name": "Old Ordbomben Supabase export plus rebuilt extras",
+      "words": 265470
+    },
+    {
+      "name": "DSDO - Den store danske ordliste",
+      "url": "https://github.com/mortenivar/dsdo",
+      "rawUrl": "https://raw.githubusercontent.com/mortenivar/dsdo/main/dsdo.txt",
+      "license": "GPL-2.0",
+      "validWords": 1768495,
+      "added": 1602815
+    }
   ]
 }
