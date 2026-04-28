@@ -2,7 +2,7 @@
 /* Single source of truth. Everything fits in one viewport. */
 
 :root {
-  --ob-bg: #0c1220;
+  --ob-bg: #0b1020;
   --ob-text: #e2e8f0;
   --ob-text-muted: #94a3b8;
   --ob-orange: #f97316;
@@ -15,7 +15,9 @@
   height: 100vh; /* fallback */
   display: flex;
   flex-direction: column;
-  background: var(--ob-bg);
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.72), rgba(12, 16, 26, 0.96)),
+    var(--ob-bg);
   color: var(--ob-text);
   overflow: hidden;
 }
@@ -24,8 +26,9 @@
 .ob-topbar {
   flex: 0 0 auto;
   text-align: center;
-  padding: 8px 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--ob-border);
+  background: rgba(255,255,255,0.03);
 }
 
 /* ---------- Main game area (fills remaining space) ---------- */
@@ -36,7 +39,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   padding: 8px 16px;
   overflow: hidden;
 }
@@ -47,7 +50,8 @@
   padding: 10px 16px;
   padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--ob-border);
-  background: var(--ob-bg);
+  background: rgba(11, 16, 32, 0.92);
+  backdrop-filter: blur(14px);
 }
 
 .ob-input-dock .ob-input-inner {
@@ -59,7 +63,7 @@
 .ob-glass {
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--ob-border);
-  border-radius: 12px;
+  border-radius: 8px;
   backdrop-filter: blur(8px);
 }
 

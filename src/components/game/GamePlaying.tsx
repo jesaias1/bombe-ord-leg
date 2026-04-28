@@ -5,7 +5,7 @@ import { ExplosionFeedback } from './ExplosionFeedback';
 import { UsedWordsList } from './UsedWordsList';
 import { Tables } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
-import { Heart } from 'lucide-react';
+import { Heart, Trophy, UserRoundX } from 'lucide-react';
 import { useGameInput } from '@/hooks/useGameInput';
 import { useEffect, useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
@@ -14,6 +14,12 @@ import { hapticManager } from '@/utils/HapticManager';
 
 type Player = Tables<'players'>;
 type Game = Tables<'games'>;
+type GameWithTurn = Game & { turn_seq?: number | null };
+type GameRuntimeWindow = Window & {
+  __lastTurnSeq?: number;
+  __lastCurrentPlayerId?: string | null;
+  [key: `__playerLives_${string}`]: number | undefined;
+};
 
 interface GamePlayingProps {
   game: Game;
@@ -41,6 +47,9 @@ export const GamePlaying = ({
   const [showExplosion, setShowExplosion] = useState(false);
   const [explosionPlayer, setExplosionPlayer] = useState<string>();
   const [explosionIsMe, setExplosionIsMe] = useState(false);
+  const gameWithTurn = game as GameWithTurn;
+  const currentTurnSeq = gameWithTurn.turn_seq;
+  const playerLivesKey = players.map(p => `${p.id}-${p.lives}`).join(',');
 
   // Track per-player word counts client-side
   const wordCountsRef = useRef<Record<string, number>>({});
@@ -48,13 +57,13 @@ export const GamePlaying = ({
 
   useEffect(() => {
     const totalWords = game.correct_words?.length || game.used_words?.length || 0;
-    const lastTurnSeq = (window as any).__lastTurnSeq;
-    const currentTurnSeq = (game as any)?.turn_seq;
+    const gameRuntime = window as GameRuntimeWindow;
+    const lastTurnSeq = gameRuntime.__lastTurnSeq;
 
     // If a new word was accepted
     if (totalWords > lastWordCountRef.current) {
       // Trigger confetti if it was ME who submitted (or always if single player)
-      const prevPlayerId = (window as any).__lastCurrentPlayerId;
+      const prevPlayerId = gameRuntime.__lastCurrentPlayerId;
       const wasMe = prevPlayerId === (players.find(p => p.user_id === currentUserId)?.id);
       
       if (wasMe || isSinglePlayer) {
@@ -75,9 +84,9 @@ export const GamePlaying = ({
     lastWordCountRef.current = totalWords;
 
     // Track explosion (life loss)
-    if (lastTurnSeq !== undefined && currentTurnSeq > lastTurnSeq) {
+    if (lastTurnSeq !== undefined && typeof currentTurnSeq === 'number' && currentTurnSeq > lastTurnSeq) {
       const lostLifePlayer = players.find(p => {
-        const prevLives = (window as any)[`__playerLives_${p.id}`];
+        const prevLives = gameRuntime[`__playerLives_${p.id}`];
         return prevLives !== undefined && p.lives < prevLives;
       });
       if (lostLifePlayer) {
@@ -92,10 +101,10 @@ export const GamePlaying = ({
       }
     }
 
-    (window as any).__lastTurnSeq = currentTurnSeq;
-    (window as any).__lastCurrentPlayerId = game.current_player_id;
-    players.forEach(p => { (window as any)[`__playerLives_${p.id}`] = p.lives; });
-  }, [(game as any)?.turn_seq, game.correct_words?.length, game.used_words?.length, players.map(p => `${p.id}-${p.lives}`).join(',')]);
+    if (typeof currentTurnSeq === 'number') gameRuntime.__lastTurnSeq = currentTurnSeq;
+    gameRuntime.__lastCurrentPlayerId = game.current_player_id;
+    players.forEach(p => { gameRuntime[`__playerLives_${p.id}`] = p.lives; });
+  }, [currentTurnSeq, currentUserId, game, isSinglePlayer, playerLivesKey, players]);
 
   const currentUserPlayer = players.find(p => p.user_id === currentUserId);
   const isSpectating = currentUserPlayer && !currentUserPlayer.is_alive;
@@ -115,25 +124,37 @@ export const GamePlaying = ({
       )}
 
       {/* Players bar */}
-      <div className="flex flex-wrap items-center justify-center gap-2 px-2 w-full max-w-lg">
+      <div className="w-full max-w-2xl px-2">
+        <div className="mb-2 flex items-center justify-center gap-2 text-xs text-slate-500">
+          <Trophy className="h-3.5 w-3.5 text-orange-300" />
+          {alivePlayers.length} tilbage
+          {deadPlayers.length > 0 && (
+            <>
+              <span className="text-slate-700">/</span>
+              <UserRoundX className="h-3.5 w-3.5" />
+              {deadPlayers.length} ude
+            </>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2">
         {alivePlayers.map(player => {
           const isActive = player.id === game.current_player_id;
           const isMe = player.user_id === currentUserId;
           const wordCount = wordCountsRef.current[player.id] || 0;
           return (
             <div key={player.id} className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all",
-              isActive ? "bg-orange-500/20 border border-orange-500/30 text-orange-300" : "bg-white/5 border border-transparent text-slate-400"
+              "flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
+              isActive ? "border-orange-400/40 bg-orange-400/15 text-orange-100 shadow-lg shadow-orange-500/10" : "border-white/5 bg-white/[0.04] text-slate-400"
             )}>
               <div className={cn(
-                "w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0",
-                isActive ? "bg-orange-500 text-white" : "bg-slate-700 text-slate-400"
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10px] font-bold",
+                isActive ? "bg-orange-500 text-white" : "bg-slate-700 text-slate-300"
               )}>
                 {player.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-col leading-tight min-w-0">
-                <span className="max-w-[56px] truncate font-medium">
-                  {player.name}{isMe ? " ★" : ""}
+                <span className="max-w-[84px] truncate font-semibold">
+                  {player.name}{isMe ? " (dig)" : ""}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <div className="flex gap-px">
@@ -142,7 +163,7 @@ export const GamePlaying = ({
                     ))}
                   </div>
                   {wordCount > 0 && (
-                    <span className="text-[9px] text-emerald-400/80 font-mono">{wordCount}w</span>
+                    <span className="text-[10px] font-mono text-emerald-300/90">{wordCount} ord</span>
                   )}
                 </div>
               </div>
@@ -152,16 +173,17 @@ export const GamePlaying = ({
         
         {/* Dead players shown dimmed */}
         {deadPlayers.map(player => (
-          <div key={player.id} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/3 text-slate-600 line-through">
+          <div key={player.id} className="rounded-md border border-white/5 bg-white/[0.02] px-2 py-1 text-[10px] text-slate-600 line-through">
             {player.name}
           </div>
         ))}
+        </div>
       </div>
 
       {/* Word counter (solo) or round info */}
       {isSinglePlayer && totalWords > 0 && (
         <div className="text-emerald-400/80 text-xs font-mono">
-          ✅ {totalWords} ord
+          {totalWords} ord
         </div>
       )}
 
@@ -180,16 +202,16 @@ export const GamePlaying = ({
 
       {/* Status chip */}
       {isSpectating ? (
-        <div className="text-purple-400 text-xs bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
-          👀 Du er ude
+        <div className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-xs text-purple-300">
+          Du er ude
         </div>
       ) : isMyTurn ? (
-        <div className="text-orange-300 text-xs bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20 animate-pulse">
-          🎯 Din tur — skriv et ord med "{game.current_syllable}"
+        <div className="animate-pulse rounded-full border border-orange-500/25 bg-orange-500/10 px-3 py-1 text-xs text-orange-200">
+          Din tur: {game.current_syllable?.toUpperCase()}
         </div>
       ) : currentPlayer ? (
-        <div className="text-slate-500 text-xs">
-          {currentPlayer.name} tænker...
+        <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-slate-400">
+          {currentPlayer.name} tænker
         </div>
       ) : null}
     </>

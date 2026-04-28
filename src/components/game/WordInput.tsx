@@ -19,7 +19,7 @@ export const WordInput: React.FC<WordInputProps> = ({
   onSubmit,
   disabled,
   currentSyllable,
-  placeholder = "Skriv dit ord...",
+  placeholder = "Skriv et dansk ord",
   isSubmitting = false,
   currentWord = '',
   onWordChange,
@@ -101,6 +101,11 @@ export const WordInput: React.FC<WordInputProps> = ({
 
   return (
     <div className="w-full space-y-2">
+      {!disabled && currentSyllable && (
+        <div className="text-center text-xs font-medium text-slate-400">
+          Ordet skal indeholde <span className="font-mono font-bold text-orange-200">{currentSyllable.toUpperCase()}</span>
+        </div>
+      )}
       {/* Input row */}
       <div className="relative">
         <Input
@@ -111,11 +116,11 @@ export const WordInput: React.FC<WordInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full h-12 text-lg pr-14 text-center font-medium rounded-xl
-                     bg-white/5 border-white/10 text-white placeholder:text-white/30
+          className="h-14 w-full rounded-lg border-white/10 bg-white/5 pr-14 text-center text-lg font-semibold text-white shadow-lg
+                     placeholder:text-white/30
                      focus:border-orange-400/50 focus:ring-orange-400/20 focus:bg-white/8
                      disabled:bg-white/3 disabled:text-white/30
-                     transition-all duration-200 shadow-lg"
+                     transition-all duration-200"
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
@@ -125,7 +130,7 @@ export const WordInput: React.FC<WordInputProps> = ({
           onClick={handleSubmit}
           disabled={disabled || !word.trim()}
           size="sm"
-          className="absolute right-1.5 top-1.5 h-9 w-9 p-0 rounded-lg
+          className="absolute right-1.5 top-1.5 h-9 w-9 rounded-md p-0
                      bg-orange-500 hover:bg-orange-400 text-white
                      disabled:bg-white/5 disabled:text-white/20
                      transition-all duration-200 shadow-md"

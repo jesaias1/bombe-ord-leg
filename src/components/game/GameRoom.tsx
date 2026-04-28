@@ -333,9 +333,16 @@ export const GameRoom = () => {
     <div className="ob-game-shell">
       {/* Top bar — always visible, very compact */}
       <div className="ob-topbar">
-        <div className="text-sm font-semibold text-white/80">{room.name}</div>
-        <div className="text-[10px] text-slate-500">
-          {room.difficulty} • {players.length === 1 ? 'Solo' : `${players.length} spillere`}
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 text-left">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold text-white/90">{room.name}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+              {room.difficulty} • {players.length === 1 ? 'Solo' : `${players.length} spillere`}
+            </div>
+          </div>
+          <div className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-xs font-bold tracking-[0.22em] text-orange-200">
+            {roomLocator}
+          </div>
         </div>
       </div>
 
@@ -346,6 +353,7 @@ export const GameRoom = () => {
             isSinglePlayer={players.length === 1}
             players={players}
             currentUserId={user?.id}
+            roomLocator={roomLocator}
             room={room}
             onStartGame={startNewGame}
             isLoading={playersLoading}
